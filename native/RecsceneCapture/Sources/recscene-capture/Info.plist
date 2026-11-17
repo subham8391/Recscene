@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleIdentifier</key>
+  <string>app.recscene.capture</string>
+  <key>CFBundleName</key>
+  <string>recscene-capture</string>
+  <key>CFBundleShortVersionString</key>
+  <string>0.1.0</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Recscene records your microphone when you add it to a recording.</string>
+  <key>NSScreenCaptureUsageDescription</key>
+  <string>Recscene records your screen.</string>
+</dict>
+</plist>
