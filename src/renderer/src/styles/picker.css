@@ -1,11 +1,13 @@
 /* Picker and widget windows are transparent overlays; the editor keeps its background. */
 html[data-route='picker'] body,
-html[data-route='widget'] body {
+html[data-route='widget'] body,
+html[data-route='notes'] body {
   background: transparent;
 }
 
 html[data-route='picker'],
-html[data-route='widget'] {
+html[data-route='widget'],
+html[data-route='notes'] {
   color-scheme: dark;
 }
 
@@ -608,4 +610,128 @@ html[data-route='widget'] {
   color: #fff;
   font: inherit;
   font-weight: 600;
+}
+
+/* Speaker notes window (specs 27–28) */
+.notes {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  background: rgba(20, 20, 28, 0.92);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.notes button,
+.notes textarea,
+.notes input,
+.notes select,
+.notes__body {
+  -webkit-app-region: no-drag;
+}
+
+.notes__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.notes__spacer {
+  flex: 1 1 auto;
+}
+
+.notes__btn {
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 11px;
+}
+
+.notes__btn--on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.notes__body {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 10px 14px;
+  line-height: 1.5;
+  user-select: text;
+}
+
+.notes__body p {
+  margin: 0 0 8px;
+}
+
+.notes__empty {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.notes__tail {
+  height: 60%;
+}
+
+.notes__edit {
+  flex: 1 1 auto;
+  margin: 0;
+  padding: 10px 14px;
+  border: 0;
+  resize: none;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  line-height: 1.5;
+  outline: none;
+}
+
+.notes__foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.notes__ctl {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.notes__ctl input {
+  width: 56px;
+  accent-color: var(--accent);
+}
+
+.notes__sel {
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 11px;
+}
+
+.notes__offset {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
 }

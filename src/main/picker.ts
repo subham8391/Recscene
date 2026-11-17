@@ -1,11 +1,12 @@
 import { statfs } from 'node:fs/promises'
 import { BrowserWindow, ipcMain, screen } from 'electron'
 import { displayUnderPoint, pickerPrefsFrom, type DisplayInfo, type PickerPrefs, type PickerState, type Rect, type RecordRequest } from '@core/recordingPicker'
+import type { SpeakerNotes } from './notes'
 import type { Preferences } from './preferences'
 import type { RecordingService } from './recording'
 import { createOverlayWindow } from './windows'
 
-const PREF_KEYS: (keyof PickerPrefs)[] = ['source', 'recordingCountdownDuration', 'recordingAreaCropPresets', 'recordMicrophone', 'systemAudio', 'recordingAreaCover', 'lastArea']
+const PREF_KEYS: (keyof PickerPrefs)[] = ['source', 'recordingCountdownDuration', 'recordingAreaCropPresets', 'recordMicrophone', 'systemAudio', 'recordingAreaCover', 'lastArea', 'showSpeakerNotes']
 
 /**
  * The recording picker (specs 1–5, 13, 17, 21, 31): a transparent window the
@@ -20,7 +21,8 @@ export class Picker {
   constructor(
     private readonly recording: RecordingService,
     private readonly prefs: Preferences,
-    private readonly projectsRoot: () => string
+    private readonly projectsRoot: () => string,
+    private readonly notes: SpeakerNotes
   ) {
     ipcMain.handle('picker:state', () => this.state())
     ipcMain.handle('picker:savePrefs', (_e, values: Partial<PickerPrefs>) => this.savePrefs(values))
@@ -71,6 +73,8 @@ export class Picker {
   private savePrefs(values: Partial<PickerPrefs>): PickerPrefs {
     const allowed = Object.fromEntries(Object.entries(values).filter(([k]) => (PREF_KEYS as string[]).includes(k)))
     this.prefs.set(allowed)
+    if (values.showSpeakerNotes === true) this.notes.show(this.displayId)
+    if (values.showSpeakerNotes === false) this.notes.hide(false)
     return this.pickerPrefs()
   }
 
