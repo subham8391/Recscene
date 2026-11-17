@@ -8,7 +8,7 @@ Status: pre-alpha scaffold. The editor shell runs; recording, rendering and expo
 
 ## Getting started
 
-Requires Node 24 (`.nvmrc`) and macOS 14 or later for screen capture.
+Requires Node 24 (`.nvmrc`), the Xcode Command Line Tools (for the Swift helper) and macOS 14 or later for screen capture.
 
 ```bash
 npm install
@@ -30,6 +30,7 @@ src/core       pure TypeScript: project model, auto-zoom, timing. No Electron, R
 src/main       Electron main process: windows, recording, files, rendering orchestration
 src/preload    the typed bridge the renderer is allowed to call (window.recscene)
 src/renderer   the React UI, built from the design canvas tokens
+native         the Swift capture helper (ScreenCaptureKit, event capture, microphone)
 design/canvas  the full UI design (23 artboards, dark + light, laptop/tablet/mobile)
 docs           decisions, feature milestones, engineering notes, competitor research
 ```

@@ -20,3 +20,7 @@
 .idea
 .vscode/*
 !.vscode/extensions.json
+
+# native helper build
+/native/bin
+/native/RecsceneCapture/.build

@@ -18,7 +18,7 @@
 - **main** owns windows, the project bundle on disk, the native helper's lifecycle and export jobs.
 - **preload** exposes `window.recscene`, a small typed API. Nothing else reaches the renderer.
 - **renderer** is the editor. It renders the preview from the project document and the raw media, and sends edits back as plain data.
-- **native** (to be added) records screen, camera, microphone, clicks, keys and cursor, and encodes exports. It never touches the UI.
+- **native** (`native/RecsceneCapture`, see its README for the protocol) records screen, microphone, clicks, keys and cursor. Camera capture and export encoding will join it. It never touches the UI.
 
 ## Project bundle
 `Name.recscene/` holds `project.json` (the `Project` type in `src/core/project.ts`), `screen.mov`, optional `camera.mov` and `mic.m4a`, and `events.json` with clicks, keys and cursor samples. The bundle is self-contained so it can be copied to another Mac.

@@ -15,5 +15,5 @@
     "baseUrl": ".",
     "paths": { "@core/*": ["src/core/*"] }
   },
-  "include": ["electron.vite.config.ts", "vitest.config.mts", "src/main/**/*", "src/preload/**/*", "src/core/**/*"]
+  "include": ["electron.vite.config.ts", "vitest.config.mts", "scripts/**/*", "src/main/**/*", "src/preload/**/*", "src/core/**/*"]
 }
