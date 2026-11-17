@@ -9,6 +9,8 @@ import { loadRoute, preloadPath } from './windows'
 
 /** Spec 33: opens the picker when idle, finishes the recording while one runs. */
 const RECORD_SHORTCUT = 'Shift+CommandOrControl+R'
+/** Spec 26: flags a moment while recording. */
+const FLAG_SHORTCUT = 'CommandOrControl+Alt+Control+F'
 
 let mainWindow: BrowserWindow | null = null
 let recording: RecordingService | null = null
@@ -76,14 +78,21 @@ ipcMain.handle('app:projectsRoot', () => projectsRoot())
 void app.whenReady().then(() => {
   const prefs = new Preferences(join(app.getPath('userData'), 'preferences.json'))
   recording = new RecordingService()
-  widget = new Widget(stopRecording)
+  widget = new Widget(recording, stopRecording)
   picker = new Picker(recording, prefs, projectsRoot)
+  recording.on('cancelled', () => {
+    widget?.hide()
+    picker?.close()
+  })
   recording.on('started', (options: StartOptions) => {
     const t = options.target
     const displayId = t.kind === 'display' ? t.id : t.kind === 'area' ? t.displayId : screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).id
     widget?.show(displayId)
   })
   globalShortcut.register(RECORD_SHORTCUT, onRecordShortcut)
+  globalShortcut.register(FLAG_SHORTCUT, () => {
+    if (recording?.isRecording) void recording.addFlag().catch(() => undefined)
+  })
   mainWindow = createMainWindow()
   // Development aid: RECSCENE_OPEN_PICKER=1 opens the picker as soon as the app is ready.
   if (!app.isPackaged && process.env['RECSCENE_OPEN_PICKER']) setTimeout(() => picker?.open(), 800)

@@ -55,9 +55,15 @@ export interface Recording {
   keys: KeyEvent[]
 }
 
+export interface ProjectMeta {
+  /** Spec 26: times (ms) flagged with ⌘⌥⌃F while recording. */
+  recordingFlags: Ms[]
+}
+
 export interface Project {
   version: 1
   name: string
+  meta: ProjectMeta
   recording: Recording
   zooms: ZoomRegion[]
   clips: Clip[]

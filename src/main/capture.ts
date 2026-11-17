@@ -134,6 +134,22 @@ export class CaptureClient extends EventEmitter {
     return this.send({ cmd: 'stop' }, 'stopped')
   }
 
+  pause(): Promise<{ timeMs: number }> {
+    return this.send({ cmd: 'pause' }, 'paused')
+  }
+
+  resume(): Promise<{ timeMs: number }> {
+    return this.send({ cmd: 'resume' }, 'resumed')
+  }
+
+  mark(kind: 'marker' | 'flag'): Promise<{ timeMs: number }> {
+    return this.send({ cmd: 'mark', kind }, 'marked')
+  }
+
+  cancel(): Promise<void> {
+    return this.send({ cmd: 'cancel' }, 'cancelled').then(() => undefined)
+  }
+
   dispose(): void {
     this.process?.kill()
     this.process = null

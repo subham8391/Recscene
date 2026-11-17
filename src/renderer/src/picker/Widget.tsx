@@ -1,45 +1,63 @@
 import { useEffect, useState } from 'react'
 import { formatClock } from '@core/recordingPicker'
+import { elapsedMs, isPaused, type SessionState } from '@core/recordingSession'
 
-/** The floating recording widget (spec 32). Pause, flag, restart and delete land with specs 22–26. */
+type Snapshot = (SessionState & { toast: string | null }) | null
+
+/** The floating recording widget (specs 22–26, 32), drawn after the recording-flow board. */
 export function Widget(): React.JSX.Element {
-  const [startedAt, setStartedAt] = useState(0)
+  const [snap, setSnap] = useState<Snapshot>(null)
   const [now, setNow] = useState(0)
-  const [stopping, setStopping] = useState(false)
+  const [busy, setBusy] = useState<string | null>(null)
 
   useEffect(() => {
     void window.recscene.widget.state().then((s) => {
-      setStartedAt(s.startedAt)
+      setSnap(s)
       setNow(Date.now())
     })
+    const off = window.recscene.widget.onUpdate(setSnap)
     const id = window.setInterval(() => setNow(Date.now()), 250)
-    return () => window.clearInterval(id)
+    return () => {
+      off()
+      window.clearInterval(id)
+    }
   }, [])
 
-  const stop = (): void => {
-    setStopping(true)
-    void window.recscene.widget.stop()
+  const run = (name: string, action: () => Promise<unknown>): void => {
+    setBusy(name)
+    void action().finally(() => setBusy(null))
   }
 
+  const paused = snap ? isPaused(snap.clock) : false
+  const clock = snap && now ? formatClock(elapsedMs(snap.clock, now)) : '00:00'
+
   return (
-    <div className="widget" role="group" aria-label="Recording in progress controls">
+    <div className={`widget${paused ? ' widget--paused' : ''}`} role="group" aria-label="Recording in progress controls">
       <span className="widget__dot" aria-hidden="true" />
-      <span className="widget__clock">{startedAt && now ? formatClock(now - startedAt) : '00:00'}</span>
-      <span className="widget__sep" aria-hidden="true" />
-      <button type="button" className="widget__btn" aria-label="Pause (coming with spec 22)" disabled>
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z" /></svg>
+      <span className="widget__clock">{clock}</span>
+      {snap?.toast ? <span className="widget__toast" role="status">{snap.toast}</span> : <span className="widget__sep" aria-hidden="true" />}
+      <button type="button" className="widget__btn" aria-label={paused ? 'Resume recording' : 'Pause'} disabled={busy !== null} onClick={() => run('pause', () => (paused ? window.recscene.widget.resume() : window.recscene.widget.pause()))}>
+        {paused ? (
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l12 8-12 8z" /></svg>
+        ) : (
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z" /></svg>
+        )}
       </button>
-      <button type="button" className="widget__btn" aria-label="Add recording flag (coming with spec 26)" disabled>
+      <button type="button" className="widget__btn" aria-label="Add recording marker" disabled={busy !== null} onClick={() => run('marker', () => window.recscene.widget.marker())}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M12 3v18M6 9l6-6 6 6" /></svg>
+      </button>
+      <button type="button" className="widget__btn" aria-label="Add recording flag (⌘⌥⌃F)" disabled={busy !== null} onClick={() => run('flag', () => window.recscene.widget.flag())}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M5 21V4h12l-3 4 3 4H5" /></svg>
       </button>
-      <button type="button" className="widget__btn" aria-label="Restart (coming with spec 23)" disabled>
+      <span className="widget__sep" aria-hidden="true" />
+      <button type="button" className="widget__btn" aria-label="Restart entire recording" disabled={busy !== null} onClick={() => run('restart', () => window.recscene.widget.restart())}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v5h5" /></svg>
       </button>
-      <button type="button" className="widget__btn widget__btn--danger" aria-label="Delete recording (coming with spec 24)" disabled>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" /></svg>
+      <button type="button" className="widget__btn widget__btn--danger" aria-label="Cancel recording" disabled={busy !== null} onClick={() => run('cancel', () => window.recscene.widget.cancel())}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
       </button>
-      <button type="button" className="widget__stop" onClick={stop} disabled={stopping}>
-        {stopping ? 'Saving…' : 'Stop'}
+      <button type="button" className="widget__stop" disabled={busy !== null} onClick={() => run('stop', () => window.recscene.widget.stop())}>
+        {busy === 'stop' ? 'Saving…' : 'Stop'}
       </button>
     </div>
   )

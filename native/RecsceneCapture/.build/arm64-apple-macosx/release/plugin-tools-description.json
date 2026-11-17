@@ -48,6 +48,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/Sources/recscene-capture/SessionClock.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/Sources/recscene-capture/Targets.swift"
         },
         {
@@ -73,6 +77,7 @@
         "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/.build/arm64-apple-macosx/release/recscene_capture.build/Protocol.swift.o",
         "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/.build/arm64-apple-macosx/release/recscene_capture.build/Recorder.swift.o",
         "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/.build/arm64-apple-macosx/release/recscene_capture.build/Session.swift.o",
+        "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/.build/arm64-apple-macosx/release/recscene_capture.build/SessionClock.swift.o",
         "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/.build/arm64-apple-macosx/release/recscene_capture.build/Targets.swift.o",
         "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/.build/arm64-apple-macosx/release/recscene_capture.build/main.swift.o"
       ],
@@ -144,6 +149,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/.build/arm64-apple-macosx/release/recscene_capture.build/SessionClock.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/.build/arm64-apple-macosx/release/recscene_capture.build/Targets.swift.o"
         },
         {
@@ -163,6 +172,7 @@
         "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/Sources/recscene-capture/Protocol.swift",
         "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/Sources/recscene-capture/Recorder.swift",
         "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/Sources/recscene-capture/Session.swift",
+        "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/Sources/recscene-capture/SessionClock.swift",
         "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/Sources/recscene-capture/Targets.swift",
         "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/Sources/recscene-capture/main.swift"
       ],
@@ -187,6 +197,7 @@
       "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/Sources/recscene-capture/Protocol.swift",
       "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/Sources/recscene-capture/Recorder.swift",
       "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/Sources/recscene-capture/Session.swift",
+      "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/Sources/recscene-capture/SessionClock.swift",
       "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/Sources/recscene-capture/Targets.swift",
       "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/Sources/recscene-capture/main.swift",
       "-I",
@@ -283,6 +294,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/.build/arm64-apple-macosx/release/recscene_capture.build/SessionClock.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/.build/arm64-apple-macosx/release/recscene_capture.build/Targets.swift.o"
         },
         {
@@ -322,6 +337,10 @@
         {
           "kind" : "file",
           "name" : "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/Sources/recscene-capture/Session.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/Sources/recscene-capture/SessionClock.swift"
         },
         {
           "kind" : "file",

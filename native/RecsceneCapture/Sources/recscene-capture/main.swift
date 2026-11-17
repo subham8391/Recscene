@@ -24,6 +24,19 @@ func handle(_ command: Command) async {
             guard let s = session else { throw ProtocolError.notRecording }
             session = nil
             output.send(try await s.stop())
+        case .pause:
+            guard let s = session else { throw ProtocolError.notRecording }
+            output.send(try s.pause())
+        case .resume:
+            guard let s = session else { throw ProtocolError.notRecording }
+            output.send(try s.resume())
+        case .mark(let kind):
+            guard let s = session else { throw ProtocolError.notRecording }
+            output.send(s.mark(kind: kind))
+        case .cancel:
+            guard let s = session else { throw ProtocolError.notRecording }
+            session = nil
+            output.send(await s.cancel())
         }
     } catch {
         output.error(error)

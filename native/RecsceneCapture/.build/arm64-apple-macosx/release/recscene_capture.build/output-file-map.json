@@ -40,6 +40,12 @@
     "swift-dependencies": "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/.build/arm64-apple-macosx/release/recscene_capture.build/Session.swiftdeps",
     "diagnostics": "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/.build/arm64-apple-macosx/release/recscene_capture.build/Session.dia"
   },
+  "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/Sources/recscene-capture/SessionClock.swift": {
+    "object": "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/.build/arm64-apple-macosx/release/recscene_capture.build/SessionClock.swift.o",
+    "swiftmodule": "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/.build/arm64-apple-macosx/release/recscene_capture.build/SessionClock~partial.swiftmodule",
+    "swift-dependencies": "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/.build/arm64-apple-macosx/release/recscene_capture.build/SessionClock.swiftdeps",
+    "diagnostics": "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/.build/arm64-apple-macosx/release/recscene_capture.build/SessionClock.dia"
+  },
   "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/Sources/recscene-capture/Targets.swift": {
     "object": "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/.build/arm64-apple-macosx/release/recscene_capture.build/Targets.swift.o",
     "swiftmodule": "/Users/subhamdas/Personal_Project/Recscene/native/RecsceneCapture/.build/arm64-apple-macosx/release/recscene_capture.build/Targets~partial.swiftmodule",

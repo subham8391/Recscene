@@ -552,6 +552,21 @@ html[data-route='widget'] {
 .widget__clock {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
+  min-width: 42px;
+}
+
+.widget--paused .widget__dot {
+  background: var(--clip);
+}
+
+.widget--paused .widget__clock {
+  color: var(--text2);
+}
+
+.widget__toast {
+  font-size: 11px;
+  color: var(--text2);
+  white-space: nowrap;
 }
 
 .widget__sep {
