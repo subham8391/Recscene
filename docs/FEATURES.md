@@ -11,7 +11,7 @@ Spec numbers refer to `docs/research/screen-studio-feature-specs.md`. A feature 
 | Cursor: smoothing, size, click highlight, hide when idle | 125–147 | Done: 126–133, 137–145 (144–145 in the preview; 146–147 stored, applied by the GPU renderer). 125 ships four sets with a pointer only and 134–136 are stored but inert until the helper records cursor types; the 20 custom sets are not drawn |
 | Background, padding, rounded corners, shadow, screen inset | 165–188 | Done: 165–184, 188 (wallpapers are 180 generated SVGs in the nine collections, not the reference JPEGs). 185–187 device mockups: toggle stored, no frames bundled yet |
 | Clips: trim, cut, speed | 80–101 | Done: 80–84, 86–101 (93 for the microphone; 94–95 wait for per-track system and device audio; 85 as X at the playhead). 83's beam mode is not built: C cuts at the playhead |
-| Export MP4 (H.264, 1080p/4K, frame rate) to `~/Movies/Recscene` | 233–245 | VideoToolbox in the native helper |
+| Export MP4 (H.264, 1080p/4K, frame rate) to `~/Movies/Recscene` | 233–245 | Done: 233–237, 240–241, 245, with 247–248 (progress, estimate, cancel). Video is rendered on a canvas and encoded with WebCodecs H.264 into an MP4 stream; audio is mixed offline and joined as AAC by the helper. 238–239 are not needed (the encoder is the platform's); 242–244 shareable links wait for M3 |
 | Projects home: open, rename, delete, recover unfinished recording | 252–262 | `.recscene` bundles in `~/Recscene Projects` |
 
 ## M2 — private beta

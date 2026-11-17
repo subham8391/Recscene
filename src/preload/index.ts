@@ -5,6 +5,7 @@ import type { PickerPrefs, PickerState, RecordRequest } from '@core/recordingPic
 import type { SessionState } from '@core/recordingSession'
 import type { SpeakerNotesPrefs } from '@core/speakerNotes'
 import type { OpenedProject } from '@core/projectFile'
+import type { ExportSettings, ExportTarget } from '@core/editor/exportSettings'
 
 export interface SessionSnapshot extends SessionState {
   toast: string | null
@@ -47,6 +48,17 @@ const api = {
     mediaUrl: (file: string): Promise<string | null> => ipcRenderer.invoke('project:mediaUrl', file) as Promise<string | null>
   },
   onEditorAction: (listener: (id: string) => void): (() => void) => on('editor:action', listener),
+  export: {
+    settings: (): Promise<{ last: unknown; defaults: unknown }> => ipcRenderer.invoke('export:settings') as Promise<{ last: unknown; defaults: unknown }>,
+    saveSettings: (settings: ExportSettings, asDefault: boolean): Promise<void> => ipcRenderer.invoke('export:saveSettings', settings, asDefault) as Promise<void>,
+    begin: (args: { target: ExportTarget; projectName: string; settings: ExportSettings; size: { width: number; height: number } }): Promise<{ id: string; target: ExportTarget; destination: string; settings: ExportSettings } | null> =>
+      ipcRenderer.invoke('export:begin', args) as Promise<{ id: string; target: ExportTarget; destination: string; settings: ExportSettings } | null>,
+    chunk: (id: string, chunk: ArrayBuffer, position: number): Promise<void> => ipcRenderer.invoke('export:chunk', id, chunk, position) as Promise<void>,
+    audio: (id: string, wav: ArrayBuffer): Promise<void> => ipcRenderer.invoke('export:audio', id, wav) as Promise<void>,
+    finish: (id: string): Promise<{ path: string; durationMs: number | null }> => ipcRenderer.invoke('export:finish', id) as Promise<{ path: string; durationMs: number | null }>,
+    cancel: (id: string): Promise<void> => ipcRenderer.invoke('export:cancel', id) as Promise<void>,
+    reveal: (path: string): Promise<void> => ipcRenderer.invoke('export:reveal', path) as Promise<void>
+  },
   picker: {
     state: (): Promise<PickerState> => ipcRenderer.invoke('picker:state') as Promise<PickerState>,
     savePrefs: (values: Partial<PickerPrefs>): Promise<PickerPrefs> => ipcRenderer.invoke('picker:savePrefs', values) as Promise<PickerPrefs>,

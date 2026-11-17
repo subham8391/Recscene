@@ -2,6 +2,7 @@ import { join } from 'node:path'
 import { app, BrowserWindow, globalShortcut, ipcMain, screen, shell } from 'electron'
 import type { RecordingResult, StartOptions } from '@core/captureProtocol'
 import { RecordingEnvironment } from './environment'
+import { ExportService } from './export'
 import { installMenu } from './menu'
 import { SpeakerNotes } from './notes'
 import { Picker } from './picker'
@@ -27,6 +28,7 @@ let notes: SpeakerNotes | null = null
 let environment: RecordingEnvironment | null = null
 let projects: ProjectService | null = null
 let prefsStore: Preferences | null = null
+let exporter: ExportService | null = null
 
 registerMediaScheme()
 let stopping: Promise<void> | null = null
@@ -170,6 +172,8 @@ void app.whenReady().then(() => {
   globalShortcut.register(RECORD_SHORTCUT, onRecordShortcut)
   for (const s of optionalShortcuts()) globalShortcut.register(s.accelerator, s.handler)
   projects = new ProjectService(prefs, () => mainWindow)
+  exporter = new ExportService(prefs, () => recording!.helper, () => mainWindow)
+  app.on('will-quit', () => exporter?.dispose())
   refreshMenu()
   mainWindow = createMainWindow()
   mainWindow.once('show', () => void recoverUnfinished(false))

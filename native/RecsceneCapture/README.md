@@ -24,6 +24,7 @@ One JSON object per line on stdin (commands) and stdout (events). Commands are a
 | `{"cmd":"cancel"}` | `{"event":"cancelled"}` — stops and deletes screen.mov, mic.m4a and events.json |
 | `{"cmd":"probe","path":"/x.mov"}` | `{"event":"probed","durationMs":5100,"width":2688,"height":1512,"hasAudio":true}` |
 | `{"cmd":"import","path":"/x.gif","output":"/p.recscene/screen.mov"}` | `{"event":"imported","output":"…","durationMs":…,"width":…,"height":…,"converted":true}` — mp4/mov with H.264 or HEVC are copied, anything else and GIFs are converted to H.264 |
+| `{"cmd":"mux","video":"/tmp/v.mp4","audio":"/tmp/a.wav","output":"/out.mp4"}` | `{"event":"muxed","output":"…","durationMs":…}` — passes the H.264 track through and encodes the WAV as AAC; `audio` may be null |
 | `{"cmd":"stop"}` | `{"event":"stopped","durationMs":4233.3,"frames":239,"files":{"screen":"…/screen.mov","events":"…/events.json","mic":"…/mic.m4a"},"micOffsetMs":12.5}` |
 
 `excludeProcessIds` lists process ids whose windows are left out of a display or area capture, so the app's own overlays never appear in the footage.

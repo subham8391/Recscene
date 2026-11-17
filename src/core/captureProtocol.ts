@@ -59,6 +59,7 @@ export type HelperCommand =
   | { cmd: 'cancel' }
   | { cmd: 'probe'; path: string }
   | { cmd: 'import'; path: string; output: string }
+  | { cmd: 'mux'; video: string; audio: string | null; output: string }
 
 export interface Permissions {
   screen: boolean
@@ -86,10 +87,11 @@ export type HelperEvent =
   | { event: 'cancelled' }
   | { event: 'probed'; durationMs: number; width: number; height: number; hasAudio: boolean }
   | { event: 'imported'; output: string; durationMs: number; width: number; height: number; converted: boolean }
+  | { event: 'muxed'; output: string; durationMs: number }
   | { event: 'warning'; message: string }
   | { event: 'error'; code: string; message: string }
 
-const EVENT_NAMES = new Set(['pong', 'permissions', 'targets', 'started', 'stopped', 'paused', 'resumed', 'marked', 'cancelled', 'probed', 'imported', 'warning', 'error'])
+const EVENT_NAMES = new Set(['pong', 'permissions', 'targets', 'started', 'stopped', 'paused', 'resumed', 'marked', 'cancelled', 'probed', 'imported', 'muxed', 'warning', 'error'])
 
 /** Parses one stdout line. Returns null for blank lines and anything that is not a helper event. */
 export function parseHelperLine(line: string): HelperEvent | null {

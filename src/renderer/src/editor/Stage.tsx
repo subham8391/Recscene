@@ -173,6 +173,7 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
         if (url) {
           const img = await new Promise<HTMLImageElement | null>((resolve) => {
             const i = new Image()
+            i.crossOrigin = 'anonymous'
             i.onload = () => resolve(i)
             i.onerror = () => resolve(null)
             i.src = url
@@ -225,7 +226,7 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
         <div className="stage__shadow" style={{ left: inner.x - output.x, top: inner.y - output.y, width: inner.width, height: inner.height, borderRadius: radius, boxShadow: shadowCss(bg, outScale) }} />
         <div className="stage__inner" style={{ left: inner.x - output.x, top: inner.y - output.y, width: inner.width, height: inner.height, borderRadius: radius }}>
           <div ref={cameraLayer} className="stage__camera">
-            <video ref={video} className="stage__video" src={screenUrl} playsInline preload="auto" style={{ left: videoLeft - (inner.x - output.x), top: videoTop - (inner.y - output.y), width: videoWidth, height: videoHeight }} onLoadedMetadata={(e) => onDuration?.(Math.round(e.currentTarget.duration * 1000))} />
+            <video ref={video} className="stage__video" src={screenUrl} crossOrigin="anonymous" playsInline preload="auto" style={{ left: videoLeft - (inner.x - output.x), top: videoTop - (inner.y - output.y), width: videoWidth, height: videoHeight }} onLoadedMetadata={(e) => onDuration?.(Math.round(e.currentTarget.duration * 1000))} />
             <div className="stage__cursorhost" style={{ left: videoLeft - (inner.x - output.x), top: videoTop - (inner.y - output.y), width: videoWidth, height: videoHeight }}>
               <CursorLayer
                 samples={cursor}

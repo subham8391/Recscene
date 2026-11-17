@@ -52,6 +52,7 @@ import { BackgroundPanel } from './BackgroundPanel'
 import { ClipPanel } from './ClipPanel'
 import { CommandMenu } from './CommandMenu'
 import { CursorPanel } from './CursorPanel'
+import { ExportDialog } from './ExportDialog'
 import { CropTool } from './CropTool'
 import { Stage, type StageHandle } from './Stage'
 import { Timeline, type TrackId, type TrackVisibility } from './Timeline'
@@ -100,6 +101,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   const [zoomClipboard, setZoomClipboard] = useState<ZoomSettings | null>(null)
   const [defaultZoomLevel, setDefaultZoomLevel] = useState(2)
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string | null>(null)
+  const [exporting, setExporting] = useState(false)
   const [recBox, setRecBox] = useState<Box>({ x: 0, y: 0, width: 0, height: 0 })
   const stage = useRef<StageHandle>(null)
   const lastTick = useRef<number | null>(null)
@@ -327,6 +329,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           return void stage.current?.frameAsPng(2160).then((png) => window.recscene.project.copyFrame(png)).then(() => setSaved((s) => ({ ...s, toast: 'Current frame image copied to clipboard' }))).catch(() => setSaved((s) => ({ ...s, toast: 'Failed to copy current frame to clipboard' })))
         case 'exportFrame':
           return void stage.current?.frameAsPng(2160).then((png) => window.recscene.project.exportFrame(png, pb.timeMs))
+        case 'export': return void (setPb((p) => ({ ...p, playing: false })), setExporting(true))
         case 'commandMenu': return setOverlay((o) => (o === 'command' ? null : 'command'))
         case 'shortcutsGuide': return setOverlay((o) => (o === 'guide' ? null : 'guide'))
         default:
@@ -392,7 +395,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           <button type="button" className="btn btn--ghost" disabled title="Masks arrive with specs 189–198">Mask</button>
         </div>
         <button type="button" className="btn btn--ghost" disabled title="Shareable links arrive with specs 236–245">Share link</button>
-        <button type="button" className="btn btn--accent" disabled title="Export arrives with specs 233–235">Export</button>
+        <button type="button" className="btn btn--accent" title="Export ⌘E" onClick={() => run('export')}>Export</button>
       </header>
 
       {sidebar && (
@@ -587,6 +590,14 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
       )}
 
       {overlay && <CommandMenu mode={overlay} onRun={(id) => { setOverlay(null); run(id) }} onClose={() => setOverlay(null)} />}
+      {exporting && (
+        <ExportDialog
+          input={{ project, clips, sourceDurationMs, screenUrl: opened.media.screen, micUrl: opened.media.mic, backgroundImageUrl: backgroundImage ? backgroundImageUrl : null, assetsUrl: opened.media.assets, cursor: opened.cursor, projectName: project.name }}
+          durationMs={durationMs}
+          onClose={() => setExporting(false)}
+          onNotice={notify}
+        />
+      )}
     </div>
   )
 }
