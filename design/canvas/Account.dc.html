@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Settings — Account and licence (laptop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif}
+.ss{--bg:#F2F2F5;--panel:#FFFFFF;--panel2:#F6F6F8;--line:#E2E2E8;--line2:#CFCFD7;--text:#17171B;--text2:#5A5A64;--text3:#6F6F7A;--accent:#5F45F0;--accentSoft:#ECE8FF;--onAccent:#FFFFFF;--caption:#2A9D5E;--clip:#D9A41C;--danger:#D14343;--focus:0 0 0 3px rgba(95,69,240,.35)}
+.ss.dark{--bg:#0E0F11;--panel:#161719;--panel2:#1C1D21;--line:#2A2B31;--line2:#383943;--text:#EDEDF2;--text2:#A6A7B1;--text3:#8E8F9A;--accent:#8F79FF;--accentSoft:#2A2546;--onAccent:#0E0F11;--caption:#45C77F;--clip:#F2C14E;--danger:#E36060;--focus:0 0 0 3px rgba(143,121,255,.4)}
+.ss *{box-sizing:border-box}
+.ss button{font:inherit;color:inherit;cursor:pointer}
+.ss button:focus-visible,.ss input:focus-visible{outline:none;box-shadow:var(--focus)}
+.ss .ic{width:18px;height:18px;flex:none}
+.ss .nav button{height:34px;padding:0 10px;border-radius:8px;border:none;background:transparent;display:flex;align-items:center;gap:10px;text-align:left;color:var(--text2);width:100%}
+.ss .nav button[aria-current="page"]{background:var(--accentSoft);color:var(--text);font-weight:600}
+.ss .card{border-radius:12px;background:var(--panel);border:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:12px}
+.ss .card h3{margin:0;font-size:13px;font-weight:600}
+.ss .ghost{height:30px;padding:0 12px;border-radius:8px;border:1px solid var(--line2);background:transparent;font-size:12px;font-weight:500}
+.ss .pri{height:30px;padding:0 14px;border-radius:8px;border:none;background:var(--accent);color:var(--onAccent);font-weight:600;font-size:12px}
+.ss .inp{height:32px;padding:0 10px;border-radius:8px;border:1px solid var(--line2);background:var(--panel2);color:var(--text);font:inherit;font-size:12px}
+.ss .note{margin:0;font-size:11px;color:var(--text3);line-height:1.45}
+.ss .seg{display:flex;padding:2px;border-radius:8px;background:var(--panel2);border:1px solid var(--line)}
+.ss .seg button{flex:1 1 0;height:26px;border:none;border-radius:6px;background:transparent;font-size:12px;color:var(--text2)}
+.ss .seg button[aria-pressed="true"]{background:var(--panel);color:var(--text);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.ss .st{height:20px;padding:0 8px;border-radius:10px;font-size:11px;font-weight:600;line-height:20px}
+a{color:#5F45F0}a:hover{color:#4A34C9}
+</style>
+</helmet>
+<div class="ss {{themeClass}}" style="width: 1280px; height: 800px; background: var(--bg); color: var(--text); display: flex; flex-direction: column; font-size: 13px; overflow: hidden; border-radius: 12px">
+  <header style="height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 14px; background: var(--panel); border-bottom: 1px solid var(--line); flex: none">
+    <div style="display: flex; gap: 8px; width: 60px" aria-hidden="true"><span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span></div>
+    <span style="font-weight: 600">Settings</span><span style="color: var(--text3)">· Account</span>
+  </header>
+  <div style="flex: 1 1 auto; display: grid; grid-template-columns: 220px minmax(0, 1fr); min-height: 0">
+    <nav class="nav" aria-label="Settings sections" style="padding: 12px; border-right: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; gap: 2px">
+      <sc-for list="{{sections}}" as="s" hint-placeholder-count="7"><button aria-current="{{ s.cur }}"><span style="width: 8px; height: 8px; border-radius: 2px; background: {{ s.dot }}"></span>{{ s.name }}</button></sc-for>
+      <div style="flex: 1 1 auto"></div>
+      <div style="padding: 10px 12px; font-size: 11px; color: var(--text3); line-height: 1.5">Recscene 1.0.0 (1)<br>You are up to date</div>
+    </nav>
+
+    <main style="overflow: auto; padding: 24px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-content: start">
+      <!-- State switcher is a design tweak, not UI -->
+      <sc-if value="{{ isTrial }}" hint-placeholder-val="{{ false }}">
+        <section class="card" style="grid-column: span 2; background: var(--accentSoft); border-color: transparent">
+          <div style="display: flex; align-items: center; gap: 12px"><span class="st" style="background: var(--accent); color: var(--onAccent)">Trial</span><b>6 days left · exports carry a Recscene watermark until you activate</b><div style="flex: 1 1 auto"></div><button class="pri">Buy a licence</button></div>
+        </section>
+      </sc-if>
+      <sc-if value="{{ isExpired }}" hint-placeholder-val="{{ false }}">
+        <section class="card" style="grid-column: span 2; border-color: var(--danger)">
+          <div style="display: flex; align-items: center; gap: 12px"><span class="st" style="background: var(--danger); color: #fff">Expired</span><b>Updates ended 2 Nov 2026. You keep this version for good; renew for a year of updates at 40% off.</b><div style="flex: 1 1 auto"></div><button class="pri">Renew with discount</button></div>
+        </section>
+      </sc-if>
+      <sc-if value="{{ isRefunded }}" hint-placeholder-val="{{ false }}">
+        <section class="card" style="grid-column: span 2; border-color: var(--danger)">
+          <div style="display: flex; align-items: center; gap: 12px"><span class="st" style="background: var(--danger); color: #fff">Refunded</span><b>This licence was refunded and no longer activates. Exports are watermarked.</b><div style="flex: 1 1 auto"></div><button class="pri">Buy a licence</button></div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{ signedOut }}" hint-placeholder-val="{{ false }}">
+        <section class="card" style="grid-column: span 2">
+          <h3>Activate Recscene</h3>
+          <div class="seg" role="group" aria-label="Activation method" style="max-width: 420px"><sc-for list="{{methods}}" as="m" hint-placeholder-count="3"><button aria-pressed="{{ m.on }}" onClick="{{ m.pick }}">{{ m.label }}</button></sc-for></div>
+          <sc-if value="{{ mKey }}" hint-placeholder-val="{{ true }}"><div style="display: flex; gap: 8px; max-width: 560px"><input class="inp" style="flex: 1 1 auto; font-family: ui-monospace, Menlo, monospace" placeholder="RS-XXXX-XXXX-XXXX-XXXX"><button class="pri">Activate</button></div><p class="note">The key is in your purchase email. One key covers 2 Macs; a team key covers the seats you bought.</p></sc-if>
+          <sc-if value="{{ mEmail }}" hint-placeholder-val="{{ false }}"><div style="display: flex; gap: 8px; max-width: 560px"><input class="inp" style="flex: 1 1 auto" placeholder="you@company.com"><button class="pri">Send code</button></div><div style="display: flex; gap: 6px; max-width: 320px"><input class="inp" style="width: 46px; text-align: center" maxlength="1"><input class="inp" style="width: 46px; text-align: center" maxlength="1"><input class="inp" style="width: 46px; text-align: center" maxlength="1"><input class="inp" style="width: 46px; text-align: center" maxlength="1"><input class="inp" style="width: 46px; text-align: center" maxlength="1"><input class="inp" style="width: 46px; text-align: center" maxlength="1"></div><p class="note">We email a six-digit code to the address on the licence. No password.</p></sc-if>
+          <sc-if value="{{ mSso }}" hint-placeholder-val="{{ false }}"><div style="display: flex; gap: 8px"><button class="ghost">Continue with Google</button><button class="ghost">Continue with Microsoft</button><button class="ghost">Company SSO…</button></div><p class="note">Team licences managed by an admin sign in through the company identity provider.</p></sc-if>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{ signedIn }}" hint-placeholder-val="{{ true }}">
+        <section class="card">
+          <h3>Licence</h3>
+          <div style="display: grid; grid-template-columns: 120px 1fr; gap: 8px 12px; font-size: 12px">
+            <span style="color: var(--text3)">Signed in as</span><span>subham@example.com</span>
+            <span style="color: var(--text3)">Product</span><span style="display: flex; align-items: center; gap: 8px">Recscene Pro · yearly <span class="st" style="background: var(--caption); color: #fff">Active</span></span>
+            <span style="color: var(--text3)">Updates until</span><span>14 Mar 2027</span>
+            <span style="color: var(--text3)">Key</span><span style="font-family: ui-monospace, Menlo, monospace">RS-7F3K-••••-••••-Q2M9 <button class="ghost" style="height: 22px; padding: 0 6px; margin-left: 6px">Copy</button></span>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap"><button class="ghost">Dashboard</button><button class="ghost">Subscription</button><button class="ghost">Orders and invoices</button></div>
+        </section>
+
+        <section class="card">
+          <h3>Product or team</h3>
+          <p class="note">This email has more than one licence. Pick which one this Mac uses.</p>
+          <sc-for list="{{products}}" as="p" hint-placeholder-count="3">
+            <button aria-pressed="{{ p.on }}" onClick="{{ p.pick }}" style="display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px; border: 2px solid {{ p.border }}; background: var(--panel2); text-align: left"><span style="width: 8px; height: 8px; border-radius: 50%; background: {{ p.dot }}"></span><span style="flex: 1 1 auto"><b style="display: block; font-weight: 600">{{ p.name }}</b><span style="font-size: 11px; color: var(--text3)">{{ p.sub }}</span></span></button>
+          </sc-for>
+        </section>
+
+        <section class="card" style="grid-column: span 2">
+          <div style="display: flex; align-items: center; gap: 10px"><h3>Devices</h3><span style="color: var(--text3); font-size: 12px">{{ devCount }} of 2 used</span></div>
+          <div style="display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 10px; overflow: hidden">
+            <sc-for list="{{devices}}" as="d" hint-placeholder-count="2">
+              <div style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-bottom: 1px solid var(--line); font-size: 12px"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5h18v12H3zM2 19h20"/></svg><span style="font-weight: 600">{{ d.name }}</span><span style="color: var(--text3)">{{ d.sub }}</span><div style="flex: 1 1 auto"></div><sc-if value="{{ d.me }}" hint-placeholder-val="{{ true }}"><span class="st" style="background: var(--accentSoft); color: var(--accent)">This Mac</span></sc-if><button class="ghost" style="height: 26px" onClick="{{ d.remove }}">{{ d.btn }}</button></div>
+            </sc-for>
+          </div>
+          <p class="note">Deactivating frees a seat without signing out of the dashboard. You can re-activate any time.</p>
+          <div style="display: flex; gap: 8px"><button class="ghost" onClick="{{ signOut }}">Sign out and use another licence</button><button class="ghost" style="color: var(--danger)" onClick="{{ deactivate }}">Deactivate this device</button></div>
+        </section>
+      </sc-if>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"light"},"state":{"editor":"enum","options":["active","trial","expired","refunded","signedOut"],"default":"active"},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { method:'key', product:0, devices:[['MacBook Pro 16"','macOS 26 · active now',true],['Mac mini','macOS 15 · last seen 3 Nov',false]], out:false }; }
+  renderVals() {
+    const theme = this.props.theme ?? 'light';
+    const st = this.state.out ? 'signedOut' : (this.props.state ?? 'active');
+    const sections = ['General','Recording','Editor','Export','Presets','Shortcuts','Account'].map((name,i) => ({ name, cur: name==='Account'?'page':'false', dot: name==='Account'?'var(--accent)':'var(--line2)' }));
+    const methods = [['key','Licence key'],['email','Email code'],['sso','SSO']].map(([v,label]) => ({ label, on: this.state.method===v, pick: ()=>this.setState({method:v}) }));
+    const prods = [['Recscene Pro (personal)','Yearly · 2 seats','var(--accent)'],['Acme Inc. team','12 seats · managed by it@acme.example','var(--caption)'],['Recscene Business (trial)','Ends 24 Nov','var(--clip)']];
+    const products = prods.map(([name,sub,dot],i) => ({ name, sub, dot, on: this.state.product===i, border: this.state.product===i?'var(--accent)':'transparent', pick: ()=>this.setState({product:i}) }));
+    const devices = this.state.devices.map(([name,sub,me],i) => ({ name, sub, me, btn: me?'Deactivate':'Remove', remove: ()=>this.setState({devices:this.state.devices.filter((_,j)=>j!==i)}) }));
+    return { themeClass: theme==='light'?'light':'dark', sections, methods, products, devices, devCount: devices.length,
+      mKey: this.state.method==='key', mEmail: this.state.method==='email', mSso: this.state.method==='sso',
+      isTrial: st==='trial', isExpired: st==='expired', isRefunded: st==='refunded', signedOut: st==='signedOut', signedIn: st!=='signedOut',
+      signOut: ()=>this.setState({out:true}), deactivate: ()=>this.setState({out:true}) };
+  }
+}
+</script>
+</body>
+</html>

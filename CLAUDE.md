@@ -6,7 +6,7 @@ A macOS screen recorder that turns a capture into a polished video automatically
 - Read `docs/DECISIONS.md`. It is the source of truth for product and architecture decisions and lists the open ones. Do not settle an open question in code; ask.
 - Check the feature's milestone in `docs/FEATURES.md`. Build only what the current milestone needs.
 - The feature behaviour is specified in `docs/research/screen-studio-feature-specs.md` (292 numbered specs of the competitor). When a spec number is cited in a task, read that spec first; Recscene matches the behaviour unless DECISIONS.md says otherwise.
-- The UI is designed in `design/canvas/` (Claude Design canvas, also at https://claude.ai/artifact/TNgyi7613cUPzPLpf3iWDp). Tokens, breakpoints and track colours in `docs/design/README.md`; the CSS tokens are mirrored in `src/renderer/src/styles/tokens.css`. Do not invent new colours or sizes.
+- The UI is designed in `design/canvas/` (Claude Design canvas, 31 boards covering every spec area, also at https://claude.ai/artifact/TNgyi7613cUPzPLpf3iWDp). Tokens, breakpoints and track colours in `docs/design/README.md`; the CSS tokens are mirrored in `src/renderer/src/styles/tokens.css`. Do not invent new colours or sizes.
 
 ## Architecture rules
 - `src/core/**` is pure TypeScript: no Electron, React or Node imports (ESLint enforces it). Everything testable lives here first.

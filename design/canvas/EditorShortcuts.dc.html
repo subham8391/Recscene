@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Editor — Shortcuts panel (laptop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif}
+.ss{--bg:#F2F2F5;--panel:#FFFFFF;--panel2:#F6F6F8;--line:#E2E2E8;--line2:#CFCFD7;--text:#17171B;--text2:#5A5A64;--text3:#6F6F7A;--accent:#5F45F0;--accentSoft:#ECE8FF;--onAccent:#FFFFFF;--zoom:#6F57F2;--clip:#D9A41C;--layout:#DF4F80;--mask:#1E9A9A;--shortcut:#2F7FE0;--caption:#2A9D5E;--voice:#E0692A;--danger:#D14343;--stage:#E6E6EC;--focus:0 0 0 3px rgba(95,69,240,.35)}
+.ss.dark{--bg:#0E0F11;--panel:#161719;--panel2:#1C1D21;--line:#2A2B31;--line2:#383943;--text:#EDEDF2;--text2:#A6A7B1;--text3:#8E8F9A;--accent:#8F79FF;--accentSoft:#2A2546;--onAccent:#0E0F11;--zoom:#8F79FF;--clip:#F2C14E;--layout:#F06A98;--mask:#34BFBF;--shortcut:#5EA0F7;--caption:#45C77F;--voice:#F58D4D;--danger:#E36060;--stage:#07070A;--focus:0 0 0 3px rgba(143,121,255,.4)}
+.ss *{box-sizing:border-box}
+.ss button{font:inherit;color:inherit;cursor:pointer}
+.ss button:focus-visible,.ss input:focus-visible,.ss select:focus-visible{outline:none;box-shadow:var(--focus)}
+.ss .ic{width:18px;height:18px;flex:none}
+.ss h3{margin:0;font-size:12px;font-weight:600;color:var(--text2)}
+.ss .sl{display:flex;flex-direction:column;gap:4px}
+.ss .sl .hd{display:flex;justify-content:space-between;font-size:12px}
+.ss .sl label{font-weight:600;color:var(--text2)}
+.ss .sl input{width:100%;accent-color:var(--accent)}
+.ss .card{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:10px;background:var(--panel2)}
+.ss .card label{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ss .card b{display:block;font-weight:500}
+.ss .card small{display:block;font-size:11px;color:var(--text3)}
+.ss .tog{width:36px;height:20px;accent-color:var(--accent);flex:none}
+.ss .ghost{height:30px;border-radius:8px;border:1px solid var(--line2);background:transparent;font-size:12px}
+.ss .seg{display:flex;padding:2px;border-radius:8px;background:var(--panel2);border:1px solid var(--line)}
+.ss .seg button{flex:1 1 0;height:26px;border:none;border-radius:6px;background:transparent;font-size:12px;color:var(--text2)}
+.ss .seg button[aria-pressed="true"]{background:var(--panel);color:var(--text);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.ss select{height:30px;padding:0 8px;border-radius:8px;border:1px solid var(--line2);background:var(--panel2);color:var(--text);font:inherit}
+.ss .note{margin:0;font-size:11px;color:var(--text3);line-height:1.45}
+.ss .chip{height:18px;padding:0 6px;border-radius:9px;background:var(--accentSoft);color:var(--accent);font-size:10px;font-weight:600;line-height:18px}
+.ss .row{display:flex;align-items:center;gap:8px}
+a{color:#5F45F0}a:hover{color:#4A34C9}
+</style>
+</helmet>
+<div class="ss {{themeClass}}" style="width: 1280px; height: 800px; background: var(--bg); color: var(--text); display: flex; flex-direction: column; font-size: 13px; overflow: hidden; border-radius: 12px; position: relative">
+  <header style="height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 14px; background: var(--panel); border-bottom: 1px solid var(--line); flex: none">
+    <div style="display: flex; gap: 8px; width: 60px" aria-hidden="true"><span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span></div>
+    <span style="font-weight: 600">Onboarding walkthrough</span><span style="color: var(--text3)">· saved</span>
+    <div style="flex: 1 1 auto; display: flex; justify-content: center; gap: 8px"><button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Auto (16:9) ▾</button><button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Crop</button><button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: {{presetsBg}}">Presets</button></div>
+    <button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Share link</button>
+    <button style="height: 30px; padding: 0 16px; border-radius: 8px; border: none; background: var(--accent); color: var(--onAccent); font-weight: 600">Export</button>
+  </header>
+
+  <div style="flex: 1 1 auto; display: flex; min-height: 0">
+    <nav aria-label="Editor panels" style="width: 68px; flex: none; background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 8px 6px; gap: 2px">
+      <sc-for list="{{rail}}" as="r" hint-placeholder-count="10"><button aria-pressed="{{ r.active }}" style="height: 54px; border-radius: 8px; border: none; background: {{ r.bg }}; color: {{ r.fg }}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 10px; font-weight: 500"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="{{ r.d }}"/></svg><span>{{ r.label }}</span></button></sc-for>
+    </nav>
+
+    <main style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column">
+      <div style="flex: 1 1 auto; position: relative; margin: 16px; border-radius: 10px; background: var(--stage); overflow: hidden">
+        <div style="position: absolute; inset: 0; background: linear-gradient(135deg, #0b2a4a 0%, #2f7fe0 55%, #bcd8ff 100%)">
+          <div style="position: absolute; inset: 7% 10%; border-radius: 12px; background: #1f2026; box-shadow: 0 30px 60px rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.12); overflow: hidden">
+            <div style="height: 28px; background: #2a2b33"></div>
+            <div style="padding: 18px; font-size: 12px; color: #9a9ba6; display: flex; flex-direction: column; gap: 10px"><span style="width: 50%; height: 10px; border-radius: 5px; background: #3a3b45"></span><span style="width: 85%; height: 10px; border-radius: 5px; background: #33343d"></span><span style="width: 70%; height: 10px; border-radius: 5px; background: #33343d"></span></div>
+            <!-- Keystroke label: spec 199–201 -->
+            <div aria-label="Pressed shortcut" style="position: absolute; left: 50%; bottom: 9%; transform: translateX(-50%); display: flex; gap: 6px; padding: {{ padKey }}; border-radius: 12px; background: rgba(0,0,0,.72); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.18)">
+              <sc-for list="{{keys}}" as="k" hint-placeholder-count="3"><span style="min-width: {{ keyW }}; height: {{ keyH }}; padding: 0 10px; border-radius: 8px; background: rgba(255,255,255,.14); color: #fff; font-size: {{ keyFont }}; font-weight: 600; display: grid; place-items: center; box-shadow: inset 0 -2px 0 rgba(0,0,0,.4)">{{ k }}</span></sc-for>
+            </div>
+          </div>
+          <div style="position: absolute; left: 14px; top: 14px; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,.55); color: #fff; font-size: 11px; display: flex; gap: 8px; align-items: center"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--shortcut)"></span>Shortcut at 00:06.2 · ⌘⇧P</div>
+        </div>
+      </div>
+      <div style="height: 44px; flex: none; display: flex; align-items: center; gap: 14px; padding: 0 20px; border-top: 1px solid var(--line); background: var(--panel)">
+        <span style="font-variant-numeric: tabular-nums; font-weight: 600">00:06.20</span><span style="color: var(--text3)">/ 00:31.00</span><div style="flex: 1 1 auto"></div>
+        <button aria-label="Play (Space)" style="width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--text); color: var(--bg); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l12 8-12 8z"/></svg></button>
+        <div style="flex: 1 1 auto"></div><span style="color: var(--text3); font-size: 11px">Key 5 focuses the Shortcuts track · ⌫ hides the selected shortcut</span>
+      </div>
+    </main>
+
+    <aside aria-label="Shortcuts settings" style="width: 312px; flex: none; background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; overflow: hidden">
+      <div style="height: 48px; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--line)"><span style="width: 10px; height: 10px; border-radius: 3px; background: var(--shortcut)"></span><span style="font-weight: 600">Shortcuts</span><span style="color: var(--text3)">12 pressed · 2 hidden</span></div>
+      <div style="flex: 1 1 auto; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 18px">
+        <section class="card">
+          <label><span><b>Show pressed shortcuts</b><small>Key combinations with a modifier, e.g. ⌘C, ⌘⇧P.</small></span><input class="tog" type="checkbox" checked onChange="{{ togShortcuts }}"></label>
+          <label><span><b>Show single-key presses</b><small>Letters, digits and arrows pressed on their own. Off by default so typing stays private.</small></span><input class="tog" type="checkbox" onChange="{{ togSingle }}"></label>
+        </section>
+
+        <section class="sl"><div class="hd"><label for="lsz">Label size</label><span>{{ sizeLabel }}</span></div><input id="lsz" type="range" min="50" max="200" step="10" value="{{ size }}" onInput="{{ setSize }}">
+          <div class="seg" role="group" aria-label="Size presets"><sc-for list="{{sizes}}" as="s" hint-placeholder-count="3"><button aria-pressed="{{ s.on }}" onClick="{{ s.pick }}">{{ s.label }}</button></sc-for></div>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 8px"><div class="row"><h3>Shortcuts in this recording</h3><span class="chip">12</span></div>
+          <div style="display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 10px; overflow: hidden">
+            <sc-for list="{{list}}" as="s" hint-placeholder-count="6">
+              <div style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border-bottom: 1px solid var(--line); font-size: 12px; opacity: {{ s.op }}">
+                <span style="font-variant-numeric: tabular-nums; color: var(--text3); width: 52px">{{ s.t }}</span>
+                <span style="font-weight: 600; font-family: Inter; letter-spacing: .5px">{{ s.k }}</span>
+                <span style="color: var(--text3); flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ s.app }}</span>
+                <button class="ghost" style="height: 24px; padding: 0 8px" onClick="{{ s.toggle }}">{{ s.btn }}</button>
+              </div>
+            </sc-for>
+          </div>
+          <p class="note">Hiding one occurrence keeps the others. "Hide all ⌘C" hides every press of that combination; a hidden shortcut shows hollow on the track and can be restored here.</p>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 8px"><h3>Disable by kind</h3>
+          <div class="card">
+            <label><span><b>Copy and paste</b><small>⌘C ⌘V ⌘X</small></span><input class="tog" type="checkbox" checked></label>
+            <label><span><b>Navigation</b><small>⌘Tab, ⌘` , arrows with modifiers</small></span><input class="tog" type="checkbox" checked></label>
+            <label><span><b>App switching and system</b><small>⌘Space, ⌘Q, ⌃↑</small></span><input class="tog" type="checkbox"></label>
+          </div>
+        </section>
+
+        <section style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+          <button class="ghost">Hide all ⌘C</button><button class="ghost">Restore hidden</button><button class="ghost" style="grid-column: span 2">Hide the Shortcuts track</button>
+        </section>
+      </div>
+    </aside>
+  </div>
+
+  <section aria-label="Timeline" style="height: 236px; flex: none; background: var(--panel); border-top: 1px solid var(--line); display: flex; flex-direction: column">
+    <div style="height: 36px; display: flex; align-items: center; gap: 6px; padding: 0 12px; border-bottom: 1px solid var(--line)">
+      <button style="height: 28px; padding: 0 10px; border-radius: 6px; border: none; background: var(--accentSoft); color: var(--shortcut); font-weight: 600">Hide selected</button>
+      <span style="font-size: 11px; color: var(--text3)">Shortcuts are placed from the recording; they cannot be added or moved · hollow = hidden</span>
+      <div style="flex: 1 1 auto"></div><label for="tlz" style="font-size: 11px; color: var(--text3)">Timeline zoom</label><input id="tlz" type="range" min="0" max="100" value="40" style="width: 120px; accent-color: var(--accent)">
+    </div>
+    <div style="flex: 1 1 auto; display: grid; grid-template-columns: 112px minmax(0, 1fr); overflow: hidden">
+      <div style="border-right: 1px solid var(--line); display: flex; flex-direction: column; font-size: 11px; color: var(--text2)"><div style="height: 20px"></div><sc-for list="{{tracks}}" as="t" hint-placeholder-count="8"><div style="height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 10px; background: {{ t.bg }}"><span style="width: 6px; height: 6px; border-radius: 2px; background: {{ t.color }}"></span>{{ t.name }}</div></sc-for></div>
+      <div style="position: relative; overflow: hidden">
+        <div style="height: 20px; display: flex; font-size: 10px; color: var(--text3); border-bottom: 1px solid var(--line)"><sc-for list="{{ruler}}" as="m" hint-placeholder-count="9"><span style="flex: 1 1 0; border-left: 1px solid var(--line2); padding-left: 4px; line-height: 20px">{{ m }}</span></sc-for></div>
+        <div style="height: 22px; position: relative; border-bottom: 1px solid var(--line)"><span style="position: absolute; left: 30%; width: 12%; top: 3px; height: 16px; border-radius: 4px; background: var(--zoom); opacity: .85"></span></div>
+        <div style="height: 22px; position: relative; border-bottom: 1px solid var(--line)"><span style="position: absolute; left: 0; width: 100%; top: 2px; height: 18px; border-radius: 4px; background: var(--clip); color: #1a1500; font-size: 10px; font-weight: 600; padding-left: 6px; line-height: 18px">1×</span></div>
+        <div style="height: 22px; border-bottom: 1px solid var(--line)"></div>
+        <div style="height: 22px; border-bottom: 1px solid var(--line)"></div>
+        <div style="height: 22px; position: relative; border-bottom: 1px solid var(--line); background: var(--accentSoft)">
+          <sc-for list="{{chips}}" as="c" hint-placeholder-count="12"><span style="position: absolute; left: {{ c.left }}; top: 3px; height: 16px; padding: 0 5px; border-radius: 4px; background: {{ c.bg }}; border: 1px solid var(--shortcut); color: {{ c.fg }}; font-size: 10px; font-weight: 600; line-height: 14px; white-space: nowrap; box-shadow: {{ c.ring }}">{{ c.k }}</span></sc-for>
+        </div>
+        <div style="height: 22px; border-bottom: 1px solid var(--line)"></div>
+        <div style="height: 22px; border-bottom: 1px solid var(--line)"></div>
+        <div style="height: 22px; display: flex; align-items: center; gap: 1px; padding: 0 2px"><sc-for list="{{wave}}" as="h" hint-placeholder-count="120"><span style="flex: 1 1 0; height: {{ h }}; background: var(--text3); opacity: .55; border-radius: 1px"></span></sc-for></div>
+        <div aria-hidden="true" style="position: absolute; left: 20%; top: 0; bottom: 0; width: 1px; background: var(--text)"><span style="position: absolute; top: 0; left: -6px; width: 13px; height: 13px; border-radius: 7px 7px 7px 0; background: var(--text); transform: rotate(-45deg)"></span></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { size: 100, hidden: {2:true, 5:true}, showShortcuts: true, showSingle: false }; }
+  renderVals() {
+    const theme = this.props.theme ?? 'dark';
+    const items = [['zooms','Zooms','M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM16 16l5 5M11 8v6M8 11h6'],['clips','Clips','M6 4h12v16H6zM6 9h12M6 14h12'],['cursor','Cursor','M5 3l14 8-6 2-3 6z'],['camera','Camera','M4 7h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4zM17 10l4-2v8l-4-2'],['background','Background','M3 5h18v14H3zM3 15l5-5 4 4 3-3 6 6'],['masks','Masks','M4 6h16v12H4zM8 10h4v4H8'],['shortcuts','Shortcuts','M3 7h18v10H3zM7 11h1M11 11h1M15 11h1M7 14h10'],['captions','Captions','M4 5h16v14H4zM7 14h6M15 14h2M7 10h2M11 10h6'],['audio','Audio','M4 12h2M8 8v8M12 5v14M16 9v6M20 11v2'],['enhance','Enhance','M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2zM5 17l1 2 2 1-2 1-1 2-1-2-2-1 2-1z']];
+    const ACTIVE = 'shortcuts';
+    const rail = items.map(([id,label,d]) => ({ id,label,d, active:id===ACTIVE, bg:id===ACTIVE?'var(--accentSoft)':'transparent', fg:id===ACTIVE?'var(--text)':'var(--text2)' }));
+    const TRACK = {clips:'Clips',shortcuts:'Shortcuts',captions:'Captions',enhance:'Voiceovers',zooms:'Zooms'}[ACTIVE];
+    const tracks = [{name:'Zooms',color:'var(--zoom)'},{name:'Clips',color:'var(--clip)'},{name:'Layouts',color:'var(--layout)'},{name:'Masks',color:'var(--mask)'},{name:'Shortcuts',color:'var(--shortcut)'},{name:'Captions',color:'var(--caption)'},{name:'Voiceovers',color:'var(--voice)'},{name:'Audio',color:'var(--text3)'}].map(t => ({...t, bg: t.name===TRACK?'var(--accentSoft)':'transparent'}));
+    const wave = Array.from({length:120},(_,i)=> (4 + Math.round(8*Math.abs(Math.sin(i*0.9))+6*Math.abs(Math.sin(i*0.27)))) + 'px');
+    const base = { themeClass: theme==='light'?'light':'dark', rail, tracks, wave, ruler:['0:00','0:04','0:08','0:12','0:16','0:20','0:24','0:28','0:31'], presetsBg:'var(--panel2)' };
+    const size = this.state.size;
+    const sizes = [[70,'Small'],[100,'Medium'],[140,'Large']].map(([v,label]) => ({ label, on: size===v, pick: ()=>this.setState({size:v}) }));
+    const raw = [['00:01.4','⌘T','Safari'],['00:03.0','⌘L','Safari'],['00:04.1','⌘C','Safari'],['00:06.2','⌘⇧P','VS Code'],['00:09.8','⌘V','VS Code'],['00:11.0','⌘S','VS Code'],['00:14.2','⌘C','Terminal'],['00:16.6','⌘Tab','System'],['00:19.0','⌘⇧4','System'],['00:22.3','⌘Z','VS Code'],['00:25.1','⌘⇧Z','VS Code'],['00:28.8','⌘Q','Terminal']];
+    const hid = this.state.hidden;
+    const list = raw.slice(0,6).map(([t,k,app],i) => ({ t,k,app, op: hid[i]?0.5:1, btn: hid[i]?'Show':'Hide', toggle: ()=>this.setState({hidden:{...hid,[i]:!hid[i]}}) }));
+    const chips = raw.map(([t,k],i) => { const sec = Number(t.slice(3)) + Number(t.slice(0,2))*60; return { k, left: (sec/31*100).toFixed(1)+'%', bg: hid[i]?'transparent':'var(--shortcut)', fg: hid[i]?'var(--shortcut)':'#fff', ring: i===3?'0 0 0 2px var(--text)':'none' }; });
+    const scale = size/100;
+    return { ...base, sizes, size, sizeLabel: size+'%', setSize: e=>this.setState({size:Number(e.target.value)}), list, chips, keys:['⌘','⇧','P'], keyW: Math.round(34*scale)+'px', keyH: Math.round(34*scale)+'px', keyFont: Math.round(15*scale)+'px', padKey: Math.round(8*scale)+'px', togShortcuts: e=>this.setState({showShortcuts:e.target.checked}), togSingle: e=>this.setState({showSingle:e.target.checked}) };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,48 +1,360 @@
 {
   "v": 3,
-  "createdOnFiles": {"v": 1, "at": "2026-11-17T10:30:00Z"},
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-17T10:30:00Z"
+  },
   "title": "Recscene Design",
-  "launch": {"view": "canvas"},
+  "launch": {
+    "view": "canvas"
+  },
   "pages": [],
   "boards": {
-    "DesignSystem.dc.html": {"x": 0, "y": 0, "w": 1400, "h": 1180, "title": "Design system · tokens, type, components (light + dark)"},
-    "Main.dc.html": {"x": 0, "y": 1460, "w": 1280, "h": 800, "title": "Laptop · Editor · Zooms panel · dark", "is_interactive": true},
-    "EditorLight.dc.html": {"x": 1360, "y": 1460, "w": 1280, "h": 800, "title": "Laptop · Editor · Zooms panel · light"},
-    "EditorCamera.dc.html": {"x": 2720, "y": 1460, "w": 1280, "h": 800, "title": "Laptop · Editor · Camera & Layouts · dark", "is_interactive": true},
-    "EditorTranscript.dc.html": {"x": 4080, "y": 1460, "w": 1280, "h": 800, "title": "Laptop · Editor · Edit by transcript · dark", "is_interactive": true},
-    "Picker.dc.html": {"x": 5440, "y": 1460, "w": 1280, "h": 800, "title": "Laptop · Recording picker over desktop · dark", "is_interactive": true},
-    "Export.dc.html": {"x": 6800, "y": 1460, "w": 1280, "h": 800, "title": "Laptop · Export & share · light", "is_interactive": true},
-    "Settings.dc.html": {"x": 8160, "y": 1460, "w": 1280, "h": 800, "title": "Laptop · Settings · dark", "is_interactive": true},
-    "Projects.dc.html": {"x": 9520, "y": 1460, "w": 1280, "h": 800, "title": "Laptop · Projects home · light"},
-    "EditorCursor.dc.html": {"x": 10880, "y": 1460, "w": 1280, "h": 800, "title": "Laptop · Editor · Cursor panel · dark", "is_interactive": true},
-    "EditorBackground.dc.html": {"x": 12240, "y": 1460, "w": 1280, "h": 800, "title": "Laptop · Editor · Background & Screen panel · dark", "is_interactive": true},
-    "EditorMasks.dc.html": {"x": 13600, "y": 1460, "w": 1280, "h": 800, "title": "Laptop · Editor · Masks panel · dark", "is_interactive": true},
-    "EditorAudio.dc.html": {"x": 14960, "y": 1460, "w": 1280, "h": 800, "title": "Laptop · Editor · Audio panel · dark", "is_interactive": true},
-    "TabletEditor.dc.html": {"x": 0, "y": 2640, "w": 1024, "h": 768, "title": "Tablet · Editor · dark", "is_interactive": true},
-    "TabletEditorLight.dc.html": {"x": 1104, "y": 2640, "w": 1024, "h": 768, "title": "Tablet · Editor · light"},
-    "TabletPicker.dc.html": {"x": 2208, "y": 2640, "w": 1024, "h": 768, "title": "Tablet · Recording picker · light", "is_interactive": true},
-    "MobileHome.dc.html": {"x": 0, "y": 3800, "w": 390, "h": 844, "title": "Mobile · Projects home · dark", "radius": 44},
-    "MobileRecord.dc.html": {"x": 470, "y": 3800, "w": 390, "h": 844, "title": "Mobile · Record · dark", "radius": 44, "is_interactive": true},
-    "MobileEditor.dc.html": {"x": 940, "y": 3800, "w": 390, "h": 844, "title": "Mobile · Editor · dark", "radius": 44, "is_interactive": true},
-    "MobileEditorSheet.dc.html": {"x": 1410, "y": 3800, "w": 390, "h": 844, "title": "Mobile · Editor · Zoom sheet open · dark", "radius": 44},
-    "MobileEditorLight.dc.html": {"x": 1880, "y": 3800, "w": 390, "h": 844, "title": "Mobile · Editor · light", "radius": 44},
-    "MobileExport.dc.html": {"x": 2350, "y": 3800, "w": 390, "h": 844, "title": "Mobile · Export & share · dark", "radius": 44, "is_interactive": true},
-    "MobileExportLight.dc.html": {"x": 2820, "y": 3800, "w": 390, "h": 844, "title": "Mobile · Export & share · light", "radius": 44}
+    "DesignSystem.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1400,
+      "h": 1180,
+      "title": "Design system \u00b7 tokens, type, components (light + dark)"
+    },
+    "Main.dc.html": {
+      "x": 0,
+      "y": 1460,
+      "w": 1280,
+      "h": 800,
+      "title": "Laptop \u00b7 Editor \u00b7 Zooms panel \u00b7 dark",
+      "is_interactive": true
+    },
+    "EditorLight.dc.html": {
+      "x": 1360,
+      "y": 1460,
+      "w": 1280,
+      "h": 800,
+      "title": "Laptop \u00b7 Editor \u00b7 Zooms panel \u00b7 light"
+    },
+    "EditorCamera.dc.html": {
+      "x": 2720,
+      "y": 1460,
+      "w": 1280,
+      "h": 800,
+      "title": "Laptop \u00b7 Editor \u00b7 Camera & Layouts \u00b7 dark",
+      "is_interactive": true
+    },
+    "EditorTranscript.dc.html": {
+      "x": 4080,
+      "y": 1460,
+      "w": 1280,
+      "h": 800,
+      "title": "Laptop \u00b7 Editor \u00b7 Edit by transcript \u00b7 dark",
+      "is_interactive": true
+    },
+    "Picker.dc.html": {
+      "x": 5440,
+      "y": 1460,
+      "w": 1280,
+      "h": 800,
+      "title": "Laptop \u00b7 Recording picker over desktop \u00b7 dark",
+      "is_interactive": true
+    },
+    "Export.dc.html": {
+      "x": 6800,
+      "y": 1460,
+      "w": 1280,
+      "h": 800,
+      "title": "Laptop \u00b7 Export & share \u00b7 light",
+      "is_interactive": true
+    },
+    "Settings.dc.html": {
+      "x": 8160,
+      "y": 1460,
+      "w": 1280,
+      "h": 800,
+      "title": "Laptop \u00b7 Settings \u00b7 dark",
+      "is_interactive": true
+    },
+    "Projects.dc.html": {
+      "x": 9520,
+      "y": 1460,
+      "w": 1280,
+      "h": 800,
+      "title": "Laptop \u00b7 Projects home \u00b7 light"
+    },
+    "EditorCursor.dc.html": {
+      "x": 10880,
+      "y": 1460,
+      "w": 1280,
+      "h": 800,
+      "title": "Laptop \u00b7 Editor \u00b7 Cursor panel \u00b7 dark",
+      "is_interactive": true
+    },
+    "EditorBackground.dc.html": {
+      "x": 12240,
+      "y": 1460,
+      "w": 1280,
+      "h": 800,
+      "title": "Laptop \u00b7 Editor \u00b7 Background & Screen panel \u00b7 dark",
+      "is_interactive": true
+    },
+    "EditorMasks.dc.html": {
+      "x": 13600,
+      "y": 1460,
+      "w": 1280,
+      "h": 800,
+      "title": "Laptop \u00b7 Editor \u00b7 Masks panel \u00b7 dark",
+      "is_interactive": true
+    },
+    "EditorAudio.dc.html": {
+      "x": 14960,
+      "y": 1460,
+      "w": 1280,
+      "h": 800,
+      "title": "Laptop \u00b7 Editor \u00b7 Audio panel \u00b7 dark",
+      "is_interactive": true
+    },
+    "TabletEditor.dc.html": {
+      "x": 0,
+      "y": 2640,
+      "w": 1024,
+      "h": 768,
+      "title": "Tablet \u00b7 Editor \u00b7 dark",
+      "is_interactive": true
+    },
+    "TabletEditorLight.dc.html": {
+      "x": 1104,
+      "y": 2640,
+      "w": 1024,
+      "h": 768,
+      "title": "Tablet \u00b7 Editor \u00b7 light"
+    },
+    "TabletPicker.dc.html": {
+      "x": 2208,
+      "y": 2640,
+      "w": 1024,
+      "h": 768,
+      "title": "Tablet \u00b7 Recording picker \u00b7 light",
+      "is_interactive": true
+    },
+    "MobileHome.dc.html": {
+      "x": 0,
+      "y": 3800,
+      "w": 390,
+      "h": 844,
+      "title": "Mobile \u00b7 Projects home \u00b7 dark",
+      "radius": 44
+    },
+    "MobileRecord.dc.html": {
+      "x": 470,
+      "y": 3800,
+      "w": 390,
+      "h": 844,
+      "title": "Mobile \u00b7 Record \u00b7 dark",
+      "radius": 44,
+      "is_interactive": true
+    },
+    "MobileEditor.dc.html": {
+      "x": 940,
+      "y": 3800,
+      "w": 390,
+      "h": 844,
+      "title": "Mobile \u00b7 Editor \u00b7 dark",
+      "radius": 44,
+      "is_interactive": true
+    },
+    "MobileEditorSheet.dc.html": {
+      "x": 1410,
+      "y": 3800,
+      "w": 390,
+      "h": 844,
+      "title": "Mobile \u00b7 Editor \u00b7 Zoom sheet open \u00b7 dark",
+      "radius": 44
+    },
+    "MobileEditorLight.dc.html": {
+      "x": 1880,
+      "y": 3800,
+      "w": 390,
+      "h": 844,
+      "title": "Mobile \u00b7 Editor \u00b7 light",
+      "radius": 44
+    },
+    "MobileExport.dc.html": {
+      "x": 2350,
+      "y": 3800,
+      "w": 390,
+      "h": 844,
+      "title": "Mobile \u00b7 Export & share \u00b7 dark",
+      "radius": 44,
+      "is_interactive": true
+    },
+    "MobileExportLight.dc.html": {
+      "x": 2820,
+      "y": 3800,
+      "w": 390,
+      "h": 844,
+      "title": "Mobile \u00b7 Export & share \u00b7 light",
+      "radius": 44
+    },
+    "EditorClips.dc.html": {
+      "x": 0,
+      "y": 5000,
+      "w": 1280,
+      "h": 800,
+      "title": "Laptop \u00b7 Editor \u00b7 Clips panel \u00b7 dark",
+      "is_interactive": true
+    },
+    "EditorShortcuts.dc.html": {
+      "x": 1360,
+      "y": 5000,
+      "w": 1280,
+      "h": 800,
+      "title": "Laptop \u00b7 Editor \u00b7 Shortcuts panel \u00b7 dark",
+      "is_interactive": true
+    },
+    "EditorCaptions.dc.html": {
+      "x": 2720,
+      "y": 5000,
+      "w": 1280,
+      "h": 800,
+      "title": "Laptop \u00b7 Editor \u00b7 Captions panel \u00b7 dark",
+      "is_interactive": true
+    },
+    "Presets.dc.html": {
+      "x": 4080,
+      "y": 5000,
+      "w": 1280,
+      "h": 800,
+      "title": "Laptop \u00b7 Editor \u00b7 Presets popover \u00b7 dark",
+      "is_interactive": true
+    },
+    "EditorEnhance.dc.html": {
+      "x": 5440,
+      "y": 5000,
+      "w": 1280,
+      "h": 800,
+      "title": "Laptop \u00b7 Editor \u00b7 Enhance (4.1.0: clarity, loupe, looks, fillers, voiceover) \u00b7 dark",
+      "is_interactive": true
+    },
+    "RecordingFlow.dc.html": {
+      "x": 6800,
+      "y": 5000,
+      "w": 1280,
+      "h": 800,
+      "title": "Laptop \u00b7 Recording flow \u00b7 area, countdown, widget, menu bar, notes, permissions \u00b7 dark",
+      "is_interactive": true
+    },
+    "ShareLink.dc.html": {
+      "x": 8160,
+      "y": 5000,
+      "w": 1280,
+      "h": 800,
+      "title": "Web \u00b7 Shared video page with comments \u00b7 light",
+      "is_interactive": true
+    },
+    "Account.dc.html": {
+      "x": 9520,
+      "y": 5000,
+      "w": 1280,
+      "h": 800,
+      "title": "Laptop \u00b7 Settings \u00b7 Account and licence (states: active, trial, expired, refunded, signed out) \u00b7 light",
+      "is_interactive": true
+    }
   },
   "order": [
     "DesignSystem.dc.html",
-    "Main.dc.html", "EditorLight.dc.html", "EditorCamera.dc.html", "EditorTranscript.dc.html", "Picker.dc.html", "Export.dc.html", "Settings.dc.html", "Projects.dc.html", "EditorCursor.dc.html", "EditorBackground.dc.html", "EditorMasks.dc.html", "EditorAudio.dc.html",
-    "TabletEditor.dc.html", "TabletEditorLight.dc.html", "TabletPicker.dc.html",
-    "MobileHome.dc.html", "MobileRecord.dc.html", "MobileEditor.dc.html", "MobileEditorSheet.dc.html", "MobileEditorLight.dc.html", "MobileExport.dc.html", "MobileExportLight.dc.html"
+    "Main.dc.html",
+    "EditorLight.dc.html",
+    "EditorCamera.dc.html",
+    "EditorTranscript.dc.html",
+    "Picker.dc.html",
+    "Export.dc.html",
+    "Settings.dc.html",
+    "Projects.dc.html",
+    "EditorCursor.dc.html",
+    "EditorBackground.dc.html",
+    "EditorMasks.dc.html",
+    "EditorAudio.dc.html",
+    "TabletEditor.dc.html",
+    "TabletEditorLight.dc.html",
+    "TabletPicker.dc.html",
+    "MobileHome.dc.html",
+    "MobileRecord.dc.html",
+    "MobileEditor.dc.html",
+    "MobileEditorSheet.dc.html",
+    "MobileEditorLight.dc.html",
+    "MobileExport.dc.html",
+    "MobileExportLight.dc.html",
+    "EditorClips.dc.html",
+    "EditorShortcuts.dc.html",
+    "EditorCaptions.dc.html",
+    "Presets.dc.html",
+    "EditorEnhance.dc.html",
+    "RecordingFlow.dc.html",
+    "ShareLink.dc.html",
+    "Account.dc.html"
   ],
   "notes": {
-    "t-ds": {"x": 0, "y": -280, "text": "Recscene — design system", "kind": "title1", "maxW": 1400},
-    "t-laptop": {"x": 0, "y": 1180, "text": "Laptop · 1280 × 800 — the editor and every panel, recording, export, settings", "kind": "title1", "maxW": 4400},
-    "t-tablet": {"x": 0, "y": 2360, "text": "Tablet · 1024 × 768 — two-pane editor, inspector as a sheet", "kind": "title1", "maxW": 3200},
-    "t-mobile": {"x": 0, "y": 3520, "text": "Mobile · 390 × 844 — companion recorder and single-column editor", "kind": "title1", "maxW": 3200},
-    "s-theme": {"x": 1460, "y": 0, "w": 420, "text": "Every artboard carries a \"theme\" tweak (dark / light). The light boards are the same file imported with theme=light, so the two modes can never drift apart. Dark is the default for the editor because footage and colour grading read best on a neutral graphite; light is the default for export, settings and the project list where text dominates.", "fill": "purple"},
-    "s-tracks": {"x": 1460, "y": 320, "w": 420, "text": "Track colours are shared by all three breakpoints: Zooms purple, Clips yellow, Camera layouts pink, Masks teal, Shortcuts blue, Captions green, Voice-overs orange. Each pair also differs in lightness so it survives greyscale.", "fill": "blue"},
-    "s-mobile": {"x": 1460, "y": 580, "w": 420, "text": "On mobile the inspector becomes a bottom sheet with 44 px targets, the sidebar becomes a tab bar, and the eight tracks collapse to a single scrubber strip with one row per enabled track. Recording on mobile is the companion role: start, stop, flag, countdown, speaker notes.", "fill": "orange"}
+    "t-ds": {
+      "x": 0,
+      "y": -280,
+      "text": "Recscene \u2014 design system",
+      "kind": "title1",
+      "maxW": 1400
+    },
+    "t-laptop": {
+      "x": 0,
+      "y": 1180,
+      "text": "Laptop \u00b7 1280 \u00d7 800 \u2014 the editor and every panel, recording, export, settings",
+      "kind": "title1",
+      "maxW": 4400
+    },
+    "t-tablet": {
+      "x": 0,
+      "y": 2360,
+      "text": "Tablet \u00b7 1024 \u00d7 768 \u2014 two-pane editor, inspector as a sheet",
+      "kind": "title1",
+      "maxW": 3200
+    },
+    "t-mobile": {
+      "x": 0,
+      "y": 3520,
+      "text": "Mobile \u00b7 390 \u00d7 844 \u2014 companion recorder and single-column editor",
+      "kind": "title1",
+      "maxW": 3200
+    },
+    "s-theme": {
+      "x": 1460,
+      "y": 0,
+      "w": 420,
+      "text": "Every artboard carries a \"theme\" tweak (dark / light). The light boards are the same file imported with theme=light, so the two modes can never drift apart. Dark is the default for the editor because footage and colour grading read best on a neutral graphite; light is the default for export, settings and the project list where text dominates.",
+      "fill": "purple"
+    },
+    "s-tracks": {
+      "x": 1460,
+      "y": 320,
+      "w": 420,
+      "text": "Track colours are shared by all three breakpoints: Zooms purple, Clips yellow, Camera layouts pink, Masks teal, Shortcuts blue, Captions green, Voice-overs orange. Each pair also differs in lightness so it survives greyscale.",
+      "fill": "blue"
+    },
+    "s-mobile": {
+      "x": 1460,
+      "y": 580,
+      "w": 420,
+      "text": "On mobile the inspector becomes a bottom sheet with 44 px targets, the sidebar becomes a tab bar, and the eight tracks collapse to a single scrubber strip with one row per enabled track. Recording on mobile is the companion role: start, stop, flag, countdown, speaker notes.",
+      "fill": "orange"
+    },
+    "t-laptop2": {
+      "x": 0,
+      "y": 4720,
+      "text": "Laptop \u00b7 the remaining areas \u2014 clips, shortcuts, captions, presets, 4.1.0 enhance, recording flow, shared page, account",
+      "kind": "title1",
+      "maxW": 4400
+    },
+    "s-coverage": {
+      "x": 1460,
+      "y": 820,
+      "w": 420,
+      "text": "Coverage: every one of the 292 specs now has a board. Row 1 editor panels + picker/export/settings/projects, row 4 the rest. Light variants of row-4 editor boards follow the same import pattern when needed.",
+      "fill": "green"
+    }
   },
   "designSystems": []
 }

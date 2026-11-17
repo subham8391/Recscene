@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Shared video page (web)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif}
+.ss{--bg:#F2F2F5;--panel:#FFFFFF;--panel2:#F6F6F8;--line:#E2E2E8;--line2:#CFCFD7;--text:#17171B;--text2:#5A5A64;--text3:#6F6F7A;--accent:#5F45F0;--accentSoft:#ECE8FF;--onAccent:#FFFFFF;--caption:#2A9D5E;--danger:#D14343;--focus:0 0 0 3px rgba(95,69,240,.35)}
+.ss.dark{--bg:#0E0F11;--panel:#161719;--panel2:#1C1D21;--line:#2A2B31;--line2:#383943;--text:#EDEDF2;--text2:#A6A7B1;--text3:#8E8F9A;--accent:#8F79FF;--accentSoft:#2A2546;--onAccent:#0E0F11;--caption:#45C77F;--danger:#E36060;--focus:0 0 0 3px rgba(143,121,255,.4)}
+.ss *{box-sizing:border-box}
+.ss button{font:inherit;color:inherit;cursor:pointer}
+.ss button:focus-visible,.ss input:focus-visible,.ss textarea:focus-visible{outline:none;box-shadow:var(--focus)}
+.ss .ghost{height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--line2);background:var(--panel);font-size:12px;font-weight:500;display:inline-flex;align-items:center;gap:6px}
+.ss .ic{width:16px;height:16px;flex:none}
+.ss .av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:600;color:#fff;flex:none}
+a{color:#5F45F0}a:hover{color:#4A34C9}
+</style>
+</helmet>
+<div class="ss {{themeClass}}" style="width: 1280px; height: 800px; background: var(--bg); color: var(--text); display: flex; flex-direction: column; font-size: 13px; overflow: hidden; border-radius: 12px">
+  <!-- Browser chrome -->
+  <div aria-hidden="true" style="height: 40px; display: flex; align-items: center; gap: 12px; padding: 0 14px; background: var(--panel); border-bottom: 1px solid var(--line)">
+    <div style="display: flex; gap: 8px"><span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span></div>
+    <div style="flex: 1 1 auto; max-width: 560px; margin: 0 auto; height: 26px; border-radius: 7px; background: var(--panel2); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; color: var(--text2)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z"/></svg>recscene.app/v/k8Qz2pLw</div>
+  </div>
+
+  <header style="height: 56px; display: flex; align-items: center; gap: 16px; padding: 0 32px; background: var(--panel); border-bottom: 1px solid var(--line); flex: none">
+    <span style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700"><span style="width: 22px; height: 22px; border-radius: 6px; background: var(--accent); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="12" r="5"/></svg></span>Recscene</span>
+    <div style="flex: 1 1 auto"></div>
+    <button class="ghost" onClick="{{ copy }}"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 8h12v12H8zM4 16V4h12"/></svg>{{ copyLabel }}</button>
+    <button class="ghost"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v12M6 10l6 6 6-6M4 20h16"/></svg>Download</button>
+    <button style="height: 32px; padding: 0 14px; border-radius: 8px; border: none; background: var(--accent); color: var(--onAccent); font-weight: 600">Make your own</button>
+  </header>
+
+  <div style="flex: 1 1 auto; display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 24px; padding: 24px 32px; min-height: 0">
+    <main style="display: flex; flex-direction: column; gap: 14px; min-width: 0">
+      <div style="position: relative; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; background: linear-gradient(135deg, #2b1d5c 0%, #5f45f0 55%, #c9b9ff 100%); box-shadow: 0 20px 50px rgba(0,0,0,.25)">
+        <div aria-hidden="true" style="position: absolute; inset: 8% 11%; border-radius: 12px; background: #1f2026; border: 1px solid rgba(255,255,255,.12)"><div style="height: 26px; background: #2a2b33"></div></div>
+        <div style="position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 72px; height: 72px; border-radius: 50%; background: rgba(255,255,255,.92); display: grid; place-items: center; box-shadow: 0 8px 24px rgba(0,0,0,.3)"><svg viewBox="0 0 24 24" width="30" height="30" fill="#17171B"><path d="M8 5l12 7-12 7z"/></svg></div>
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 16px; background: linear-gradient(transparent, rgba(0,0,0,.6)); display: flex; align-items: center; gap: 12px; color: #fff; font-size: 12px"><span style="font-variant-numeric: tabular-nums">00:06 / 00:31</span><div style="flex: 1 1 auto; height: 4px; border-radius: 2px; background: rgba(255,255,255,.3)"><span style="display: block; width: 20%; height: 100%; border-radius: 2px; background: #fff"></span></div><span>1080p</span><span>⤢</span></div>
+        <sc-if value="{{ muted }}" hint-placeholder-val="{{ true }}"><div style="position: absolute; left: 16px; top: 16px; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,.6); color: #fff; font-size: 11px">Muted preview · click to unmute</div></sc-if>
+      </div>
+      <div style="display: flex; align-items: flex-start; gap: 14px">
+        <div style="flex: 1 1 auto; min-width: 0">
+          <h1 style="margin: 0; font-size: 20px; font-weight: 700">Onboarding walkthrough</h1>
+          <p style="margin: 6px 0 0; color: var(--text2)">Subham Das · shared 2 hours ago · 31 s · 14 views</p>
+        </div>
+        <div style="display: flex; gap: 8px"><button class="ghost">👍 3</button><button class="ghost">Share</button></div>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+        <span style="height: 24px; padding: 0 10px; border-radius: 12px; background: var(--accentSoft); color: var(--accent); font-size: 11px; font-weight: 600; line-height: 24px">Public link</span>
+        <span style="height: 24px; padding: 0 10px; border-radius: 12px; background: var(--panel2); border: 1px solid var(--line); font-size: 11px; line-height: 22px; color: var(--text2)">Expires in 30 days</span>
+        <span style="height: 24px; padding: 0 10px; border-radius: 12px; background: var(--panel2); border: 1px solid var(--line); font-size: 11px; line-height: 22px; color: var(--text2)">Comments on</span>
+        <span style="height: 24px; padding: 0 10px; border-radius: 12px; background: var(--panel2); border: 1px solid var(--line); font-size: 11px; line-height: 22px; color: var(--text2)">Download allowed</span>
+      </div>
+      <p style="margin: 0; font-size: 11px; color: var(--text3)">Only the rendered video is on the server. The project, raw recording and transcript stay on the author's Mac.</p>
+    </main>
+
+    <aside aria-label="Comments" style="display: flex; flex-direction: column; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; min-height: 0">
+      <div style="height: 48px; display: flex; align-items: center; gap: 8px; padding: 0 16px; border-bottom: 1px solid var(--line); font-weight: 600">Comments <span style="color: var(--text3); font-weight: 400">{{ count }}</span><div style="flex: 1 1 auto"></div><button class="ghost" style="height: 26px; padding: 0 8px">Timestamps ▾</button></div>
+      <div style="flex: 1 1 auto; overflow: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 14px">
+        <sc-for list="{{comments}}" as="c" hint-placeholder-count="4">
+          <div style="display: flex; gap: 10px">
+            <span class="av" style="background: {{ c.color }}">{{ c.initials }}</span>
+            <div style="flex: 1 1 auto; min-width: 0"><div style="display: flex; gap: 8px; align-items: baseline"><span style="font-weight: 600">{{ c.name }}</span><span style="font-size: 11px; color: var(--text3)">{{ c.when }}</span></div><p style="margin: 4px 0 0; line-height: 1.45"><a href="#" style="font-variant-numeric: tabular-nums; font-weight: 600; text-decoration: none">{{ c.t }}</a> {{ c.text }}</p><div style="margin-top: 6px; display: flex; gap: 10px; font-size: 11px; color: var(--text3)"><button style="border: none; background: none; padding: 0; color: inherit">Reply</button><button style="border: none; background: none; padding: 0; color: inherit">👍 {{ c.likes }}</button></div></div>
+          </div>
+        </sc-for>
+      </div>
+      <form style="border-top: 1px solid var(--line); padding: 12px 16px; display: flex; flex-direction: column; gap: 8px" onSubmit="{{ submit }}">
+        <textarea rows="2" placeholder="Comment at 00:06…" style="resize: none; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2); color: var(--text); font: inherit"></textarea>
+        <div style="display: flex; align-items: center; gap: 8px"><label style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text2)"><input type="checkbox" checked style="accent-color: var(--accent)">Attach current time</label><div style="flex: 1 1 auto"></div><input placeholder="Your name" style="height: 28px; width: 120px; padding: 0 8px; border-radius: 6px; border: 1px solid var(--line2); background: var(--panel2); color: var(--text); font: inherit; font-size: 12px"><button type="submit" style="height: 28px; padding: 0 12px; border-radius: 8px; border: none; background: var(--accent); color: var(--onAccent); font-weight: 600; font-size: 12px">Post</button></div>
+      </form>
+    </aside>
+  </div>
+  <footer style="height: 36px; flex: none; display: flex; align-items: center; justify-content: center; gap: 16px; font-size: 11px; color: var(--text3); border-top: 1px solid var(--line); background: var(--panel)">Made with Recscene · <a href="#">Report</a> · <a href="#">Privacy</a></footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { copied:false, muted:true }; }
+  renderVals() {
+    const theme = this.props.theme ?? 'light';
+    const comments = [
+      { initials:'AR', color:'#2F7FE0', name:'Ana R.', when:'1 h', t:'00:04', text:'Can we show the empty state a beat longer before the zoom?', likes:2 },
+      { initials:'SD', color:'#5F45F0', name:'Subham Das', when:'52 min', t:'00:04', text:'Yes, I will hold the zoom 0.5 s longer in the next version.', likes:1 },
+      { initials:'JK', color:'#2A9D5E', name:'Jae K.', when:'20 min', t:'00:19', text:'The caption says "key" but the field is labelled "token".', likes:0 },
+      { initials:'MO', color:'#E0692A', name:'Mo', when:'5 min', t:'00:28', text:'Love the ending. Ship it.', likes:3 }
+    ];
+    return { themeClass: theme==='light'?'light':'dark', comments, count: comments.length, muted: this.state.muted,
+      copyLabel: this.state.copied ? 'Link copied' : 'Copy link', copy: ()=>{ this.setState({copied:true}); setTimeout(()=>this.setState({copied:false}), 1500); },
+      submit: e=>{ e.preventDefault(); } };
+  }
+}
+</script>
+</body>
+</html>

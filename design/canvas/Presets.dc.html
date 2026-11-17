@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Editor — Presets popover (laptop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif}
+.ss{--bg:#F2F2F5;--panel:#FFFFFF;--panel2:#F6F6F8;--line:#E2E2E8;--line2:#CFCFD7;--text:#17171B;--text2:#5A5A64;--text3:#6F6F7A;--accent:#5F45F0;--accentSoft:#ECE8FF;--onAccent:#FFFFFF;--zoom:#6F57F2;--clip:#D9A41C;--layout:#DF4F80;--mask:#1E9A9A;--shortcut:#2F7FE0;--caption:#2A9D5E;--voice:#E0692A;--danger:#D14343;--stage:#E6E6EC;--focus:0 0 0 3px rgba(95,69,240,.35)}
+.ss.dark{--bg:#0E0F11;--panel:#161719;--panel2:#1C1D21;--line:#2A2B31;--line2:#383943;--text:#EDEDF2;--text2:#A6A7B1;--text3:#8E8F9A;--accent:#8F79FF;--accentSoft:#2A2546;--onAccent:#0E0F11;--zoom:#8F79FF;--clip:#F2C14E;--layout:#F06A98;--mask:#34BFBF;--shortcut:#5EA0F7;--caption:#45C77F;--voice:#F58D4D;--danger:#E36060;--stage:#07070A;--focus:0 0 0 3px rgba(143,121,255,.4)}
+.ss *{box-sizing:border-box}
+.ss button{font:inherit;color:inherit;cursor:pointer}
+.ss button:focus-visible,.ss input:focus-visible,.ss select:focus-visible{outline:none;box-shadow:var(--focus)}
+.ss .ic{width:18px;height:18px;flex:none}
+.ss h3{margin:0;font-size:12px;font-weight:600;color:var(--text2)}
+.ss .sl{display:flex;flex-direction:column;gap:4px}
+.ss .sl .hd{display:flex;justify-content:space-between;font-size:12px}
+.ss .sl label{font-weight:600;color:var(--text2)}
+.ss .sl input{width:100%;accent-color:var(--accent)}
+.ss .card{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:10px;background:var(--panel2)}
+.ss .card label{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ss .card b{display:block;font-weight:500}
+.ss .card small{display:block;font-size:11px;color:var(--text3)}
+.ss .tog{width:36px;height:20px;accent-color:var(--accent);flex:none}
+.ss .ghost{height:30px;border-radius:8px;border:1px solid var(--line2);background:transparent;font-size:12px}
+.ss .seg{display:flex;padding:2px;border-radius:8px;background:var(--panel2);border:1px solid var(--line)}
+.ss .seg button{flex:1 1 0;height:26px;border:none;border-radius:6px;background:transparent;font-size:12px;color:var(--text2)}
+.ss .seg button[aria-pressed="true"]{background:var(--panel);color:var(--text);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.ss select{height:30px;padding:0 8px;border-radius:8px;border:1px solid var(--line2);background:var(--panel2);color:var(--text);font:inherit}
+.ss .note{margin:0;font-size:11px;color:var(--text3);line-height:1.45}
+.ss .chip{height:18px;padding:0 6px;border-radius:9px;background:var(--accentSoft);color:var(--accent);font-size:10px;font-weight:600;line-height:18px}
+.ss .row{display:flex;align-items:center;gap:8px}
+a{color:#5F45F0}a:hover{color:#4A34C9}
+</style>
+</helmet>
+<div class="ss {{themeClass}}" style="width: 1280px; height: 800px; background: var(--bg); color: var(--text); display: flex; flex-direction: column; font-size: 13px; overflow: hidden; border-radius: 12px; position: relative">
+  <header style="height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 14px; background: var(--panel); border-bottom: 1px solid var(--line); flex: none">
+    <div style="display: flex; gap: 8px; width: 60px" aria-hidden="true"><span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span></div>
+    <span style="font-weight: 600">Onboarding walkthrough</span><span style="color: var(--text3)">· saved</span>
+    <div style="flex: 1 1 auto; display: flex; justify-content: center; gap: 8px"><button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Auto (16:9) ▾</button><button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Crop</button><button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: {{presetsBg}}">Presets</button></div>
+    <button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Share link</button>
+    <button style="height: 30px; padding: 0 16px; border-radius: 8px; border: none; background: var(--accent); color: var(--onAccent); font-weight: 600">Export</button>
+  </header>
+
+  <div style="flex: 1 1 auto; display: flex; min-height: 0">
+    <nav aria-label="Editor panels" style="width: 68px; flex: none; background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 8px 6px; gap: 2px">
+      <sc-for list="{{rail}}" as="r" hint-placeholder-count="10"><button aria-pressed="{{ r.active }}" style="height: 54px; border-radius: 8px; border: none; background: {{ r.bg }}; color: {{ r.fg }}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 10px; font-weight: 500"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="{{ r.d }}"/></svg><span>{{ r.label }}</span></button></sc-for>
+    </nav>
+
+    <main style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column">
+      <div style="flex: 1 1 auto; position: relative; margin: 16px; border-radius: 10px; background: var(--stage); overflow: hidden">
+        <div style="position: absolute; inset: 0; background: {{ bgGrad }}">
+          <div style="position: absolute; inset: 7% 10%; border-radius: {{ radius }}; background: #1f2026; box-shadow: 0 30px 60px rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.12); overflow: hidden">
+            <div style="height: 28px; background: #2a2b33"></div>
+            <div style="padding: 18px; display: flex; flex-direction: column; gap: 10px"><span style="width: 55%; height: 10px; border-radius: 5px; background: #3a3b45"></span><span style="width: 88%; height: 10px; border-radius: 5px; background: #33343d"></span><span style="width: 66%; height: 10px; border-radius: 5px; background: #33343d"></span></div>
+          </div>
+          <div style="position: absolute; left: 14px; top: 14px; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,.55); color: #fff; font-size: 11px">Preview · preset "{{ current }}"</div>
+        </div>
+      </div>
+      <div style="height: 44px; flex: none; display: flex; align-items: center; gap: 14px; padding: 0 20px; border-top: 1px solid var(--line); background: var(--panel)">
+        <span style="font-variant-numeric: tabular-nums; font-weight: 600">00:06.20</span><span style="color: var(--text3)">/ 00:31.00</span><div style="flex: 1 1 auto"></div>
+        <button aria-label="Play (Space)" style="width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--text); color: var(--bg); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l12 8-12 8z"/></svg></button>
+        <div style="flex: 1 1 auto"></div><span style="color: var(--text3); font-size: 11px">Presets are files; the editor re-reads the folder when it opens</span>
+      </div>
+    </main>
+
+    <aside aria-label="Zoom settings" style="width: 312px; flex: none; background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; overflow: hidden">
+      <div style="height: 48px; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--line)"><span style="width: 10px; height: 10px; border-radius: 3px; background: var(--zoom)"></span><span style="font-weight: 600">Zoom</span><span style="color: var(--text3)">auto</span></div>
+      <div style="flex: 1 1 auto; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 18px">
+        <section style="display: flex; flex-direction: column; gap: 8px"><h3>Zoom</h3>
+          <div class="sl"><div class="hd"><label for="zd">Depth</label><span>2.0×</span></div><input id="zd" type="range" min="100" max="400" value="200"></div>
+          <div class="sl"><div class="hd"><label for="zs">Speed</label><span>Normal</span></div><input id="zs" type="range" min="0" max="100" value="50"></div>
+        </section>
+        <section class="card"><label><span><b>Automatic zooms</b><small>Follow clicks. Part of every preset.</small></span><input class="tog" type="checkbox" checked></label></section>
+        <p class="note">A preset stores everything in the inspector panels: zoom, cursor, camera layout, background, padding, shadow, captions style and export settings. It never stores clips, masks or the recording itself.</p>
+      </div>
+    </aside>
+  </div>
+
+  <section aria-label="Timeline" style="height: 236px; flex: none; background: var(--panel); border-top: 1px solid var(--line); display: flex; flex-direction: column">
+    <div style="height: 36px; display: flex; align-items: center; gap: 6px; padding: 0 12px; border-bottom: 1px solid var(--line)">
+      <button style="height: 28px; padding: 0 10px; border-radius: 6px; border: none; background: var(--accentSoft); color: var(--zoom); font-weight: 600">+ Zoom</button>
+      <span style="font-size: 11px; color: var(--text3)">Applying a preset changes panel settings only; clips, masks and the recording stay as they are</span>
+      <div style="flex: 1 1 auto"></div><label for="tlz" style="font-size: 11px; color: var(--text3)">Timeline zoom</label><input id="tlz" type="range" min="0" max="100" value="40" style="width: 120px; accent-color: var(--accent)">
+    </div>
+    <div style="flex: 1 1 auto; display: grid; grid-template-columns: 112px minmax(0, 1fr); overflow: hidden">
+      <div style="border-right: 1px solid var(--line); display: flex; flex-direction: column; font-size: 11px; color: var(--text2)"><div style="height: 20px"></div><sc-for list="{{tracks}}" as="t" hint-placeholder-count="8"><div style="height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 10px; background: {{ t.bg }}"><span style="width: 6px; height: 6px; border-radius: 2px; background: {{ t.color }}"></span>{{ t.name }}</div></sc-for></div>
+      <div style="position: relative; overflow: hidden">
+        <div style="height: 20px; display: flex; font-size: 10px; color: var(--text3); border-bottom: 1px solid var(--line)"><sc-for list="{{ruler}}" as="m" hint-placeholder-count="9"><span style="flex: 1 1 0; border-left: 1px solid var(--line2); padding-left: 4px; line-height: 20px">{{ m }}</span></sc-for></div>
+        <div style="height: 22px; position: relative; border-bottom: 1px solid var(--line); background: var(--accentSoft)"><span style="position: absolute; left: 30%; width: 12%; top: 3px; height: 16px; border-radius: 4px; background: var(--zoom); opacity: .85"></span><span style="position: absolute; left: 55%; width: 10%; top: 3px; height: 16px; border-radius: 4px; background: var(--zoom); opacity: .85"></span></div>
+        <div style="height: 22px; position: relative; border-bottom: 1px solid var(--line)"><span style="position: absolute; left: 0; width: 100%; top: 2px; height: 18px; border-radius: 4px; background: var(--clip); color: #1a1500; font-size: 10px; font-weight: 600; padding-left: 6px; line-height: 18px">1×</span></div>
+        <div style="height: 22px; border-bottom: 1px solid var(--line)"></div>
+        <div style="height: 22px; border-bottom: 1px solid var(--line)"></div>
+        <div style="height: 22px; border-bottom: 1px solid var(--line)"></div>
+        <div style="height: 22px; border-bottom: 1px solid var(--line)"></div>
+        <div style="height: 22px; border-bottom: 1px solid var(--line)"></div>
+        <div style="height: 22px; display: flex; align-items: center; gap: 1px; padding: 0 2px"><sc-for list="{{wave}}" as="h" hint-placeholder-count="120"><span style="flex: 1 1 0; height: {{ h }}; background: var(--text3); opacity: .55; border-radius: 1px"></span></sc-for></div>
+        <div aria-hidden="true" style="position: absolute; left: 20%; top: 0; bottom: 0; width: 1px; background: var(--text)"><span style="position: absolute; top: 0; left: -6px; width: 13px; height: 13px; border-radius: 7px 7px 7px 0; background: var(--text); transform: rotate(-45deg)"></span></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { sel: 0 }; }
+  renderVals() {
+    const theme = this.props.theme ?? 'dark';
+    const items = [['zooms','Zooms','M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM16 16l5 5M11 8v6M8 11h6'],['clips','Clips','M6 4h12v16H6zM6 9h12M6 14h12'],['cursor','Cursor','M5 3l14 8-6 2-3 6z'],['camera','Camera','M4 7h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4zM17 10l4-2v8l-4-2'],['background','Background','M3 5h18v14H3zM3 15l5-5 4 4 3-3 6 6'],['masks','Masks','M4 6h16v12H4zM8 10h4v4H8'],['shortcuts','Shortcuts','M3 7h18v10H3zM7 11h1M11 11h1M15 11h1M7 14h10'],['captions','Captions','M4 5h16v14H4zM7 14h6M15 14h2M7 10h2M11 10h6'],['audio','Audio','M4 12h2M8 8v8M12 5v14M16 9v6M20 11v2'],['enhance','Enhance','M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2zM5 17l1 2 2 1-2 1-1 2-1-2-2-1 2-1z']];
+    const ACTIVE = 'zooms';
+    const rail = items.map(([id,label,d]) => ({ id,label,d, active:id===ACTIVE, bg:id===ACTIVE?'var(--accentSoft)':'transparent', fg:id===ACTIVE?'var(--text)':'var(--text2)' }));
+    const TRACK = {clips:'Clips',shortcuts:'Shortcuts',captions:'Captions',enhance:'Voiceovers',zooms:'Zooms'}[ACTIVE];
+    const tracks = [{name:'Zooms',color:'var(--zoom)'},{name:'Clips',color:'var(--clip)'},{name:'Layouts',color:'var(--layout)'},{name:'Masks',color:'var(--mask)'},{name:'Shortcuts',color:'var(--shortcut)'},{name:'Captions',color:'var(--caption)'},{name:'Voiceovers',color:'var(--voice)'},{name:'Audio',color:'var(--text3)'}].map(t => ({...t, bg: t.name===TRACK?'var(--accentSoft)':'transparent'}));
+    const wave = Array.from({length:120},(_,i)=> (4 + Math.round(8*Math.abs(Math.sin(i*0.9))+6*Math.abs(Math.sin(i*0.27)))) + 'px');
+    const base = { themeClass: theme==='light'?'light':'dark', rail, tracks, wave, ruler:['0:00','0:04','0:08','0:12','0:16','0:20','0:24','0:28','0:31'], presetsBg:'var(--panel2)' };
+    const defs = [['Product demo','linear-gradient(135deg,#2b1d5c,#5f45f0 55%,#c9b9ff)','12px',true],['Bug report','linear-gradient(135deg,#1c1c20,#3a3a44)','6px',false],['Social 9:16','linear-gradient(135deg,#f06a98,#f58d4d)','16px',false],['Clean white','linear-gradient(135deg,#ffffff,#e6e6ec)','10px',false],['Podcast','linear-gradient(135deg,#0f3a24,#2a9d5e)','12px',false],['Team default (shared)','linear-gradient(135deg,#0b2a4a,#2f7fe0)','12px',false]];
+    const S = this.state.sel;
+    const presets = defs.map(([name,grad,rad,isDefault],i) => ({ name, grad, rad, isDefault, on: S===i, border: S===i?'var(--accent)':'transparent', pick: ()=>this.setState({sel:i}), apply: ()=>this.setState({sel:i}) }));
+    return { ...base, presetsBg:'var(--accentSoft)', presets, count: defs.length, current: defs[S][0], bgGrad: defs[S][1], radius: defs[S][2] };
+  }
+}
+</script>
+</body>
+</html>

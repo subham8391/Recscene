@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Recording flow — area, countdown, widget, menu bar, permissions (laptop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif}
+.ss{--bg:#F2F2F5;--panel:#FFFFFF;--panel2:#F6F6F8;--line:#E2E2E8;--line2:#CFCFD7;--text:#17171B;--text2:#5A5A64;--text3:#6F6F7A;--accent:#5F45F0;--accentSoft:#ECE8FF;--onAccent:#FFFFFF;--caption:#2A9D5E;--clip:#D9A41C;--danger:#D14343;--focus:0 0 0 3px rgba(95,69,240,.35)}
+.ss.dark{--bg:#0E0F11;--panel:#161719;--panel2:#1C1D21;--line:#2A2B31;--line2:#383943;--text:#EDEDF2;--text2:#A6A7B1;--text3:#8E8F9A;--accent:#8F79FF;--accentSoft:#2A2546;--onAccent:#0E0F11;--caption:#45C77F;--clip:#F2C14E;--danger:#E36060;--focus:0 0 0 3px rgba(143,121,255,.4)}
+.ss *{box-sizing:border-box}
+.ss button{font:inherit;color:inherit;cursor:pointer}
+.ss button:focus-visible{outline:none;box-shadow:var(--focus)}
+.ss .ic{width:16px;height:16px;flex:none}
+.ss .hud{position:absolute;border-radius:12px;background:var(--panel);color:var(--text);border:1px solid var(--line2);box-shadow:0 16px 40px rgba(0,0,0,.45)}
+.ss .wbtn{width:34px;height:34px;border-radius:8px;border:none;background:transparent;display:grid;place-items:center;color:var(--text2)}
+.ss .wbtn:hover{background:var(--panel2);color:var(--text)}
+.ss .hnd{position:absolute;width:12px;height:12px;border-radius:2px;background:#fff;border:1px solid var(--accent)}
+.ss .tag{position:absolute;padding:3px 7px;border-radius:5px;background:rgba(0,0,0,.65);color:#fff;font-size:10px;font-weight:600;letter-spacing:.3px;text-transform:uppercase}
+.ss .ghost{height:28px;padding:0 10px;border-radius:8px;border:1px solid var(--line2);background:transparent;font-size:12px;font-weight:500}
+.ss .pri{height:28px;padding:0 12px;border-radius:8px;border:none;background:var(--accent);color:var(--onAccent);font-weight:600;font-size:12px}
+.ss .mi{display:flex;align-items:center;gap:10px;height:30px;padding:0 10px;border-radius:6px;font-size:12px}
+.ss .mi:hover{background:var(--accentSoft)}
+.ss .perm{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:var(--panel2)}
+a{color:#5F45F0}a:hover{color:#4A34C9}
+</style>
+</helmet>
+<div class="ss {{themeClass}}" style="width: 1280px; height: 800px; position: relative; overflow: hidden; border-radius: 12px; font-size: 13px; color: var(--text); background: radial-gradient(1200px 700px at 30% 110%, #3a2d8a 0%, #141225 55%, #0a0a12 100%)">
+  <!-- macOS menu bar with the Recscene status item: spec 32–33, 41 -->
+  <div aria-label="Menu bar" style="position: absolute; left: 0; right: 0; top: 0; height: 28px; background: rgba(20,20,30,.72); backdrop-filter: blur(10px); display: flex; align-items: center; gap: 18px; padding: 0 16px; color: #fff; font-size: 12px">
+    <span style="font-weight: 700"></span><span style="font-weight: 600">Finder</span><span>File</span><span>Edit</span><span>View</span>
+    <div style="flex: 1 1 auto"></div>
+    <span aria-label="Recscene status item, recording" style="display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 6px; background: rgba(227,96,96,.25)"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 0 3px rgba(227,96,96,.3)"></span><span style="font-variant-numeric: tabular-nums">{{ clock }}</span></span>
+    <span>⌘⇧2 stops</span><span>Tue 17 Nov 15:52</span>
+  </div>
+
+  <!-- Status item menu -->
+  <div class="hud" style="left: 1016px; top: 32px; width: 236px; padding: 6px">
+    <div class="mi" style="font-weight: 600"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--danger)"></span>Recording · {{ clock }}</div>
+    <div class="mi">Pause <span style="margin-left: auto; color: var(--text3)">⌘⇧P</span></div>
+    <div class="mi">Add marker <span style="margin-left: auto; color: var(--text3)">⌘⇧M</span></div>
+    <div class="mi">Add flag <span style="margin-left: auto; color: var(--text3)">⌘⇧F</span></div>
+    <div class="mi" style="color: var(--danger)">Stop and open editor <span style="margin-left: auto; color: var(--text3)">⌘⇧2</span></div>
+    <div style="height: 1px; margin: 6px 4px; background: var(--line)"></div>
+    <div class="mi">Restart recording</div>
+    <div class="mi">Cancel recording</div>
+    <div style="height: 1px; margin: 6px 4px; background: var(--line)"></div>
+    <div class="mi" style="color: var(--text3); font-size: 11px">After recording: Open in editor ▾</div>
+  </div>
+
+  <!-- Dim outside the area + dragged area with handles: spec 3–4, 31 -->
+  <div aria-hidden="true" style="position: absolute; inset: 28px 0 0 0; background: rgba(0,0,0,{{ dim }})"></div>
+  <div aria-label="Recording area" style="position: absolute; left: 140px; top: 120px; width: 760px; height: 475px; box-shadow: 0 0 0 9999px transparent; border: 2px solid var(--accent); background: rgba(95,69,240,.06)">
+    <span class="hnd" style="left: -7px; top: -7px"></span><span class="hnd" style="right: -7px; top: -7px"></span><span class="hnd" style="left: -7px; bottom: -7px"></span><span class="hnd" style="right: -7px; bottom: -7px"></span>
+    <span class="hnd" style="left: 50%; top: -7px; margin-left: -6px"></span><span class="hnd" style="left: 50%; bottom: -7px; margin-left: -6px"></span><span class="hnd" style="left: -7px; top: 50%; margin-top: -6px"></span><span class="hnd" style="right: -7px; top: 50%; margin-top: -6px"></span>
+    <!-- Size badge with saved sizes: spec 4–5 -->
+    <div style="position: absolute; left: 50%; top: -42px; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 6px 0 10px; border-radius: 8px; background: var(--panel); border: 1px solid var(--line2); color: var(--text); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap"><b>1520 × 950</b><span style="color: var(--text3)">· 16:10</span><button class="ghost" style="height: 22px; padding: 0 8px" onClick="{{ toggleSizes }}">Sizes ▾</button></div>
+    <sc-if value="{{ sizesOpen }}" hint-placeholder-val="{{ true }}">
+      <div class="hud" style="left: 50%; top: -6px; transform: translateX(-50%); width: 240px; padding: 6px; z-index: 3">
+        <div class="mi" style="font-weight: 600">1920 × 1080 <span style="margin-left: auto; color: var(--text3)">16:9</span></div>
+        <div class="mi">1280 × 800 <span style="margin-left: auto; color: var(--text3)">16:10</span></div>
+        <div class="mi">1080 × 1080 <span style="margin-left: auto; color: var(--text3)">1:1</span></div>
+        <div class="mi">1080 × 1920 <span style="margin-left: auto; color: var(--text3)">9:16</span></div>
+        <div style="height: 1px; margin: 6px 4px; background: var(--line)"></div>
+        <div class="mi">Save current size…</div>
+        <div class="mi">Resize the window under the area to this size</div>
+      </div>
+    </sc-if>
+    <!-- Countdown: spec 21 -->
+    <sc-if value="{{ counting }}" hint-placeholder-val="{{ true }}">
+      <div aria-live="polite" aria-label="Countdown" style="position: absolute; inset: 0; display: grid; place-items: center"><div style="width: 150px; height: 150px; border-radius: 50%; background: rgba(0,0,0,.6); backdrop-filter: blur(6px); border: 3px solid var(--accent); display: grid; place-items: center; color: #fff; font-size: 72px; font-weight: 700; font-variant-numeric: tabular-nums">{{ count }}</div><span style="position: absolute; bottom: 24%; color: #fff; font-size: 12px; opacity: .85">Press Esc to cancel · Space to skip the countdown</span></div>
+    </sc-if>
+    <span class="tag" style="left: 8px; bottom: 8px">Desktop icons hidden · Dock hidden</span>
+  </div>
+
+  <!-- Floating recording widget: spec 22–27, 32 -->
+  <div role="toolbar" aria-label="Recording controls" class="hud" style="left: 50%; bottom: 36px; transform: translateX(-50%); display: flex; align-items: center; gap: 2px; padding: 6px 8px">
+    <span style="display: inline-flex; align-items: center; gap: 8px; padding: 0 10px 0 6px; font-variant-numeric: tabular-nums; font-weight: 600"><span style="width: 10px; height: 10px; border-radius: 50%; background: var(--danger)"></span>{{ clock }}</span>
+    <span style="width: 1px; height: 22px; background: var(--line)"></span>
+    <button class="wbtn" aria-label="Pause" onClick="{{ togglePause }}"><svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="{{ pauseIcon }}"/></svg></button>
+    <button class="wbtn" aria-label="Add marker"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M6 9l6-6 6 6"/></svg></button>
+    <button class="wbtn" aria-label="Add flag"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 21V4h12l-2 4 2 4H5"/></svg></button>
+    <button class="wbtn" aria-label="Speaker notes" onClick="{{ toggleNotes }}"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v12H8l-4 4zM8 9h8M8 12h5"/></svg></button>
+    <button class="wbtn" aria-label="Microphone on"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+    <button class="wbtn" aria-label="Camera on"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4zM17 10l4-2v8l-4-2"/></svg></button>
+    <span style="width: 1px; height: 22px; background: var(--line)"></span>
+    <button class="wbtn" aria-label="Restart recording"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v5h5"/></svg></button>
+    <button class="wbtn" aria-label="Cancel recording" style="color: var(--danger)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <button aria-label="Stop (⌘⇧2)" style="margin-left: 6px; height: 34px; padding: 0 14px 0 10px; border-radius: 8px; border: none; background: var(--danger); color: #fff; font-weight: 600; display: inline-flex; align-items: center; gap: 8px"><span style="width: 10px; height: 10px; border-radius: 2px; background: #fff"></span>Stop</button>
+  </div>
+  <sc-if value="{{ paused }}" hint-placeholder-val="{{ false }}"><div class="tag" style="left: 50%; bottom: 92px; transform: translateX(-50%); background: var(--clip); color: #1a1500">Paused · the pause is cut out of the project</div></sc-if>
+
+  <!-- Speaker notes / teleprompter window: spec 27–28 -->
+  <sc-if value="{{ notes }}" hint-placeholder-val="{{ true }}">
+    <div role="dialog" aria-label="Speaker notes" class="hud" style="left: 936px; top: 300px; width: 316px; height: 270px; display: flex; flex-direction: column; overflow: hidden">
+      <div style="height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border-bottom: 1px solid var(--line); font-size: 12px; font-weight: 600">Speaker notes<div style="flex: 1 1 auto"></div><button class="ghost" style="height: 22px; padding: 0 8px">Teleprompter</button><span style="color: var(--text3); font-size: 11px">Not recorded</span></div>
+      <div style="flex: 1 1 auto; overflow: hidden; padding: 12px 14px; font-size: 15px; line-height: 1.5; position: relative">
+        <p style="margin: 0 0 10px; color: var(--text3)">Hi, this is a quick walkthrough of the new workspace…</p>
+        <p style="margin: 0 0 10px; font-weight: 600">Open Settings, paste the API key, press Save.</p>
+        <p style="margin: 0 0 10px; color: var(--text2)">Point out the dashboard loading and the workspace switcher.</p>
+        <p style="margin: 0; color: var(--text3)">Close with the invite flow.</p>
+        <span aria-hidden="true" style="position: absolute; left: 0; right: 0; top: 52px; height: 24px; background: var(--accentSoft); opacity: .5"></span>
+      </div>
+      <div style="height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border-top: 1px solid var(--line); font-size: 11px; color: var(--text3)">Scroll speed <input type="range" min="0" max="100" value="35" style="width: 90px; accent-color: var(--accent)"><div style="flex: 1 1 auto"></div>Opacity 90%</div>
+    </div>
+  </sc-if>
+
+  <!-- Permissions onboarding card: shown the first time, and whenever one is missing -->
+  <sc-if value="{{ perms }}" hint-placeholder-val="{{ true }}">
+    <div role="dialog" aria-label="Permissions" class="hud" style="left: 24px; top: 56px; width: 300px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+      <div style="font-weight: 600">Before the first recording</div>
+      <p style="margin: 0; font-size: 12px; color: var(--text2); line-height: 1.45">macOS asks once per permission. Recscene never sends your screen anywhere.</p>
+      <div class="perm"><span style="width: 10px; height: 10px; border-radius: 50%; background: var(--caption)"></span><span style="flex: 1 1 auto"><b style="font-weight: 600; display: block">Screen Recording</b><span style="font-size: 11px; color: var(--text3)">Granted</span></span></div>
+      <div class="perm"><span style="width: 10px; height: 10px; border-radius: 50%; background: var(--clip)"></span><span style="flex: 1 1 auto"><b style="font-weight: 600; display: block">Input Monitoring</b><span style="font-size: 11px; color: var(--text3)">Needed to show keystrokes</span></span><button class="pri" style="height: 24px; padding: 0 10px">Allow</button></div>
+      <div class="perm"><span style="width: 10px; height: 10px; border-radius: 50%; background: var(--caption)"></span><span style="flex: 1 1 auto"><b style="font-weight: 600; display: block">Microphone</b><span style="font-size: 11px; color: var(--text3)">Granted</span></span></div>
+      <div class="perm"><span style="width: 10px; height: 10px; border-radius: 50%; background: var(--line2)"></span><span style="flex: 1 1 auto"><b style="font-weight: 600; display: block">Camera</b><span style="font-size: 11px; color: var(--text3)">Asked when you turn the webcam on</span></span></div>
+      <div style="display: flex; gap: 8px; justify-content: flex-end"><button class="ghost" onClick="{{ closePerms }}">Later</button><button class="pri" onClick="{{ closePerms }}">Done</button></div>
+    </div>
+  </sc-if>
+
+  <!-- Annotations for the canvas reader -->
+  <span class="tag" style="left: 24px; bottom: 24px; text-transform: none; letter-spacing: 0; font-weight: 500; background: rgba(0,0,0,.5)">Specs 3–5, 21–35, 41 · tweaks: countdown, notes, permissions, dim</span>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"countdown":{"editor":"boolean","default":true},"notes":{"editor":"boolean","default":true},"permissions":{"editor":"boolean","default":true},"dim":{"editor":"number","default":0.45,"min":0,"max":0.9,"step":0.05},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { sizes:false, paused:false, notesOpen:null, permsOpen:null, count:3 }; }
+  renderVals() {
+    const theme = this.props.theme ?? 'dark';
+    const notes = this.state.notesOpen ?? (this.props.notes ?? true);
+    const perms = this.state.permsOpen ?? (this.props.permissions ?? true);
+    return { themeClass: theme==='light'?'light':'dark', clock: this.state.paused ? '00:12 ⏸' : '00:12', dim: String(this.props.dim ?? 0.45),
+      counting: this.props.countdown ?? true, count: this.state.count,
+      sizesOpen: this.state.sizes, toggleSizes: ()=>this.setState({sizes:!this.state.sizes}),
+      paused: this.state.paused, togglePause: ()=>this.setState({paused:!this.state.paused}), pauseIcon: this.state.paused ? 'M7 4l12 8-12 8z' : 'M6 5h4v14H6zM14 5h4v14h-4z',
+      notes, toggleNotes: ()=>this.setState({notesOpen:!notes}), perms, closePerms: ()=>this.setState({permsOpen:false}) };
+  }
+}
+</script>
+</body>
+</html>
