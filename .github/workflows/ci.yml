@@ -6,8 +6,10 @@ on:
   pull_request:
 
 jobs:
+  # Linux keeps the private repo inside the free Actions quota (macOS minutes cost 10×).
+  # The Swift helper is skipped there (build:native is macOS-only); it is built and run on the Mac.
   check:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
