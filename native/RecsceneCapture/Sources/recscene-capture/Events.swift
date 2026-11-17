@@ -51,16 +51,12 @@ final class EventRecorder {
     private var lastCursorAt: TimeInterval = 0
     private var lastPoint = CGPoint(x: -1, y: -1)
     private var buttonsDown: [CGMouseButton: Bool] = [.left: false, .right: false, .center: false]
-    /// Seconds of system uptime at the first recorded video frame. Events before it are dropped.
-    var startUptime: TimeInterval? {
-        get { lock.lock(); defer { lock.unlock() }; return _startUptime }
-        set { lock.lock(); _startUptime = newValue; lock.unlock() }
-    }
-    private var _startUptime: TimeInterval?
+    private let clock: SessionClock
     private(set) var capturesKeys = false
 
-    init(region: CGRect) {
+    init(region: CGRect, clock: SessionClock) {
         self.region = region
+        self.clock = clock
     }
 
     func start() {
@@ -144,8 +140,7 @@ final class EventRecorder {
     // MARK: Helpers
 
     private func relative(_ uptime: TimeInterval) -> Double? {
-        guard let start = startUptime, uptime >= start else { return nil }
-        return (uptime - start) * 1000
+        clock.time(at: uptime).map { $0 * 1000 }
     }
 
     private func normalise(_ p: CGPoint) -> Position {

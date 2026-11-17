@@ -21,7 +21,15 @@ final class Microphone {
         startedAt = ProcessInfo.processInfo.systemUptime
     }
 
+    func pause() { recorder.pause() }
+    func resume() { recorder.record() }
+
     func stop() {
         recorder.stop()
+    }
+
+    func discard() {
+        recorder.stop()
+        recorder.deleteRecording()
     }
 }

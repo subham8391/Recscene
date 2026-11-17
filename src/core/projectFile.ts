@@ -16,6 +16,7 @@ export interface NewProjectInput {
   screen: { width: number; height: number; file: string }
   mic?: { file: string }
   events: RecordedEvents
+  flags?: number[]
 }
 
 /** Builds the project document written as project.json after a recording stops. */
@@ -23,6 +24,7 @@ export function newProject(input: NewProjectInput): Project {
   return {
     version: 1,
     name: input.name,
+    meta: { recordingFlags: input.flags ?? [] },
     recording: {
       id: input.id,
       createdAt: input.createdAt,

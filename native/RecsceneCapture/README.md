@@ -18,6 +18,10 @@ One JSON object per line on stdin (commands) and stdout (events). Commands are a
 | `{"cmd":"permissions","request":false}` | `{"event":"permissions","screen":true,"inputMonitoring":false,"accessibility":false,"microphone":"granted"}` |
 | `{"cmd":"list"}` | `{"event":"targets","displays":[…],"windows":[…]}` |
 | `{"cmd":"start","target":…,"outputDir":"/path/Name.recscene","mic":false,"systemAudio":false,"fps":60,"showCursor":false,"codec":"h264","excludeProcessIds":[]}` | `{"event":"started","outputDir":"…","width":3600,"height":2338}` |
+| `{"cmd":"pause"}` | `{"event":"paused","timeMs":4210.5}` — frames and audio are dropped until resume; the file stays contiguous |
+| `{"cmd":"resume"}` | `{"event":"resumed","timeMs":4210.5}` |
+| `{"cmd":"mark","kind":"marker"}` | `{"event":"marked","kind":"marker","timeMs":9120.0}` — `kind` is `marker` or `flag`; the time excludes pauses |
+| `{"cmd":"cancel"}` | `{"event":"cancelled"}` — stops and deletes screen.mov, mic.m4a and events.json |
 | `{"cmd":"stop"}` | `{"event":"stopped","durationMs":4233.3,"frames":239,"files":{"screen":"…/screen.mov","events":"…/events.json","mic":"…/mic.m4a"},"micOffsetMs":12.5}` |
 
 `excludeProcessIds` lists process ids whose windows are left out of a display or area capture, so the app's own overlays never appear in the footage.
@@ -26,11 +30,11 @@ Targets: `{"kind":"display","id":1}`, `{"kind":"window","id":1234}`, or `{"kind"
 
 Display entries: `id, x, y, width, height` (points, global top-left origin), `scale` (pixels per point), `isMain`. Window entries: `id, title, app, bundleId, pid, x, y, width, height`.
 
-Errors: `{"event":"error","code":"…","message":"…"}` with codes `bad-command`, `not-recording`, `already-recording`, `target-not-found`, `permission-screen`, `permission-microphone`, `writer`, `stream`, `internal`.
+Errors: `{"event":"error","code":"…","message":"…"}` with codes `bad-command`, `not-recording`, `already-recording`, `already-paused`, `not-paused`, `target-not-found`, `permission-screen`, `permission-microphone`, `writer`, `stream`, `internal`.
 
 ## Output files
 
-- `screen.mov`: H.264 (or HEVC) at the target's pixel size, up to the requested fps (frames only arrive when the screen changes). The optional system-audio track is AAC 48 kHz stereo.
+- `screen.mov`: H.264 (or HEVC) at the target's pixel size, up to the requested fps. Frames only arrive when the screen changes, so the last frame is repeated at stop time and the file always lasts as long as the recording. Pauses are cut out; timestamps after a resume are shifted back by the paused time. The optional system-audio track is AAC 48 kHz stereo.
 - `events.json`: `{ version, region, clicks[], keys[], cursor[] }`. Times are milliseconds from the first video frame. Positions are normalised 0..1 within `region` (the recorded display, window or area in global points). `clicks` have `button` left/right/middle; `keys` have a display `label` such as `⌘C`; `cursor` is sampled at up to 60 Hz while the mouse moves.
 - `mic.m4a`: AAC mono when `mic` is true. `micOffsetMs` in the `stopped` event is how long after the first frame the microphone started (negative if before).
 

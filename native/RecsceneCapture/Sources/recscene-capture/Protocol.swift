@@ -73,6 +73,10 @@ enum Command {
     case list
     case start(StartOptions)
     case stop
+    case pause
+    case resume
+    case mark(kind: String)
+    case cancel
 
     static func parse(_ line: String) throws -> Command {
         guard let data = line.data(using: .utf8) else { throw ProtocolError.badCommand("not utf-8") }
@@ -83,6 +87,12 @@ enum Command {
         case "ping": return .ping
         case "list": return .list
         case "stop": return .stop
+        case "pause": return .pause
+        case "resume": return .resume
+        case "cancel": return .cancel
+        case "mark":
+            struct M: Decodable { let kind: String? }
+            return .mark(kind: try decoder.decode(M.self, from: data).kind ?? "marker")
         case "permissions":
             struct P: Decodable { let request: Bool? }
             return .permissions(request: try decoder.decode(P.self, from: data).request ?? false)
@@ -96,6 +106,8 @@ enum ProtocolError: Error, LocalizedError {
     case badCommand(String)
     case notRecording
     case alreadyRecording
+    case notPaused
+    case alreadyPaused
     case targetNotFound
     case permission(String)
     case writer(String)
@@ -105,6 +117,8 @@ enum ProtocolError: Error, LocalizedError {
         case .badCommand: return "bad-command"
         case .notRecording: return "not-recording"
         case .alreadyRecording: return "already-recording"
+        case .notPaused: return "not-paused"
+        case .alreadyPaused: return "already-paused"
         case .targetNotFound: return "target-not-found"
         case .permission(let which): return "permission-\(which)"
         case .writer: return "writer"
@@ -116,6 +130,8 @@ enum ProtocolError: Error, LocalizedError {
         case .badCommand(let m): return "Bad command: \(m)"
         case .notRecording: return "Nothing is being recorded"
         case .alreadyRecording: return "A recording is already running"
+        case .notPaused: return "Cannot resume recording: it is not paused"
+        case .alreadyPaused: return "Cannot pause recording: it is already paused"
         case .targetNotFound: return "The display or window to record was not found"
         case .permission(let which): return "Missing \(which) permission"
         case .writer(let m): return "Could not write the recording: \(m)"
@@ -161,12 +177,16 @@ enum OutEvent: Encodable {
     case targets(displays: [DisplayInfo], windows: [WindowInfo])
     case started(outputDir: String, width: Int, height: Int)
     case stopped(durationMs: Double, files: StoppedFiles, micOffsetMs: Double?, frames: Int)
+    case paused(timeMs: Double)
+    case resumed(timeMs: Double)
+    case marked(kind: String, timeMs: Double)
+    case cancelled
     case warning(message: String)
     case error(code: String, message: String)
 
     private enum CodingKeys: String, CodingKey {
         case event, version, screen, inputMonitoring, accessibility, microphone, displays, windows, outputDir, width, height
-        case durationMs, files, micOffsetMs, frames, message, code
+        case durationMs, files, micOffsetMs, frames, message, code, timeMs, kind
     }
 
     func encode(to encoder: Encoder) throws {
@@ -193,6 +213,14 @@ enum OutEvent: Encodable {
             try c.encode(files, forKey: .files)
             try c.encodeIfPresent(micOffsetMs, forKey: .micOffsetMs)
             try c.encode(frames, forKey: .frames)
+        case .paused(let timeMs):
+            try c.encode("paused", forKey: .event); try c.encode(timeMs, forKey: .timeMs)
+        case .resumed(let timeMs):
+            try c.encode("resumed", forKey: .event); try c.encode(timeMs, forKey: .timeMs)
+        case let .marked(kind, timeMs):
+            try c.encode("marked", forKey: .event); try c.encode(kind, forKey: .kind); try c.encode(timeMs, forKey: .timeMs)
+        case .cancelled:
+            try c.encode("cancelled", forKey: .event)
         case .warning(let message):
             try c.encode("warning", forKey: .event); try c.encode(message, forKey: .message)
         case let .error(code, message):
