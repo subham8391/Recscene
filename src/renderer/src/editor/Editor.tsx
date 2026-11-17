@@ -54,6 +54,8 @@ import type { OpenedProject } from '@core/projectFile'
 import { BackgroundPanel } from './BackgroundPanel'
 import { CameraPanel, LayoutPanel } from './CameraPanel'
 import { MaskPanel } from './MaskPanel'
+import { ShortcutsPanel } from './ShortcutsPanel'
+import { ENABLE_QUESTION, setAllHidden, setHidden, setHiddenForLabel, setKindDisabled, shortcutEvents } from '@core/editor/shortcuts'
 import { ClipPanel } from './ClipPanel'
 import { CommandMenu } from './CommandMenu'
 import { CursorPanel } from './CursorPanel'
@@ -281,8 +283,14 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
 
   const toggleTrack = (id: TrackId): void => {
     if (id === 'zooms') return
+    // Spec 199: opening the Shortcuts track with labels off offers to turn them on.
+    if (id === 'shortcuts' && !visible.shortcuts && project.recording.keys.length > 0 && !project.config.showShortcuts && window.confirm(ENABLE_QUESTION)) {
+      edit({ ...project, config: { ...project.config, showShortcuts: true } })
+    }
     setVisible((v) => ({ ...v, [id]: !v[id] }))
   }
+  const shortcuts = useMemo(() => shortcutEvents(project.recording.keys, project.config), [project.recording.keys, project.config])
+  const setShortcutConfig = (next: Project['config']): void => edit({ ...project, config: next })
 
   const run = useCallback(
     (id: string): void => {
@@ -328,6 +336,9 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
         case 'focusTimelineOnMask': return selectedMask ? focusMask(selectedMask, true) : undefined
         case 'focusTimelineOnMaskStart': return selectedMask ? focusMask(selectedMask, true) : undefined
         case 'removeAllMasks': return void (setSelectedMaskId(null), setMasks([]))
+        case 'toggleShowShortcuts': return edit({ ...project, config: { ...project.config, showShortcuts: !project.config.showShortcuts } })
+        case 'hideAllShortcuts': return setShortcutConfig(setAllHidden(project.config, shortcuts, true))
+        case 'showAllShortcuts': return setShortcutConfig(setAllHidden(project.config, shortcuts, false))
         case 'toggleHideCamera': return hasCamera ? edit({ ...project, config: { ...project.config, hideCamera: !project.config.hideCamera } }) : notify('No camera recorded')
         case 'addLayout': return addLayout(outputToSource(clips, pb.timeMs), 'only-camera')
         case 'addBothLayout': return addLayout(outputToSource(clips, pb.timeMs), 'both')
@@ -476,11 +487,15 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
         case 'commandMenu': return setOverlay((o) => (o === 'command' ? null : 'command'))
         case 'shortcutsGuide': return setOverlay((o) => (o === 'guide' ? null : 'guide'))
         default:
-          if (id.startsWith('sidebar:')) setPanel(id.slice('sidebar:'.length))
+          if (id.startsWith('sidebar:')) {
+            setPanel(id.slice('sidebar:'.length))
+            // Spec 204: the track shows itself when the Keyboard Shortcuts panel opens.
+            if (id === 'sidebar:shortcuts' && project.recording.keys.length > 0) setVisible((v) => ({ ...v, shortcuts: true }))
+          }
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [durationMs, pb.timeMs, prefs, project, save, closeProject, setPrefs, clips, selectedClip, currentClip, clipboard, sourceDurationMs, setClips, zooms, selectedZoom, zoomClipboard, defaultZoomLevel, setZooms, layouts, selectedLayout, layoutClipboard, hasCamera, setLayouts, addLayout, moveLayoutCamera, masks, selectedMask, maskClipboard, setMasks, addMask, focusMask]
+    [durationMs, pb.timeMs, prefs, project, save, closeProject, setPrefs, clips, selectedClip, currentClip, clipboard, sourceDurationMs, setClips, zooms, selectedZoom, zoomClipboard, defaultZoomLevel, setZooms, layouts, selectedLayout, layoutClipboard, hasCamera, setLayouts, addLayout, moveLayoutCamera, masks, selectedMask, maskClipboard, setMasks, addMask, focusMask, shortcuts, setShortcutConfig]
   )
 
   useEffect(() => window.recscene.onEditorAction(run), [run])
@@ -730,6 +745,20 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
               onConfig={(patch) => edit({ ...project, config: { ...project.config, ...patch } })}
               onAction={run}
             />
+          ) : panel === 'shortcuts' ? (
+            <ShortcutsPanel
+              config={project.config}
+              events={shortcuts}
+              hasKeys={project.recording.keys.length > 0}
+              trackVisible={visible.shortcuts}
+              onConfig={(patch) => edit({ ...project, config: { ...project.config, ...patch } })}
+              onHide={(t, hidden) => setShortcutConfig(setHidden(project.config, t, hidden))}
+              onHideLabel={(label, hidden) => setShortcutConfig(setHiddenForLabel(project.config, shortcuts, label, hidden))}
+              onHideAll={(hidden) => setShortcutConfig(setAllHidden(project.config, shortcuts, hidden))}
+              onKind={(kind, disabled) => setShortcutConfig(setKindDisabled(project.config, kind, disabled))}
+              onSeek={(ms) => { const o = sourceToOutput(clips, ms); if (o !== null) setPb((p) => seek(p, o, durationMs)) }}
+              onToggleTrack={() => setVisible((v) => ({ ...v, shortcuts: !v.shortcuts }))}
+            />
           ) : panel === 'cursor' ? (
             <CursorPanel
               config={project.config}
@@ -795,6 +824,9 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           onAddMaskAt={(ms) => addMask(ms)}
           onMaskPreview={setDraftMasks}
           onMaskCommit={() => { const next = draftMasks; setDraftMasks(null); if (next) setMasks(next) }}
+          onHideShortcut={(t, hidden) => setShortcutConfig(setHidden(project.config, t, hidden))}
+          onHideShortcutLabel={(label, hidden) => setShortcutConfig(setHiddenForLabel(project.config, shortcuts, label, hidden))}
+          onHideAllShortcuts={(hidden) => setShortcutConfig(setAllHidden(project.config, shortcuts, hidden))}
           micUrl={opened.media.mic}
           showWaveform={!prefs.hideAudioWaveform}
           smoothWaveform={prefs.enableSmoothWaveform}

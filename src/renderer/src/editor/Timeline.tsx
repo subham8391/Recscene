@@ -6,6 +6,7 @@ import { waveformBars } from '@core/editor/waveform'
 import { isAutoType, moveZoom, type ZoomRange } from '@core/editor/zooms'
 import { LAYOUT_NAMES, moveLayout, type CameraLayout } from '@core/editor/cameraLayout'
 import { maskLabel, moveMask, type Mask } from '@core/editor/masks'
+import { countOf, isShown, shortcutEvents } from '@core/editor/shortcuts'
 import { outputToSource } from '@core/editor/clips'
 import type { Project } from '@core/project'
 import { formatClock } from '@core/recordingPicker'
@@ -58,6 +59,10 @@ interface Props {
   onAddMaskAt: (sourceMs: number) => void
   onMaskPreview: (masks: Mask[]) => void
   onMaskCommit: (masks: Mask[]) => void
+  /** Shortcuts track (specs 202–203): hide one press, every press of a combination, or all. */
+  onHideShortcut: (timeMs: number, hidden: boolean) => void
+  onHideShortcutLabel: (label: string, hidden: boolean) => void
+  onHideAllShortcuts: (hidden: boolean) => void
   micUrl?: string
   showWaveform: boolean
   smoothWaveform: boolean
@@ -75,13 +80,25 @@ const TRACKS: { id: TrackId; name: string; color: string; key: string; forced?: 
 
 /** The timeline (specs 50–51, 58–62, 80–87): toolbar, ruler, clips with trim handles, tracks, waveform, playhead. */
 export function Timeline(props: Props): React.JSX.Element {
-  const { project, clips, sourceDurationMs, markers, durationMs, timeMs, view, setView, visible, toggleTrack, onSeek, onPreview, selectedClipId, onSelectClip, onTrimPreview, onTrimCommit, onRemoveTrim, onJoin, selectedZoomId, onSelectZoom, onAddZoomAt, onZoomPreview, onZoomCommit, hasCamera, selectedLayoutId, onSelectLayout, onAddLayoutAt, onLayoutPreview, onLayoutCommit, selectedMaskId, onSelectMask, onAddMaskAt, onMaskPreview, onMaskCommit, micUrl, showWaveform, smoothWaveform, alwaysShowScrollbar, audioScrubber, onToggleAudioScrubber } = props
+  const { project, clips, sourceDurationMs, markers, durationMs, timeMs, view, setView, visible, toggleTrack, onSeek, onPreview, selectedClipId, onSelectClip, onTrimPreview, onTrimCommit, onRemoveTrim, onJoin, selectedZoomId, onSelectZoom, onAddZoomAt, onZoomPreview, onZoomCommit, hasCamera, selectedLayoutId, onSelectLayout, onAddLayoutAt, onLayoutPreview, onLayoutCommit, selectedMaskId, onSelectMask, onAddMaskAt, onMaskPreview, onMaskCommit, onHideShortcut, onHideShortcutLabel, onHideAllShortcuts, micUrl, showWaveform, smoothWaveform, alwaysShowScrollbar, audioScrubber, onToggleAudioScrubber } = props
   const zoomDrag = useRef<{ id: string; mode: 'move' | 'start' | 'end'; startX: number; origin: ZoomRange[]; moved: boolean } | null>(null)
   const layoutDrag = useRef<{ id: string; mode: 'move' | 'start' | 'end'; startX: number; origin: CameraLayout[]; moved: boolean } | null>(null)
   const maskDrag = useRef<{ id: string; mode: 'move' | 'start' | 'end'; startX: number; origin: Mask[]; moved: boolean } | null>(null)
   const lane = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(1)
   const [tracksOpen, setTracksOpen] = useState(false)
+  const [chipMenu, setChipMenu] = useState<{ timeMs: number; label: string; hidden: boolean; x: number; y: number } | null>(null)
+  const shortcuts = useMemo(() => shortcutEvents(project.recording.keys, project.config), [project.recording.keys, project.config])
+  useEffect(() => {
+    if (!chipMenu) return
+    const close = (): void => setChipMenu(null)
+    window.addEventListener('mousedown', close)
+    window.addEventListener('keydown', close)
+    return () => {
+      window.removeEventListener('mousedown', close)
+      window.removeEventListener('keydown', close)
+    }
+  }, [chipMenu])
   const [bars, setBars] = useState<number[]>([])
   const drag = useRef<{ id: string; edge: 'start' | 'end'; startX: number; origin: Clip[]; speed: number; targetMs: number | null } | null>(null)
 
@@ -325,7 +342,23 @@ export function Timeline(props: Props): React.JSX.Element {
                   </div>
                 )
               })}
-              {t.id === 'shortcuts' && project.recording.keys.map((k, i) => { const o = atOutput(k.timeMs); return o === null ? null : <span key={i} className="tl__chip" style={{ left: pct(o) }}>{k.label}</span> })}
+              {t.id === 'shortcuts' && shortcuts.map((k) => {
+                const o = atOutput(k.timeMs)
+                if (o === null) return null
+                return (
+                  <button
+                    key={k.timeMs}
+                    type="button"
+                    className={`tl__chip${isShown(k) ? '' : ' tl__chip--off'}${chipMenu?.timeMs === k.timeMs ? ' tl__chip--on' : ''}`}
+                    style={{ left: pct(o) }}
+                    title={`${k.hidden ? 'Show shortcut' : 'Hide shortcut'} · ${k.label}`}
+                    onClick={(e) => { e.stopPropagation(); onHideShortcut(k.timeMs, !k.hidden) }}
+                    onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setChipMenu({ timeMs: k.timeMs, label: k.label, hidden: k.hidden, x: e.clientX, y: e.clientY }) }}
+                  >
+                    {k.label}
+                  </button>
+                )
+              })}
             </div>
           ))}
           {wantBars && (
@@ -334,6 +367,13 @@ export function Timeline(props: Props): React.JSX.Element {
             </div>
           )}
           <div className="tl__playhead" style={{ left: pct(timeMs) }} aria-hidden="true" />
+          {chipMenu && (
+            <div role="menu" className="menu tl__ctx" style={{ left: chipMenu.x, top: chipMenu.y }} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()} onMouseMove={(e) => e.stopPropagation()}>
+              <button type="button" role="menuitem" className="menu__item" onClick={() => { onHideShortcut(chipMenu.timeMs, !chipMenu.hidden); setChipMenu(null) }}>{chipMenu.hidden ? 'Show shortcut' : 'Hide shortcut'}</button>
+              {countOf(shortcuts, chipMenu.label) > 1 && <button type="button" role="menuitem" className="menu__item" onClick={() => { onHideShortcutLabel(chipMenu.label, !chipMenu.hidden); setChipMenu(null) }}>{chipMenu.hidden ? 'Show' : 'Hide'} all {chipMenu.label}</button>}
+              <button type="button" role="menuitem" className="menu__item" onClick={() => { onHideAllShortcuts(!shortcuts.every((k) => k.hidden)); setChipMenu(null) }}>{shortcuts.every((k) => k.hidden) ? 'Show all shortcuts' : 'Hide all shortcuts'}</button>
+            </div>
+          )}
         </div>
       </div>
     </section>

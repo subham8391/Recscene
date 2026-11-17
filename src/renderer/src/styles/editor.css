@@ -1295,3 +1295,93 @@ input[type='color'] {
   background: var(--mask);
   color: #04303a;
 }
+
+/* Keystroke overlay (specs 199–201) */
+.keycaps {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.keycaps__key {
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.4);
+  font-family: var(--font);
+}
+
+.keylist {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 240px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.keylist__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 6px;
+  font-size: 12px;
+}
+
+.keylist__row--off .keylist__label {
+  color: var(--text3);
+  text-decoration: line-through;
+}
+
+.keylist__time {
+  border: 0;
+  background: none;
+  color: var(--text3);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  padding: 0;
+}
+
+.keylist__label {
+  font-weight: 600;
+  min-width: 48px;
+}
+
+.keylist__kind {
+  flex: 1 1 auto;
+  font-size: 11px;
+}
+
+.tl__chip {
+  pointer-events: auto;
+  cursor: default;
+}
+
+.tl__chip--off {
+  background: transparent;
+  color: var(--shortcut);
+  border: 1px solid var(--shortcut);
+  line-height: 14px;
+}
+
+.tl__chip--on {
+  box-shadow: 0 0 0 2px var(--text);
+}
+
+.tl__ctx {
+  position: fixed;
+  z-index: 30;
+}
