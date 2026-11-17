@@ -10,7 +10,7 @@ Spec numbers refer to `docs/research/screen-studio-feature-specs.md`. A feature 
 | Automatic zooms from clicks; manual zoom regions; zoom speed and depth | 102–124 | `src/core/autoZoom.ts` |
 | Cursor: smoothing, size, click highlight, hide when idle | 125–147 | |
 | Background, padding, rounded corners, shadow, screen inset | 165–188 | |
-| Clips: trim, cut, speed | 80–101 | |
+| Clips: trim, cut, speed | 80–101 | Done: 80–84, 86–101 (93 for the microphone; 94–95 wait for per-track system and device audio; 85 as X at the playhead). 83's beam mode is not built: C cuts at the playhead |
 | Export MP4 (H.264, 1080p/4K, frame rate) to `~/Movies/Recscene` | 233–245 | VideoToolbox in the native helper |
 | Projects home: open, rename, delete, recover unfinished recording | 252–262 | `.recscene` bundles in `~/Recscene Projects` |
 

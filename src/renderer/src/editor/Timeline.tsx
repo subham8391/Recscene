@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { clipOutputMs, outputOffsets, sourceToOutput, trimClip, trimmedMs, type Clip } from '@core/editor/clips'
+import { speedLabel } from '@core/editor/playback'
 import { panView, rulerTicks, sliderToZoom, timeAtX, visibleLabel, xAtTime, zoomToSlider, zoomView, type TimelineView } from '@core/editor/timelineView'
 import { waveformBars } from '@core/editor/waveform'
 import type { Project } from '@core/project'
-import type { RecordingMarker } from '@core/recordingSession'
 import { formatClock } from '@core/recordingPicker'
-import { speedLabel } from '@core/editor/playback'
+import type { RecordingMarker } from '@core/recordingSession'
 
 export type TrackId = 'zooms' | 'layouts' | 'masks' | 'shortcuts'
 
@@ -17,6 +18,8 @@ export interface TrackVisibility {
 
 interface Props {
   project: Project
+  clips: Clip[]
+  sourceDurationMs: number
   markers: RecordingMarker[]
   durationMs: number
   timeMs: number
@@ -26,6 +29,13 @@ interface Props {
   toggleTrack: (id: TrackId) => void
   onSeek: (ms: number) => void
   onPreview: (ms: number | null) => void
+  selectedClipId: string | null
+  onSelectClip: (id: string | null) => void
+  /** Live clips while an edge is dragged; `commit` writes to history. */
+  onTrimPreview: (clips: Clip[]) => void
+  onTrimCommit: (clips: Clip[]) => void
+  onRemoveTrim: (id: string, edge: 'start' | 'end') => void
+  onJoin: (rightId: string) => void
   micUrl?: string
   showWaveform: boolean
   smoothWaveform: boolean
@@ -41,13 +51,14 @@ const TRACKS: { id: TrackId; name: string; color: string; key: string; forced?: 
   { id: 'masks', name: 'Masks', color: 'var(--mask)', key: '4' }
 ]
 
-/** The timeline (specs 50–51, 58–62): toolbar, ruler, tracks, waveform, playhead and preview. */
+/** The timeline (specs 50–51, 58–62, 80–87): toolbar, ruler, clips with trim handles, tracks, waveform, playhead. */
 export function Timeline(props: Props): React.JSX.Element {
-  const { project, markers, durationMs, timeMs, view, setView, visible, toggleTrack, onSeek, onPreview, micUrl, showWaveform, smoothWaveform, alwaysShowScrollbar, audioScrubber, onToggleAudioScrubber } = props
+  const { project, clips, sourceDurationMs, markers, durationMs, timeMs, view, setView, visible, toggleTrack, onSeek, onPreview, selectedClipId, onSelectClip, onTrimPreview, onTrimCommit, onRemoveTrim, onJoin, micUrl, showWaveform, smoothWaveform, alwaysShowScrollbar, audioScrubber, onToggleAudioScrubber } = props
   const lane = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(1)
   const [tracksOpen, setTracksOpen] = useState(false)
   const [bars, setBars] = useState<number[]>([])
+  const drag = useRef<{ id: string; edge: 'start' | 'end'; startX: number; origin: Clip[]; speed: number; targetMs: number | null } | null>(null)
 
   useEffect(() => {
     const el = lane.current
@@ -57,7 +68,6 @@ export function Timeline(props: Props): React.JSX.Element {
     return () => ro.disconnect()
   }, [])
 
-  // Decode the microphone track once for the waveform (spec 61).
   const wantBars = !!micUrl && showWaveform
   useEffect(() => {
     if (!micUrl || !showWaveform) return
@@ -67,8 +77,7 @@ export function Timeline(props: Props): React.JSX.Element {
         const buf = await (await fetch(micUrl)).arrayBuffer()
         const ctx = new AudioContext()
         const decoded = await ctx.decodeAudioData(buf)
-        const samples = decoded.getChannelData(0)
-        if (!cancelled) setBars(waveformBars(samples, 600, smoothWaveform))
+        if (!cancelled) setBars(waveformBars(decoded.getChannelData(0), 600, smoothWaveform))
         void ctx.close()
       } catch {
         if (!cancelled) setBars([])
@@ -92,11 +101,40 @@ export function Timeline(props: Props): React.JSX.Element {
     else setView(panView(view, (e.deltaX || e.deltaY) * (view.visibleMs / width), durationMs))
   }
 
+  // Trim handles (spec 80): pixels → output ms → source ms through the clip's speed.
+  const onHandleDown = (id: string, edge: 'start' | 'end') => (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const clip = clips.find((c) => c.id === id)
+    if (!clip) return
+    drag.current = { id, edge, startX: e.clientX, origin: clips, speed: clip.speed, targetMs: null }
+    onSelectClip(id)
+  }
+  const onMouseMove = (e: React.MouseEvent): void => {
+    const d = drag.current
+    if (!d) {
+      onPreview(timeFromEvent(e))
+      return
+    }
+    const clip = d.origin.find((c) => c.id === d.id)
+    if (!clip) return
+    const deltaMs = ((e.clientX - d.startX) / width) * view.visibleMs * d.speed
+    const target = (d.edge === 'start' ? clip.sourceStartMs : clip.sourceEndMs) + deltaMs
+    d.targetMs = target
+    onTrimPreview(trimClip(d.origin, d.id, d.edge, target, sourceDurationMs))
+  }
+  const onMouseUp = (): void => {
+    const d = drag.current
+    drag.current = null
+    if (d && d.targetMs !== null) onTrimCommit(trimClip(d.origin, d.id, d.edge, d.targetMs, sourceDurationMs))
+  }
+
   const ticks = useMemo(() => rulerTicks(view), [view])
   const x = (ms: number): number => xAtTime(view, ms, width)
   const pct = (ms: number): string => `${(x(ms) / width) * 100}%`
+  const offsets = outputOffsets(clips)
   const visibleCount = 1 + Number(visible.layouts) + Number(visible.masks) + Number(visible.shortcuts)
   const rows = TRACKS.filter((t) => t.forced || visible[t.id])
+  const atOutput = (sourceMs: number): number | null => sourceToOutput(clips, sourceMs)
 
   return (
     <section aria-label="Timeline" className={`tl${alwaysShowScrollbar ? ' tl--scrollbar' : ''}`}>
@@ -118,9 +156,8 @@ export function Timeline(props: Props): React.JSX.Element {
             </div>
           )}
         </div>
-        <button type="button" className={`btn btn--ghost${audioScrubber ? ' btn--on' : ''}`} aria-pressed={audioScrubber} title={audioScrubber ? 'Disable audio scrubber' : 'Enable audio scrubber (experimental)'} onClick={onToggleAudioScrubber}>
-          ♪ scrub
-        </button>
+        <button type="button" className={`btn btn--ghost${audioScrubber ? ' btn--on' : ''}`} aria-pressed={audioScrubber} title={audioScrubber ? 'Disable audio scrubber' : 'Enable audio scrubber (experimental)'} onClick={onToggleAudioScrubber}>♪ scrub</button>
+        <span className="muted tl__hint">C splits at the playhead · drag the yellow handles to trim · ⌫ removes the selected clip</span>
         <span className="tl__spacer" />
         <label className="tl__zoom" title={`Timeline zoom — ${visibleLabel(view)}`}>
           <span className="muted">Timeline zoom</span>
@@ -131,39 +168,50 @@ export function Timeline(props: Props): React.JSX.Element {
         <div className="tl__names">
           <div className="tl__ruler-pad" />
           <div className="tl__name"><span className="tl__dot" style={{ background: 'var(--clip)' }} />Clips</div>
-          {rows.map((t) => (
-            <div key={t.id} className="tl__name"><span className="tl__dot" style={{ background: t.color }} />{t.name}</div>
-          ))}
-          {showWaveform && micUrl && <div className="tl__name"><span className="tl__dot" style={{ background: 'var(--text3)' }} />Audio</div>}
+          {rows.map((t) => <div key={t.id} className="tl__name"><span className="tl__dot" style={{ background: t.color }} />{t.name}</div>)}
+          {wantBars && <div className="tl__name"><span className="tl__dot" style={{ background: 'var(--text3)' }} />Audio</div>}
         </div>
-        <div ref={lane} className="tl__lane" onWheel={onWheel} onMouseMove={(e) => onPreview(timeFromEvent(e))} onMouseLeave={() => onPreview(null)} onClick={(e) => onSeek(timeFromEvent(e))}>
+        <div ref={lane} className="tl__lane" onWheel={onWheel} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={() => { onMouseUp(); onPreview(null) }} onClick={(e) => { if (!drag.current) { onSeek(timeFromEvent(e)); if ((e.target as HTMLElement).classList.contains('tl__row') || (e.target as HTMLElement).classList.contains('tl__ruler')) onSelectClip(null) } }}>
           <div className="tl__ruler">
-            {ticks.map((t) => (
-              <span key={t.timeMs} className="tl__tick" style={{ left: pct(t.timeMs) }}>{t.label}</span>
-            ))}
-            {markers.map((m, i) => (
-              <span key={`m${i}`} className="tl__marker" style={{ left: pct(m.timeMs) }} title={`Marker ${formatClock(m.timeMs)}${m.label ? ` · ${m.label}` : ''}`} />
-            ))}
-            {project.meta.recordingFlags.map((f, i) => (
-              <span key={`f${i}`} className="tl__flag" style={{ left: pct(f) }} title={`Flag ${formatClock(f)}`}>⚑</span>
-            ))}
+            {ticks.map((t) => <span key={t.timeMs} className="tl__tick" style={{ left: pct(t.timeMs) }}>{t.label}</span>)}
+            {markers.map((m, i) => { const o = atOutput(m.timeMs); return o === null ? null : <span key={`m${i}`} className="tl__marker" style={{ left: pct(o) }} title={`Marker ${formatClock(m.timeMs)}${m.label ? ` · ${m.label}` : ''}`} /> })}
+            {project.meta.recordingFlags.map((f, i) => { const o = atOutput(f); return o === null ? null : <span key={`f${i}`} className="tl__flag" style={{ left: pct(o) }} title={`Flag ${formatClock(f)}`}>⚑</span> })}
           </div>
-          <div className="tl__row">
-            {(project.clips.length ? project.clips : [{ id: 'all', startMs: 0, endMs: durationMs, speed: 1 }]).map((c) => (
-              <span key={c.id} className="tl__clip" style={{ left: pct(c.startMs), width: `${((x(c.endMs) - x(c.startMs)) / width) * 100}%` }}>
-                {speedLabel(c.speed)} · {formatClock(c.endMs - c.startMs)}
-              </span>
-            ))}
+          <div className="tl__row tl__row--clips">
+            {clips.map((c, i) => {
+              const start = offsets[i] ?? 0
+              const end = start + clipOutputMs(c)
+              const left = x(start)
+              const w = Math.max(2, x(end) - left)
+              const trimStart = trimmedMs(clips, c.id, 'start', sourceDurationMs)
+              const trimEnd = trimmedMs(clips, c.id, 'end', sourceDurationMs)
+              const selected = c.id === selectedClipId
+              return (
+                <div key={c.id} className={`tl__clip${selected ? ' tl__clip--on' : ''}`} style={{ left, width: w }} onClick={(e) => { e.stopPropagation(); onSelectClip(c.id); onSeek(timeFromEvent(e)) }} title={`Clip ${i + 1} · ${speedLabel(c.speed)} · ${formatClock(clipOutputMs(c))}`}>
+                  <span className="tl__clip__label">{speedLabel(c.speed)} · {formatClock(clipOutputMs(c))}{c.hideCursor ? ' · Hide' : ''}</span>
+                  <span className="tl__handle tl__handle--start" onMouseDown={onHandleDown(c.id, 'start')} title="Trim start" />
+                  <span className="tl__handle tl__handle--end" onMouseDown={onHandleDown(c.id, 'end')} title="Trim end" />
+                  {(trimStart > 0 || (i > 0 && trimStart === 0)) && (
+                    <button type="button" className="tl__bubble tl__bubble--start" onClick={(e) => { e.stopPropagation(); if (trimStart > 0) onRemoveTrim(c.id, 'start'); else onJoin(c.id) }} title={trimStart > 0 ? `Undo trim · ${formatClock(trimStart)} trimmed` : 'Join clips'}>
+                      {trimStart > 0 ? `✂ ${formatClock(trimStart)}` : '⟷'}
+                    </button>
+                  )}
+                  {trimEnd > 0 && i === clips.length - 1 && (
+                    <button type="button" className="tl__bubble tl__bubble--end" onClick={(e) => { e.stopPropagation(); onRemoveTrim(c.id, 'end') }} title={`Undo trim · ${formatClock(trimEnd)} trimmed`}>✂ {formatClock(trimEnd)}</button>
+                  )}
+                </div>
+              )
+            })}
           </div>
           {rows.map((t) => (
             <div key={t.id} className="tl__row" data-track={t.id}>
-              {t.id === 'zooms' && project.zooms.map((z) => <span key={z.id} className="tl__item" style={{ left: pct(z.startMs), width: `${((x(z.endMs) - x(z.startMs)) / width) * 100}%`, background: 'var(--zoom)' }} />)}
-              {t.id === 'shortcuts' && project.recording.keys.map((k, i) => <span key={i} className="tl__chip" style={{ left: pct(k.timeMs) }}>{k.label}</span>)}
+              {t.id === 'zooms' && project.zooms.map((z) => { const a = atOutput(z.startMs); const b = atOutput(z.endMs); return a === null || b === null ? null : <span key={z.id} className="tl__item" style={{ left: pct(a), width: `${((x(b) - x(a)) / width) * 100}%`, background: 'var(--zoom)' }} /> })}
+              {t.id === 'shortcuts' && project.recording.keys.map((k, i) => { const o = atOutput(k.timeMs); return o === null ? null : <span key={i} className="tl__chip" style={{ left: pct(o) }}>{k.label}</span> })}
             </div>
           ))}
-          {showWaveform && micUrl && (
+          {wantBars && (
             <div className="tl__row tl__wave">
-              {(wantBars ? bars : []).map((b, i) => <span key={i} style={{ left: pct((i / bars.length) * durationMs), height: `${Math.max(4, b * 100)}%` }} />)}
+              {bars.map((b, i) => { const o = atOutput((i / bars.length) * sourceDurationMs); return o === null ? null : <span key={i} style={{ left: pct(o), height: `${Math.max(4, b * 100)}%` }} /> })}
             </div>
           )}
           <div className="tl__playhead" style={{ left: pct(timeMs) }} aria-hidden="true" />

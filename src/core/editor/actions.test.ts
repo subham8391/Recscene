@@ -41,5 +41,7 @@ describe('shortcuts', () => {
     expect(filterActions('zoom').map((a) => a.id)).toEqual(['timelineZoomIn', 'timelineZoomOut', 'track:zooms'])
     expect(filterActions('⌘k')[0]?.id).toBe('commandMenu')
     expect(groupActions(ACTIONS)[0]?.group).toBe('Playback')
+    expect(actionForKey(key('c'))?.id).toBe('splitSliceAtCurrentTime')
+    expect(actionForKey(key('Backspace'))?.id).toBe('removeSlice')
   })
 })

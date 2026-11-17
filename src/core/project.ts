@@ -36,13 +36,8 @@ export interface ZoomRegion {
   automatic: boolean
 }
 
-export interface Clip {
-  id: string
-  startMs: Ms
-  endMs: Ms
-  /** Playback rate; 1 = real time. */
-  speed: number
-}
+import { defaultClip, type Clip } from './editor/clips'
+export type { Clip } from './editor/clips'
 
 export interface Recording {
   id: string
@@ -63,9 +58,15 @@ export interface ProjectMeta {
 export interface ProjectConfig {
   /** Spec 48: "x:y" or null for Auto. */
   defaultOutputAspectRatio: string | null
+  /** Spec 81: the usable part of the source, [start, end] in ms. */
+  recordingRange: [number, number] | null
+  /** Spec 100: fractions of the recording, or null for no crop. */
+  recordingCrop: { x: number; y: number; width: number; height: number } | null
+  /** Spec 92: typing bursts (by start time) the user already handled. */
+  resolvedTypingSuggestions: number[]
 }
 
-export const defaultProjectConfig: ProjectConfig = { defaultOutputAspectRatio: null }
+export const defaultProjectConfig: ProjectConfig = { defaultOutputAspectRatio: null, recordingRange: null, recordingCrop: null, resolvedTypingSuggestions: [] }
 
 export interface Project {
   version: 1
@@ -91,7 +92,7 @@ export function normaliseProject(raw: unknown): Project {
     config: { ...defaultProjectConfig, ...(typeof r.config === 'object' && r.config ? r.config : {}) },
     recording: { ...recording, clicks: recording.clicks ?? [], keys: recording.keys ?? [] },
     zooms: Array.isArray(r.zooms) ? r.zooms : [],
-    clips: Array.isArray(r.clips) ? r.clips : [],
+    clips: Array.isArray(r.clips) && r.clips.length > 0 ? r.clips : [defaultClip(recording.durationMs)],
     ...(r.updatedAt ? { updatedAt: r.updatedAt } : {}),
     ...(r.lastSavedAt ? { lastSavedAt: r.lastSavedAt } : {})
   }
