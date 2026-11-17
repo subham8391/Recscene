@@ -171,7 +171,15 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
     const { lastSavedAt } = await window.recscene.project.save(project)
     setSaved({ at: lastSavedAt, dirty: false, toast: 'Project saved' })
     window.setTimeout(() => setSaved((s) => ({ ...s, toast: null })), 2000)
-  }, [project])
+    // The projects home shows the edited look: cache a small frame next to the project file.
+    void stage.current?.frameAsPng(360).then((png) => window.recscene.library.saveThumbnail(opened.projectDir, png)).catch(() => undefined)
+  }, [project, opened.projectDir])
+
+  /** Back to the projects home; unsaved work is saved first (spec 73 autosaves anyway). */
+  const closeProject = useCallback(async () => {
+    if (saved.dirty) await save()
+    await window.recscene.project.close()
+  }, [saved.dirty, save])
 
   // Autosave every 30 s while dirty (spec 73).
   useEffect(() => {
@@ -317,6 +325,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
         case 'openProject': return void window.recscene.project.pick()
         case 'openLastProject': return
         case 'showInFinder': return void window.recscene.project.showInFinder()
+        case 'closeProject': return void closeProject()
         case 'copyFrame':
           if (selectedZoom) {
             setZoomClipboard(zoomSettings(selectedZoom))
@@ -337,7 +346,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [durationMs, pb.timeMs, prefs, project, save, setPrefs, clips, selectedClip, currentClip, clipboard, sourceDurationMs, setClips, zooms, selectedZoom, zoomClipboard, defaultZoomLevel, setZooms]
+    [durationMs, pb.timeMs, prefs, project, save, closeProject, setPrefs, clips, selectedClip, currentClip, clipboard, sourceDurationMs, setClips, zooms, selectedZoom, zoomClipboard, defaultZoomLevel, setZooms]
   )
 
   useEffect(() => window.recscene.onEditorAction(run), [run])
@@ -376,6 +385,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   return (
     <div className={`app app--${layout}`}>
       <header className="titlebar">
+        <button type="button" className="btn btn--ghost titlebar__back" title="Back to projects ⌘⇧W" onClick={() => run('closeProject')}>‹ Projects</button>
         <span className="titlebar__name">{project.name}</span>
         <span className="titlebar__project">· {savedLabel}</span>
         <div className="titlebar__center">

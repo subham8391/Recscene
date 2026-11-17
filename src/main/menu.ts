@@ -1,4 +1,4 @@
-import { app, dialog, Menu, shell, type BrowserWindow } from 'electron'
+import { dialog, Menu, shell, type BrowserWindow } from 'electron'
 import { IMPORTABLE_EXTENSIONS } from '@core/recovery'
 
 export interface MenuActions {
@@ -10,6 +10,8 @@ export interface MenuActions {
   openLastProject: () => Promise<void>
   openRecent: (projectDir: string) => Promise<unknown>
   recent: { projectDir: string; name: string }[]
+  /** Spec 255: the current projects folder. */
+  projectsRoot: () => string
   /** Sends an editor action id to the renderer (save, undo, toggles…). */
   editorAction: (id: string) => void
 }
@@ -44,9 +46,10 @@ export function installMenu(actions: MenuActions): void {
         { label: 'Save', accelerator: 'CommandOrControl+S', click: send('save') },
         { label: 'Save As…', accelerator: 'Shift+CommandOrControl+S', click: send('saveAs') },
         { label: 'Show Project in Finder', accelerator: 'Shift+CommandOrControl+O', click: send('showInFinder') },
+        { label: 'Close Project', accelerator: 'Shift+CommandOrControl+W', click: send('closeProject') },
         { type: 'separator' },
         { label: 'Recover Unfinished Recordings', click: () => void actions.recoverUnfinished() },
-        { label: 'Show Projects Folder', click: () => void shell.openPath(`${app.getPath('home')}/Recscene Projects`) },
+        { label: 'Show Projects Folder', click: () => void shell.openPath(actions.projectsRoot()) },
         { type: 'separator' },
         { role: 'close' }
       ]

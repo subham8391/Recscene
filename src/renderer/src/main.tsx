@@ -8,6 +8,7 @@ import './styles/tokens.css'
 import './styles/app.css'
 import './styles/picker.css'
 import './styles/editor.css'
+import './styles/home.css'
 
 const root = document.getElementById('root')
 if (!root) throw new Error('Missing #root element')

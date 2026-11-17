@@ -8,8 +8,9 @@ import { SpeakerNotes } from './notes'
 import { Picker } from './picker'
 import { ProjectService, registerMediaScheme } from './project'
 import { Preferences } from './preferences'
-import { projectsRoot, RecordingService } from './recording'
+import { projectsRoot, RecordingService, setProjectsFolderSource } from './recording'
 import { offerRecovery } from './recovery'
+import { LibraryService } from './library'
 import { Widget } from './widget'
 import { loadRoute, preloadPath } from './windows'
 
@@ -29,6 +30,7 @@ let environment: RecordingEnvironment | null = null
 let projects: ProjectService | null = null
 let prefsStore: Preferences | null = null
 let exporter: ExportService | null = null
+let library: LibraryService | null = null
 
 registerMediaScheme()
 let stopping: Promise<void> | null = null
@@ -112,6 +114,7 @@ function refreshMenu(): void {
       openLastProject: () => projects?.openLast() ?? Promise.resolve(),
       openRecent: (dir) => projects?.open(dir).then(() => refreshMenu()) ?? Promise.resolve(),
       recent,
+      projectsRoot,
       editorAction: (id) => mainWindow?.webContents.send('editor:action', id)
     })
   })
@@ -143,6 +146,7 @@ ipcMain.handle('app:projectsRoot', () => projectsRoot())
 void app.whenReady().then(() => {
   const prefs = new Preferences(join(app.getPath('userData'), 'preferences.json'))
   prefsStore = prefs
+  setProjectsFolderSource(() => prefs.get('projectsFolderPath'))
   recording = new RecordingService(prefs)
   widget = new Widget(recording, stopRecording)
   notes = new SpeakerNotes(prefs)
@@ -173,10 +177,14 @@ void app.whenReady().then(() => {
   for (const s of optionalShortcuts()) globalShortcut.register(s.accelerator, s.handler)
   projects = new ProjectService(prefs, () => mainWindow)
   exporter = new ExportService(prefs, () => recording!.helper, () => mainWindow)
-  app.on('will-quit', () => exporter?.dispose())
+  library = new LibraryService(prefs, recording, { showResult, importVideo, mainWindow: () => mainWindow, refreshMenu })
+  app.on('will-quit', () => {
+    exporter?.dispose()
+    void library
+  })
   refreshMenu()
   mainWindow = createMainWindow()
-  mainWindow.once('show', () => void recoverUnfinished(false))
+  // Spec 40 on launch: the projects home shows unfinished recordings in its banner; File › Recover asks with a dialog.
   // Development aid: RECSCENE_OPEN_PICKER=1 opens the picker as soon as the app is ready.
   if (!app.isPackaged && process.env['RECSCENE_OPEN_PICKER']) setTimeout(() => picker?.open(), 800)
   app.on('activate', () => {

@@ -6,6 +6,13 @@ import type { SessionState } from '@core/recordingSession'
 import type { SpeakerNotesPrefs } from '@core/speakerNotes'
 import type { OpenedProject } from '@core/projectFile'
 import type { ExportSettings, ExportTarget } from '@core/editor/exportSettings'
+import type { ProjectSummary, UnfinishedRecording } from '@core/projectsHome'
+
+export interface ProjectsFolder {
+  path: string
+  isDefault: boolean
+  outsideMainStorage: boolean
+}
 
 export interface SessionSnapshot extends SessionState {
   toast: string | null
@@ -41,11 +48,30 @@ const api = {
     copyFrame: (png: ArrayBuffer): Promise<void> => ipcRenderer.invoke('project:copyFrame', png) as Promise<void>,
     exportFrame: (png: ArrayBuffer, timeMs: number): Promise<string | null> => ipcRenderer.invoke('project:exportFrame', png, timeMs) as Promise<string | null>,
     onOpened: (listener: (opened: OpenedProject) => void): (() => void) => on('project:opened', listener),
+    close: (): Promise<void> => ipcRenderer.invoke('project:close') as Promise<void>,
+    onClosed: (listener: () => void): (() => void) => on('project:closed', listener),
     pickBackgroundImage: (): Promise<{ file: string; url: string } | null> => ipcRenderer.invoke('project:pickBackgroundImage') as Promise<{ file: string; url: string } | null>,
     /** A dropped File (its path is resolved here) or pasted PNG bytes. */
     importBackgroundImage: (source: File | ArrayBuffer): Promise<{ file: string; url: string }> =>
       ipcRenderer.invoke('project:importBackgroundImage', source instanceof ArrayBuffer ? source : webUtils.getPathForFile(source)) as Promise<{ file: string; url: string }>,
     mediaUrl: (file: string): Promise<string | null> => ipcRenderer.invoke('project:mediaUrl', file) as Promise<string | null>
+  },
+  /** The projects home (Projects board; specs 7, 40, 75, 255). */
+  library: {
+    list: (): Promise<ProjectSummary[]> => ipcRenderer.invoke('library:list') as Promise<ProjectSummary[]>,
+    storage: (): Promise<{ usedBytes: number; freeBytes: number }> => ipcRenderer.invoke('library:storage') as Promise<{ usedBytes: number; freeBytes: number }>,
+    rename: (projectDir: string, name: string): Promise<{ projectDir: string; name: string }> => ipcRenderer.invoke('library:rename', projectDir, name) as Promise<{ projectDir: string; name: string }>,
+    duplicate: (projectDir: string): Promise<{ projectDir: string; name: string }> => ipcRenderer.invoke('library:duplicate', projectDir) as Promise<{ projectDir: string; name: string }>,
+    trash: (projectDir: string): Promise<void> => ipcRenderer.invoke('library:trash', projectDir) as Promise<void>,
+    showInFinder: (projectDir: string): Promise<void> => ipcRenderer.invoke('library:showInFinder', projectDir) as Promise<void>,
+    saveThumbnail: (projectDir: string, png: ArrayBuffer): Promise<string> => ipcRenderer.invoke('library:saveThumbnail', projectDir, png) as Promise<string>,
+    unfinished: (): Promise<UnfinishedRecording[]> => ipcRenderer.invoke('library:unfinished') as Promise<UnfinishedRecording[]>,
+    recover: (dir: string): Promise<{ ok: boolean; message: string }> => ipcRenderer.invoke('library:recover', dir) as Promise<{ ok: boolean; message: string }>,
+    deleteUnfinished: (dir: string): Promise<void> => ipcRenderer.invoke('library:deleteUnfinished', dir) as Promise<void>,
+    createFromVideo: (): Promise<void> => ipcRenderer.invoke('library:createFromVideo') as Promise<void>,
+    folder: (): Promise<ProjectsFolder> => ipcRenderer.invoke('library:folder') as Promise<ProjectsFolder>,
+    chooseFolder: (): Promise<ProjectsFolder> => ipcRenderer.invoke('library:chooseFolder') as Promise<ProjectsFolder>,
+    resetFolder: (): Promise<void> => ipcRenderer.invoke('library:resetFolder') as Promise<void>
   },
   onEditorAction: (listener: (id: string) => void): (() => void) => on('editor:action', listener),
   export: {
