@@ -24,19 +24,10 @@ export interface KeyEvent {
   label: string
 }
 
-export interface ZoomRegion {
-  id: string
-  startMs: Ms
-  endMs: Ms
-  /** Centre of the zoom in normalised screen space. */
-  center: Point
-  /** 1 = no zoom. 2 = the screen is shown at twice its size. */
-  scale: number
-  /** True when the app created it from clicks; false when the user drew it. */
-  automatic: boolean
-}
+export type { ZoomRange } from './editor/zooms'
 
 import { defaultClip, type Clip } from './editor/clips'
+import type { ZoomRange } from './editor/zooms'
 export type { Clip } from './editor/clips'
 
 export interface Recording {
@@ -64,9 +55,20 @@ export interface ProjectConfig {
   recordingCrop: { x: number; y: number; width: number; height: number } | null
   /** Spec 92: typing bursts (by start time) the user already handled. */
   resolvedTypingSuggestions: number[]
+  /** Spec 114. */
+  alwaysKeepZoomedIn: boolean
+  /** Spec 123. */
+  screenMovementSpring: { stiffness: number; damping: number; mass: number }
 }
 
-export const defaultProjectConfig: ProjectConfig = { defaultOutputAspectRatio: null, recordingRange: null, recordingCrop: null, resolvedTypingSuggestions: [] }
+export const defaultProjectConfig: ProjectConfig = {
+  defaultOutputAspectRatio: null,
+  recordingRange: null,
+  recordingCrop: null,
+  resolvedTypingSuggestions: [],
+  alwaysKeepZoomedIn: false,
+  screenMovementSpring: { stiffness: 200, damping: 40, mass: 2.25 }
+}
 
 export interface Project {
   version: 1
@@ -74,7 +76,7 @@ export interface Project {
   meta: ProjectMeta
   config: ProjectConfig
   recording: Recording
-  zooms: ZoomRegion[]
+  zooms: ZoomRange[]
   clips: Clip[]
   /** ISO timestamps (spec 73–74). */
   updatedAt?: string

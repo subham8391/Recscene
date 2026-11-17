@@ -143,6 +143,14 @@
   background: #000;
   border-radius: 6px;
   overflow: hidden;
+  isolation: isolate;
+  clip-path: inset(0 round 6px);
+}
+
+.stage__inner {
+  position: absolute;
+  overflow: hidden;
+  clip-path: inset(0);
 }
 
 .stage__video {
@@ -226,7 +234,7 @@
   flex: 1 1 auto;
 }
 
-.tl__zoom {
+.tl__zi {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -837,4 +845,108 @@
 .crop__warn {
   font-size: 11px;
   color: var(--danger);
+}
+
+/* Zooms (specs 102–124) */
+.stage__camera {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.tl__zi {
+  position: absolute;
+  top: 3px;
+  height: 16px;
+  border-radius: 4px;
+  background: var(--zoom);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+  overflow: visible;
+  cursor: grab;
+  opacity: 0.9;
+}
+
+.tl__zi--off {
+  opacity: 0.35;
+}
+
+.tl__zi--on {
+  box-shadow: 0 0 0 2px var(--text);
+}
+
+.tl__zi__label {
+  display: block;
+  padding: 0 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tl__zi .tl__handle {
+  height: 16px;
+}
+
+.tl__zi .tl__handle--start { border-left-color: #fff; }
+.tl__zi .tl__handle--end { border-right-color: #fff; }
+
+.tl__row[data-track='zooms'] {
+  cursor: copy;
+}
+
+.choice {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 2px solid var(--line2);
+  background: var(--panel2);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+}
+
+.choice--on {
+  border-color: var(--accent);
+}
+
+.choice b {
+  font-weight: 600;
+}
+
+.choice small {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.target {
+  position: relative;
+  width: 100%;
+  border-radius: 8px;
+  background: #000;
+  overflow: hidden;
+  cursor: crosshair;
+}
+
+.target__frame {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+}
+
+.target__dot {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
 }

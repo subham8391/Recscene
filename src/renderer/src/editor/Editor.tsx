@@ -24,6 +24,8 @@ import {
   type TypingGroup
 } from '@core/editor/clips'
 import { applyCropAspect, cropFromFractions, cropToFractions } from '@core/editor/crop'
+import { addZoomAt, automaticZooms, duplicateZoom, removeZoom, setAllDisabled, splitZoom, stepZoomLevel, updateZoom, zoomSettings, type ZoomRange, type ZoomSettings } from '@core/editor/zooms'
+import { appPrefsFrom } from '@core/appPrefs'
 import { canRedo, canUndo, createHistory, record, redo, undo } from '@core/editor/history'
 import { showsSidebar, showsTimeline, togglePreview, toggleSidebar, toggleTimeline, type LayoutState } from '@core/editor/layout'
 import {
@@ -51,6 +53,7 @@ import { CommandMenu } from './CommandMenu'
 import { CropTool } from './CropTool'
 import { Stage, type StageHandle } from './Stage'
 import { Timeline, type TrackId, type TrackVisibility } from './Timeline'
+import { ZoomPanel } from './ZoomPanel'
 import { useEditorPrefs } from './useEditorPrefs'
 
 const PANELS: { id: string; label: string; key: string }[] = [
@@ -90,12 +93,20 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   const [draftClips, setDraftClips] = useState<Clip[] | null>(null)
   const [clipboard, setClipboard] = useState<ClipSettings | null>(null)
   const [cropping, setCropping] = useState(false)
+  const [selectedZoomId, setSelectedZoomId] = useState<string | null>(null)
+  const [draftZooms, setDraftZooms] = useState<ZoomRange[] | null>(null)
+  const [zoomClipboard, setZoomClipboard] = useState<ZoomSettings | null>(null)
+  const [defaultZoomLevel, setDefaultZoomLevel] = useState(2)
   const [recBox, setRecBox] = useState<Box>({ x: 0, y: 0, width: 0, height: 0 })
   const stage = useRef<StageHandle>(null)
   const lastTick = useRef<number | null>(null)
   const timeRef = useRef(0)
 
   const clips = draftClips ?? project.clips
+  const zooms = draftZooms ?? project.zooms
+  const selectedZoom = zooms.find((z) => z.id === selectedZoomId) ?? null
+  const selectedZoomIndex = selectedZoom ? zooms.indexOf(selectedZoom) : -1
+  const shownProject = draftZooms ? { ...project, zooms: draftZooms } : project
   const durationMs = outputDurationMs(clips)
   const sourceMs = outputToSource(clips, preview ?? pb.timeMs)
   const currentClip = clipAtOutput(clips, pb.timeMs)?.clip ?? null
@@ -106,6 +117,10 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   useEffect(() => {
     timeRef.current = pb.timeMs
   }, [pb.timeMs])
+
+  useEffect(() => {
+    void window.recscene.prefs.get().then((raw) => setDefaultZoomLevel(appPrefsFrom(raw).defaultZoomLevel ?? 2))
+  }, [])
 
   // The playback clock (specs 52–57); the loop preference is global (spec 57) and the view follows the playhead (spec 59).
   const loop = prefs.playbackLoop
@@ -158,6 +173,19 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   }
   const ignoreTyping = (group: TypingGroup): void => edit({ ...project, config: { ...project.config, resolvedTypingSuggestions: [...project.config.resolvedTypingSuggestions, group.startMs] } })
 
+  const setZooms = useCallback((next: ZoomRange[]) => edit({ ...project, zooms: next }), [edit, project])
+  const setDefaultLevel = (level: number): void => {
+    setDefaultZoomLevel(level)
+    void window.recscene.prefs.set({ defaultZoomLevel: level })
+  }
+  const addZoom = (sourceMsAt: number, type: 'follow-click-groups' | 'manual' = 'follow-click-groups'): void => {
+    const r = addZoomAt(zooms, sourceMsAt, sourceDurationMs, defaultZoomLevel, type)
+    if (r.error) return notify(r.error)
+    setZooms(r.zooms)
+    setSelectedClipId(null)
+    if (r.zoom) setSelectedZoomId(r.zoom.id)
+  }
+
   const toggleTrack = (id: TrackId): void => {
     if (id === 'zooms') return
     setVisible((v) => ({ ...v, [id]: !v[id] }))
@@ -178,8 +206,8 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
         case 'goToFirstFrame': return setPb((p) => goToFirstFrame(p))
         case 'goToLastFrame': return setPb((p) => goToLastFrame(p, D))
         case 'toggleLoop': return setPrefs({ playbackLoop: !prefs.playbackLoop })
-        case 'timelineZoomIn': return setView((v) => zoomView(v, 0.75, D, pb.timeMs))
-        case 'timelineZoomOut': return setView((v) => zoomView(v, 1.25, D, pb.timeMs))
+        case 'timelineZoomIn': return selectedZoom ? setZooms(zooms.map((z) => (z.id === selectedZoom.id ? stepZoomLevel(z, 1) : z))) : setView((v) => zoomView(v, 0.75, D, pb.timeMs))
+        case 'timelineZoomOut': return selectedZoom ? setZooms(zooms.map((z) => (z.id === selectedZoom.id ? stepZoomLevel(z, -1) : z))) : setView((v) => zoomView(v, 1.25, D, pb.timeMs))
         case 'toggleAudioScrubber': return setPrefs({ playbackAudioScrubber: !prefs.playbackAudioScrubber })
         case 'undo': return setHistory((h) => (canUndo(h) ? undo(h) : h))
         case 'redo': return setHistory((h) => (canRedo(h) ? redo(h) : h))
@@ -189,13 +217,40 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
         case 'toggleWaveform': return setPrefs({ hideAudioWaveform: !prefs.hideAudioWaveform })
         case 'toggleSmoothWaveform': return setPrefs({ enableSmoothWaveform: !prefs.enableSmoothWaveform })
         case 'toggleTimelineScrollbar': return setPrefs({ alwaysShowTimelineScrollbar: !prefs.alwaysShowTimelineScrollbar })
-        case 'closeSidebarItem': return void (setOverlay(null), setSelectedClipId(null), setCropping(false))
+        case 'closeSidebarItem': return void (setOverlay(null), setSelectedClipId(null), setSelectedZoomId(null), setCropping(false))
+        case 'addZoom': return addZoom(outputToSource(clips, pb.timeMs))
+        case 'addManualZoom': return addZoom(outputToSource(clips, pb.timeMs), 'manual')
+        case 'duplicateZoom': return selectedZoom ? setZooms(duplicateZoom(zooms, selectedZoom.id, sourceDurationMs)) : undefined
+        case 'toggleZoomDisabled': return selectedZoom ? setZooms(updateZoom(zooms, selectedZoom.id, { isDisabled: !selectedZoom.isDisabled })) : undefined
+        case 'disableAllZooms': return setZooms(setAllDisabled(zooms, true))
+        case 'enableAllZooms': return setZooms(setAllDisabled(zooms, false))
+        case 'applyZoomLevelToAll':
+          if (!selectedZoom) return
+          setZooms(zooms.map((z) => ({ ...z, zoom: selectedZoom.zoom })))
+          return notify('Zoom level applied to all zooms')
+        case 'restoreDefaultZooms': return void (setSelectedZoomId(null), setZooms(automaticZooms(project.recording.clicks, sourceDurationMs, defaultZoomLevel)))
+        case 'removeAllZooms': return void (setSelectedZoomId(null), setZooms([]))
+        case 'cut':
+          if (!selectedZoom) return
+          setZoomClipboard(zoomSettings(selectedZoom))
+          setSelectedZoomId(null)
+          setZooms(removeZoom(zooms, selectedZoom.id))
+          return notify('Zoom range copied')
         case 'splitSliceAtCurrentTime': {
+          if (selectedZoom) {
+            const r = splitZoom(zooms, outputToSource(clips, pb.timeMs))
+            if (r.error) return notify(r.error)
+            return setZooms(r.zooms)
+          }
           const r = splitClip(clips, outputToSource(clips, pb.timeMs))
           if (r.error) return notify(r.error)
           return setClips(r.clips)
         }
         case 'removeSlice': {
+          if (selectedZoom) {
+            setSelectedZoomId(null)
+            return setZooms(removeZoom(zooms, selectedZoom.id))
+          }
           const target = selectedClip ?? currentClip
           if (!target || clips.length <= 1) return
           setSelectedClipId(null)
@@ -216,22 +271,36 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           return setClips(resetAllClips(sourceDurationMs))
         case 'crop': return void (setPb((p) => ({ ...p, playing: false })), setCropping(true))
         case 'paste': {
+          if (zoomClipboard && (selectedZoom || !clipboard)) {
+            if (selectedZoom) {
+              setZooms(updateZoom(zooms, selectedZoom.id, zoomClipboard))
+              return notify('Zoom range settings pasted')
+            }
+            const r = addZoomAt(zooms, outputToSource(clips, pb.timeMs), sourceDurationMs, zoomClipboard.zoom, zoomClipboard.type)
+            if (r.error) return notify(r.error)
+            setZooms(r.zoom ? updateZoom(r.zooms, r.zoom.id, zoomClipboard) : r.zooms)
+            return notify('Zoom range settings pasted')
+          }
           if (!clipboard) return
           const target = clipAtSource(clips, outputToSource(clips, pb.timeMs))
           if (!target) return
           setClips(updateClip(clips, target.id, clipboard))
           return notify('Slice settings pasted')
         }
-        case 'track:zooms': return
-        case 'track:layouts': return toggleTrack('layouts')
-        case 'track:shortcuts': return toggleTrack('shortcuts')
-        case 'track:masks': return toggleTrack('masks')
+        case 'track:zooms': return selectedZoom ? setZooms(updateZoom(zooms, selectedZoom.id, { zoom: 1 })) : undefined
+        case 'track:layouts': return selectedZoom ? setZooms(updateZoom(zooms, selectedZoom.id, { zoom: 1.2 })) : toggleTrack('layouts')
+        case 'track:shortcuts': return selectedZoom ? setZooms(updateZoom(zooms, selectedZoom.id, { zoom: 1.4 })) : toggleTrack('shortcuts')
+        case 'track:masks': return selectedZoom ? setZooms(updateZoom(zooms, selectedZoom.id, { zoom: 1.6 })) : toggleTrack('masks')
         case 'save': return void save()
         case 'saveAs': return void window.recscene.project.saveAs(project)
         case 'openProject': return void window.recscene.project.pick()
         case 'openLastProject': return
         case 'showInFinder': return void window.recscene.project.showInFinder()
         case 'copyFrame':
+          if (selectedZoom) {
+            setZoomClipboard(zoomSettings(selectedZoom))
+            return notify('Zoom range copied')
+          }
           if (selectedClip) {
             setClipboard(clipSettings(selectedClip))
             return notify('Slice settings copied')
@@ -245,7 +314,8 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           if (id.startsWith('sidebar:')) setPanel(id.slice('sidebar:'.length))
       }
     },
-    [durationMs, pb.timeMs, prefs, project, save, setPrefs, clips, selectedClip, currentClip, clipboard, sourceDurationMs, setClips]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [durationMs, pb.timeMs, prefs, project, save, setPrefs, clips, selectedClip, currentClip, clipboard, sourceDurationMs, setClips, zooms, selectedZoom, zoomClipboard, defaultZoomLevel, setZooms]
   )
 
   useEffect(() => window.recscene.onEditorAction(run), [run])
@@ -255,6 +325,16 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
       if (overlay) return
       const target = e.target as HTMLElement | null
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+      if (selectedZoom && !e.metaKey && !e.altKey && !e.ctrlKey && /^[0-9]$/.test(e.key)) {
+        const presets = [defaultZoomLevel, 1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6]
+        const level = presets[Number(e.key)]
+        if (level !== undefined) {
+          e.preventDefault()
+          setZooms(updateZoom(zooms, selectedZoom.id, { zoom: level }))
+          if (e.key !== '0') setDefaultLevel(level)
+          return
+        }
+      }
       const action = actionForKey(e)
       if (!action) return
       e.preventDefault()
@@ -262,7 +342,8 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [run, overlay])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [run, overlay, selectedZoom, zooms, defaultZoomLevel])
 
   const shownTime = preview ?? pb.timeMs
   const aspect = aspectLabel(project.config.defaultOutputAspectRatio, project.recording.screen)
@@ -311,7 +392,8 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
         )}
         <Stage
           ref={stage}
-          project={project}
+          project={shownProject}
+          cursor={opened.cursor}
           screenUrl={opened.media.screen}
           micUrl={opened.media.mic}
           sourceMs={sourceMs}
@@ -361,13 +443,31 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           <select className="input" aria-label="Preview size" value={prefs.playbackPreviewMaxHeight} onChange={(e) => setPrefs({ playbackPreviewMaxHeight: Number(e.target.value) as 480 })}>
             {[480, 720, 1080, 1440, 2160].map((h) => <option key={h} value={h}>{h}p</option>)}
           </select>
+          <button type="button" className="btn btn--ghost" title="Add a 3 s zoom at the playhead" onClick={() => run('addZoom')}>+ Zoom</button>
           <button type="button" className="btn btn--ghost" title="Show command menu… ⌘K" onClick={() => run('commandMenu')}>⌘K</button>
         </div>
       </main>
 
       {sidebar && (
         <aside className="inspector" aria-label="Inspector">
-          {selectedClip ? (
+          {selectedZoom ? (
+            <>
+              <div className="inspector__head"><span className="tl__dot" style={{ background: 'var(--zoom)' }} /><h2>Zoom</h2><span className="muted">{selectedZoomIndex + 1} of {zooms.length}</span><span className="tl__spacer" /><button type="button" className="btn btn--ghost btn--sm" onClick={() => setSelectedZoomId(null)}>Close <kbd>⎋</kbd></button></div>
+              <ZoomPanel
+                project={project}
+                zooms={zooms}
+                zoom={selectedZoom}
+                index={selectedZoomIndex}
+                cursor={opened.cursor}
+                screenUrl={opened.media.screen}
+                defaultZoomLevel={defaultZoomLevel}
+                onZooms={setZooms}
+                onConfig={(config) => edit({ ...project, config })}
+                onDefaultLevel={setDefaultLevel}
+                onAction={run}
+              />
+            </>
+          ) : selectedClip ? (
             <>
               <div className="inspector__head"><span className="tl__dot" style={{ background: 'var(--clip)' }} /><h2>Clip</h2><span className="muted">{selectedIndex + 1} of {clips.length}</span><span className="tl__spacer" /><button type="button" className="btn btn--ghost btn--sm" onClick={() => setSelectedClipId(null)}>Close <kbd>⎋</kbd></button></div>
               <ClipPanel
@@ -395,6 +495,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
             <dt>Captured</dt><dd>{project.recording.clicks.length} clicks · {project.recording.keys.length} keystrokes · {project.meta.recordingFlags.length} flags · {opened.markers.length} markers</dd>
             <dt>History</dt><dd>{history.past.length} undo · {history.future.length} redo</dd>
             <dt>Clips</dt><dd>{clips.length} · click a clip on the timeline to edit it</dd>
+            <dt>Zooms</dt><dd>{zooms.length} · click the Zooms track to add one</dd>
           </dl>
             </>
           )}
@@ -403,7 +504,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
 
       {timeline && (
         <Timeline
-          project={project}
+          project={shownProject}
           clips={clips}
           sourceDurationMs={sourceDurationMs}
           markers={opened.markers}
@@ -416,11 +517,16 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           onSeek={(ms) => setPb((p) => seek(p, ms, durationMs))}
           onPreview={setPreview}
           selectedClipId={selectedClipId}
-          onSelectClip={setSelectedClipId}
+          onSelectClip={(id) => { setSelectedClipId(id); if (id) setSelectedZoomId(null) }}
           onTrimPreview={setDraftClips}
           onTrimCommit={(next) => { setDraftClips(null); setClips(next) }}
           onRemoveTrim={(id, edge) => setClips(removeTrim(clips, id, edge, sourceDurationMs))}
           onJoin={(rightId) => setClips(joinClips(clips, rightId))}
+          selectedZoomId={selectedZoomId}
+          onSelectZoom={(id) => { setSelectedZoomId(id); if (id) setSelectedClipId(null) }}
+          onAddZoomAt={(ms) => addZoom(ms)}
+          onZoomPreview={setDraftZooms}
+          onZoomCommit={() => { const next = draftZooms; setDraftZooms(null); if (next) setZooms(next) }}
           micUrl={opened.media.mic}
           showWaveform={!prefs.hideAudioWaveform}
           smoothWaveform={prefs.enableSmoothWaveform}

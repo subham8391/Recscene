@@ -10,6 +10,9 @@ describe('appPrefsFrom', () => {
       actionAfterRecording: 'quick-export'
     })
     expect(appPrefsFrom({ actionAfterRecording: 'nonsense' }).actionAfterRecording).toBe('create-project')
+    expect(appPrefsFrom({ defaultZoomLevel: 9 }).defaultZoomLevel).toBe(4)
+    expect(appPrefsFrom({ defaultZoomLevel: null }).defaultZoomLevel).toBeNull()
+    expect(appPrefsFrom({ createAutomaticZooms: false }).createAutomaticZooms).toBe(false)
   })
 })
 

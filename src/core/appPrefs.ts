@@ -13,6 +13,10 @@ export interface AppPrefs {
   playRecordingSounds: boolean
   /** Spec 41. */
   actionAfterRecording: 'create-project' | 'quick-export'
+  /** Spec 103. */
+  createAutomaticZooms: boolean
+  /** Spec 109: null means the built-in 2. */
+  defaultZoomLevel: number | null
 }
 
 export const defaultAppPrefs: AppPrefs = {
@@ -20,7 +24,9 @@ export const defaultAppPrefs: AppPrefs = {
   hideAppDockIconWhileRecording: true,
   blockShortcutsWhileRecording: false,
   playRecordingSounds: true,
-  actionAfterRecording: 'create-project'
+  actionAfterRecording: 'create-project',
+  createAutomaticZooms: true,
+  defaultZoomLevel: 1.135
 }
 
 export function appPrefsFrom(raw: unknown): AppPrefs {
@@ -31,7 +37,9 @@ export function appPrefsFrom(raw: unknown): AppPrefs {
     hideAppDockIconWhileRecording: bool('hideAppDockIconWhileRecording'),
     blockShortcutsWhileRecording: bool('blockShortcutsWhileRecording'),
     playRecordingSounds: bool('playRecordingSounds'),
-    actionAfterRecording: r.actionAfterRecording === 'quick-export' ? 'quick-export' : 'create-project'
+    actionAfterRecording: r.actionAfterRecording === 'quick-export' ? 'quick-export' : 'create-project',
+    createAutomaticZooms: bool('createAutomaticZooms'),
+    defaultZoomLevel: typeof r.defaultZoomLevel === 'number' && Number.isFinite(r.defaultZoomLevel) ? Math.min(4, Math.max(1, r.defaultZoomLevel)) : r.defaultZoomLevel === null ? null : defaultAppPrefs.defaultZoomLevel
   }
 }
 
