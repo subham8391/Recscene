@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto'
 import { EventEmitter } from 'node:events'
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { app, BrowserWindow } from 'electron'
 import { normaliseEvents, type EventsFile, type Permissions, type RecordingResult, type StartOptions } from '@core/captureProtocol'
 import { newProject, recordingFolderName } from '@core/projectFile'
 import { addFlag, addMarker, markersFile, pauseClock, resumeClock, startSession, type SessionState } from '@core/recordingSession'
+import { importedBundleName, isUnfinishedBundle } from '@core/recovery'
 import { CaptureClient, resolveHelperPath } from './capture'
 
 export type RendererStartOptions = Omit<StartOptions, 'outputDir'> & { name?: string }
@@ -180,6 +181,64 @@ export class RecordingService extends EventEmitter {
     }
     this.emit('stopped', result)
     return result
+  }
+
+  /** Spec 40: `.recscene` folders with footage but no project.json. */
+  async unfinishedBundles(): Promise<string[]> {
+    const root = projectsRoot()
+    const names = await readdir(root).catch(() => [] as string[])
+    const found: string[] = []
+    for (const name of names) {
+      const dir = join(root, name)
+      if (!(await stat(dir).then((s) => s.isDirectory()).catch(() => false))) continue
+      const files = await readdir(dir).catch(() => [] as string[])
+      if (isUnfinishedBundle({ name, files })) found.push(dir)
+    }
+    return found
+  }
+
+  /** Spec 40: turn leftover footage into a project; events may be missing after a crash. */
+  async recover(projectDir: string): Promise<RecordingResult> {
+    const screen = join(projectDir, 'screen.mov')
+    const probed = await this.client.probe(screen)
+    const eventsPath = join(projectDir, 'events.json')
+    const eventsFile = JSON.parse(await readFile(eventsPath, 'utf8').catch(() => '{"version":1,"region":{"x":0,"y":0,"width":0,"height":0},"clicks":[],"keys":[],"cursor":[]}')) as EventsFile
+    const events = normaliseEvents(eventsFile, probed.durationMs)
+    const created = await stat(screen).then((s) => s.birthtime).catch(() => new Date())
+    return this.writeProject(projectDir, { createdAt: created, durationMs: probed.durationMs, width: probed.width, height: probed.height, events, mic: await stat(join(projectDir, 'mic.m4a')).then(() => 'mic.m4a').catch(() => undefined), flags: [], markers: [], frames: 0 })
+  }
+
+  /** Spec 7: a project from an existing mp4, mov or gif, with no cursor or click data. */
+  async importVideo(path: string): Promise<RecordingResult> {
+    const root = projectsRoot()
+    await mkdir(root, { recursive: true })
+    const existing = await readdir(root).catch(() => [] as string[])
+    const projectDir = join(root, importedBundleName(basename(path), existing))
+    await mkdir(projectDir, { recursive: true })
+    const screen = join(projectDir, 'screen.mov')
+    const imported = await this.client.importVideo(path, screen).catch(async (error: unknown) => {
+      await rm(projectDir, { recursive: true, force: true })
+      throw error
+    })
+    await writeFile(join(projectDir, 'events.json'), JSON.stringify({ version: 1, region: { x: 0, y: 0, width: imported.width, height: imported.height }, clicks: [], keys: [], cursor: [] }))
+    return this.writeProject(projectDir, { createdAt: new Date(), durationMs: imported.durationMs, width: imported.width, height: imported.height, events: { clicks: [], keys: [], cursor: [] }, flags: [], markers: [], frames: 0 })
+  }
+
+  private async writeProject(projectDir: string, input: { createdAt: Date; durationMs: number; width: number; height: number; events: ReturnType<typeof normaliseEvents>; mic?: string; flags: number[]; markers: SessionState['markers']; frames: number }): Promise<RecordingResult> {
+    const project = newProject({
+      id: randomUUID(),
+      name: basename(projectDir, '.recscene'),
+      createdAt: input.createdAt.toISOString(),
+      durationMs: input.durationMs,
+      screen: { width: input.width, height: input.height, file: 'screen.mov' },
+      ...(input.mic ? { mic: { file: input.mic } } : {}),
+      events: input.events,
+      flags: input.flags
+    })
+    const projectFile = join(projectDir, 'project.json')
+    await writeFile(projectFile, JSON.stringify(project, null, 2))
+    await writeFile(join(projectDir, 'recording-markers.json'), JSON.stringify(markersFile(input.markers), null, 2))
+    return { projectDir, projectFile, durationMs: input.durationMs, frames: input.frames, width: input.width, height: input.height, clicks: input.events.clicks.length, keys: input.events.keys.length, cursorSamples: input.events.cursor.length }
   }
 
   dispose(): void {

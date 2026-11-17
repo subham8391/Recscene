@@ -77,6 +77,10 @@ enum Command {
     case resume
     case mark(kind: String)
     case cancel
+    /// Reads duration and size of a video file (recovery, import).
+    case probe(path: String)
+    /// Copies or converts a video or GIF into `output` as H.264 .mov.
+    case importVideo(path: String, output: String)
 
     static func parse(_ line: String) throws -> Command {
         guard let data = line.data(using: .utf8) else { throw ProtocolError.badCommand("not utf-8") }
@@ -90,6 +94,13 @@ enum Command {
         case "pause": return .pause
         case "resume": return .resume
         case "cancel": return .cancel
+        case "probe":
+            struct P: Decodable { let path: String }
+            return .probe(path: try decoder.decode(P.self, from: data).path)
+        case "import":
+            struct I: Decodable { let path: String; let output: String }
+            let i = try decoder.decode(I.self, from: data)
+            return .importVideo(path: i.path, output: i.output)
         case "mark":
             struct M: Decodable { let kind: String? }
             return .mark(kind: try decoder.decode(M.self, from: data).kind ?? "marker")
@@ -111,6 +122,7 @@ enum ProtocolError: Error, LocalizedError {
     case targetNotFound
     case permission(String)
     case writer(String)
+    case unreadable(String)
 
     var code: String {
         switch self {
@@ -122,6 +134,7 @@ enum ProtocolError: Error, LocalizedError {
         case .targetNotFound: return "target-not-found"
         case .permission(let which): return "permission-\(which)"
         case .writer: return "writer"
+        case .unreadable: return "unreadable"
         }
     }
 
@@ -135,6 +148,7 @@ enum ProtocolError: Error, LocalizedError {
         case .targetNotFound: return "The display or window to record was not found"
         case .permission(let which): return "Missing \(which) permission"
         case .writer(let m): return "Could not write the recording: \(m)"
+        case .unreadable(let m): return m
         }
     }
 }
@@ -181,12 +195,14 @@ enum OutEvent: Encodable {
     case resumed(timeMs: Double)
     case marked(kind: String, timeMs: Double)
     case cancelled
+    case probed(durationMs: Double, width: Int, height: Int, hasAudio: Bool)
+    case imported(output: String, durationMs: Double, width: Int, height: Int, converted: Bool)
     case warning(message: String)
     case error(code: String, message: String)
 
     private enum CodingKeys: String, CodingKey {
         case event, version, screen, inputMonitoring, accessibility, microphone, displays, windows, outputDir, width, height
-        case durationMs, files, micOffsetMs, frames, message, code, timeMs, kind
+        case durationMs, files, micOffsetMs, frames, message, code, timeMs, kind, hasAudio, output, converted
     }
 
     func encode(to encoder: Encoder) throws {
@@ -221,6 +237,13 @@ enum OutEvent: Encodable {
             try c.encode("marked", forKey: .event); try c.encode(kind, forKey: .kind); try c.encode(timeMs, forKey: .timeMs)
         case .cancelled:
             try c.encode("cancelled", forKey: .event)
+        case let .probed(durationMs, width, height, hasAudio):
+            try c.encode("probed", forKey: .event)
+            try c.encode(durationMs, forKey: .durationMs); try c.encode(width, forKey: .width); try c.encode(height, forKey: .height); try c.encode(hasAudio, forKey: .hasAudio)
+        case let .imported(output, durationMs, width, height, converted):
+            try c.encode("imported", forKey: .event)
+            try c.encode(output, forKey: .output); try c.encode(durationMs, forKey: .durationMs)
+            try c.encode(width, forKey: .width); try c.encode(height, forKey: .height); try c.encode(converted, forKey: .converted)
         case .warning(let message):
             try c.encode("warning", forKey: .event); try c.encode(message, forKey: .message)
         case let .error(code, message):

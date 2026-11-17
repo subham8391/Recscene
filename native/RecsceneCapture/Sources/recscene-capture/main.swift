@@ -37,6 +37,12 @@ func handle(_ command: Command) async {
             guard let s = session else { throw ProtocolError.notRecording }
             session = nil
             output.send(await s.cancel())
+        case .probe(let path):
+            let info = try await Media.probe(path: path)
+            output.send(.probed(durationMs: info.durationMs, width: info.width, height: info.height, hasAudio: info.hasAudio))
+        case let .importVideo(path, outputPath):
+            let (info, converted) = try await Media.importVideo(path: path, output: outputPath)
+            output.send(.imported(output: outputPath, durationMs: info.durationMs, width: info.width, height: info.height, converted: converted))
         }
     } catch {
         output.error(error)

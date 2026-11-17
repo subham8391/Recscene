@@ -2,10 +2,12 @@ import { join } from 'node:path'
 import { app, BrowserWindow, globalShortcut, ipcMain, screen, shell } from 'electron'
 import type { RecordingResult, StartOptions } from '@core/captureProtocol'
 import { RecordingEnvironment } from './environment'
+import { installMenu } from './menu'
 import { SpeakerNotes } from './notes'
 import { Picker } from './picker'
 import { Preferences } from './preferences'
 import { projectsRoot, RecordingService } from './recording'
+import { offerRecovery } from './recovery'
 import { Widget } from './widget'
 import { loadRoute, preloadPath } from './windows'
 
@@ -84,6 +86,29 @@ function onRecordShortcut(): void {
   else picker?.open()
 }
 
+function showResult(result: RecordingResult, notice?: string | null): void {
+  const window = showMainWindow()
+  window.webContents.send('recording:finished', result)
+  if (notice) window.webContents.send('app:notice', notice)
+}
+
+async function recoverUnfinished(manual: boolean): Promise<void> {
+  if (!recording) return
+  const { results, notice } = await offerRecovery(recording, { manual })
+  const last = results[results.length - 1]
+  if (last) showResult(last, notice)
+  else if (notice) showMainWindow().webContents.send('app:notice', notice)
+}
+
+async function importVideo(path: string): Promise<void> {
+  if (!recording) return
+  try {
+    showResult(await recording.importVideo(path), 'Project created from video. There is no mouse cursor recorded, so automatic zooms cannot follow clicks.')
+  } catch (error) {
+    showMainWindow().webContents.send('app:notice', error instanceof Error ? error.message.replace(/^.*?: (?=[A-Z])/, '') : String(error))
+  }
+}
+
 ipcMain.handle('app:version', () => app.getVersion())
 ipcMain.handle('app:openPicker', () => picker?.open())
 ipcMain.handle('app:projectsRoot', () => projectsRoot())
@@ -118,7 +143,9 @@ void app.whenReady().then(() => {
   })
   globalShortcut.register(RECORD_SHORTCUT, onRecordShortcut)
   for (const s of optionalShortcuts()) globalShortcut.register(s.accelerator, s.handler)
+  installMenu({ newRecording: () => picker?.open(), importVideo, recoverUnfinished: () => recoverUnfinished(true), mainWindow: () => mainWindow })
   mainWindow = createMainWindow()
+  mainWindow.once('show', () => void recoverUnfinished(false))
   // Development aid: RECSCENE_OPEN_PICKER=1 opens the picker as soon as the app is ready.
   if (!app.isPackaged && process.env['RECSCENE_OPEN_PICKER']) setTimeout(() => picker?.open(), 800)
   app.on('activate', () => {

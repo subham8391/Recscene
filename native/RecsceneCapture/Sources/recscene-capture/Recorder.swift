@@ -47,6 +47,8 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate {
         config.channelCount = 2
 
         writer = try AVAssetWriter(outputURL: outputURL, fileType: .mov)
+        // Write a movie fragment every 2 s so an interrupted recording stays playable (spec 40).
+        writer.movieFragmentInterval = CMTime(seconds: 2, preferredTimescale: 600)
         let codec: AVVideoCodecType = options.codec == "hevc" ? .hevc : .h264
         let bitrate = max(10_000_000, width * height * 6)
         var compression: [String: Any] = [
