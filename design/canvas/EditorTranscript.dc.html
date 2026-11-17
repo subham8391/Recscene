@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Editor — Captions and Edit by transcript (laptop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif}
+.ss{--bg:#F2F2F5;--panel:#FFFFFF;--panel2:#F6F6F8;--raised:#FFFFFF;--line:#E2E2E8;--line2:#CFCFD7;--text:#17171B;--text2:#5A5A64;--text3:#6F6F7A;--accent:#5F45F0;--accentSoft:#ECE8FF;--onAccent:#FFFFFF;--zoom:#6F57F2;--clip:#D9A41C;--layout:#DF4F80;--mask:#1E9A9A;--shortcut:#2F7FE0;--caption:#2A9D5E;--captionSoft:#DDF3E6;--voice:#E0692A;--danger:#D14343;--dangerSoft:#FBE3E3;--stage:#E6E6EC;--shadow:0 10px 30px rgba(20,20,35,.12);--focus:0 0 0 3px rgba(95,69,240,.35)}
+.ss.dark{--bg:#0E0F11;--panel:#161719;--panel2:#1C1D21;--raised:#23242A;--line:#2A2B31;--line2:#383943;--text:#EDEDF2;--text2:#A6A7B1;--text3:#8E8F9A;--accent:#8F79FF;--accentSoft:#2A2546;--onAccent:#0E0F11;--zoom:#8F79FF;--clip:#F2C14E;--layout:#F06A98;--mask:#34BFBF;--shortcut:#5EA0F7;--caption:#45C77F;--captionSoft:#173526;--voice:#F58D4D;--danger:#E36060;--dangerSoft:#3A1F22;--stage:#07070A;--shadow:0 10px 30px rgba(0,0,0,.5);--focus:0 0 0 3px rgba(143,121,255,.4)}
+.ss *{box-sizing:border-box}
+.ss button{font:inherit;color:inherit;cursor:pointer}
+.ss button:focus-visible,.ss input:focus-visible,.ss [contenteditable]:focus-visible{outline:none;box-shadow:var(--focus)}
+.ss .ghost:hover{background:var(--panel2)}
+.ss .ic{width:18px;height:18px;flex:none}
+.ss h3{margin:0;font-size:12px;font-weight:600;color:var(--text2)}
+.ss .w{padding:1px 2px;border-radius:3px;line-height:1.9}
+.ss .w.del{text-decoration:line-through;color:var(--text3)}
+.ss .w.f1{background:var(--dangerSoft);text-decoration:underline dotted var(--danger);text-underline-offset:3px}
+.ss .w.f2{text-decoration:underline dotted var(--text3);text-underline-offset:3px}
+.ss .w.sel{background:var(--accentSoft);box-shadow:0 0 0 1px var(--accent)}
+.ss .w.hid{color:var(--text3);background:var(--panel2)}
+.ss .gap{display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 6px;border-radius:9px;border:1px dashed var(--line2);color:var(--text3);font-size:10px;vertical-align:middle;margin:0 2px}
+a{color:#5F45F0}a:hover{color:#4A34C9}
+</style>
+</helmet>
+<div class="ss {{themeClass}}" style="width: 1280px; height: 800px; background: var(--bg); color: var(--text); display: flex; flex-direction: column; font-size: 13px; overflow: hidden; border-radius: 12px">
+
+  <header style="height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 14px; background: var(--panel); border-bottom: 1px solid var(--line); flex: none">
+    <div style="display: flex; gap: 8px; width: 60px" aria-hidden="true"><span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span></div>
+    <span style="font-weight: 600">Billing settings demo</span><span style="color: var(--text3)">· transcript generated 2 min ago</span>
+    <div style="flex: 1 1 auto; display: flex; justify-content: center; gap: 8px">
+      <button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Wide 16:9 ▾</button>
+      <button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Crop</button>
+      <button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Presets</button>
+    </div>
+    <button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Share link</button>
+    <button style="height: 30px; padding: 0 16px; border-radius: 8px; border: none; background: var(--accent); color: var(--onAccent); font-weight: 600">Export</button>
+  </header>
+
+  <div style="flex: 1 1 auto; display: flex; min-height: 0">
+    <nav aria-label="Editor panels" style="width: 68px; flex: none; background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 8px 6px; gap: 2px">
+      <sc-for list="{{rail}}" as="r" hint-placeholder-count="10">
+        <button aria-pressed="{{ r.active }}" style="height: 54px; border-radius: 8px; border: none; background: {{ r.bg }}; color: {{ r.fg }}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 10px; font-weight: 500"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="{{ r.d }}"/></svg><span>{{ r.label }}</span></button>
+      </sc-for>
+    </nav>
+
+    <main style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column">
+      <div style="flex: 1 1 auto; position: relative; margin: 16px; border-radius: 10px; background: var(--stage); overflow: hidden">
+        <div style="position: absolute; inset: 0; background: linear-gradient(135deg, #0f3d3a 0%, #176b5d 50%, #86c6a1 100%)">
+          <div style="position: absolute; inset: 7% 10%; border-radius: 12px; background: #1f2026; box-shadow: 0 30px 60px rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.12)"></div>
+          <!-- Caption line -->
+          <div style="position: absolute; left: 50%; bottom: 11%; transform: translateX(-50%); padding: 8px 14px; border-radius: 10px; background: rgba(0,0,0,.7); color: #fff; font-size: 20px; font-weight: 600; white-space: nowrap">Open <span style="color: var(--caption)">billing</span> and pick a plan</div>
+          <div style="position: absolute; right: 7%; bottom: 8%; width: 130px; height: 130px; border-radius: 25%; background: linear-gradient(160deg, #e9c1a3, #a16a4c); border: 2px solid rgba(255,255,255,.25)"></div>
+        </div>
+      </div>
+      <div style="height: 44px; flex: none; display: flex; align-items: center; gap: 14px; padding: 0 20px; border-top: 1px solid var(--line); background: var(--panel)">
+        <span style="font-variant-numeric: tabular-nums; font-weight: 600">00:18.72</span><span style="color: var(--text3)">/ 01:21.00</span>
+        <div style="flex: 1 1 auto"></div>
+        <button aria-label="Play (Space)" style="width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--text); color: var(--bg); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l12 8-12 8z"/></svg></button>
+        <div style="flex: 1 1 auto"></div>
+        <span style="color: var(--text3); font-size: 11px">Transcript edits are ordinary cuts: undo with ⌘Z</span>
+      </div>
+    </main>
+
+    <aside aria-label="Captions settings" style="width: 312px; flex: none; background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; overflow: hidden">
+      <div style="height: 48px; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--line)"><span style="width: 10px; height: 10px; border-radius: 3px; background: var(--caption)"></span><span style="font-weight: 600">Captions</span></div>
+      <div style="flex: 1 1 auto; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 18px">
+        <section style="display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 10px; background: var(--panel2)">
+          <label style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><span style="font-weight: 500">Show captions</span><input type="checkbox" checked style="width: 36px; height: 20px; accent-color: var(--accent)"></label>
+          <div><div style="display: flex; justify-content: space-between"><label for="cap-size" style="font-size: 12px; font-weight: 600; color: var(--text2)">Size</label><span>100%</span></div><input id="cap-size" type="range" min="50" max="200" value="100" style="width: 100%; accent-color: var(--accent)"></div>
+          <div role="group" aria-label="Caption position" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1px solid var(--line2); border-radius: 8px; overflow: hidden"><button style="height: 28px; border: none; background: var(--accentSoft); font-weight: 600; font-size: 12px">Bottom</button><button style="height: 28px; border: none; border-left: 1px solid var(--line2); background: var(--panel); color: var(--text2); font-size: 12px">Centre</button></div>
+          <div role="group" aria-label="Word animation" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--line2); border-radius: 8px; overflow: hidden"><button style="height: 28px; border: none; background: var(--panel); color: var(--text2); font-size: 12px">Line</button><button style="height: 28px; border: none; border-left: 1px solid var(--line2); background: var(--accentSoft); font-weight: 600; font-size: 12px">Reveal</button><button style="height: 28px; border: none; border-left: 1px solid var(--line2); background: var(--panel); color: var(--text2); font-size: 12px">Word</button></div>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 8px">
+          <h3>Transcript method</h3>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+            <button aria-pressed="true" style="padding: 10px; border-radius: 10px; border: 2px solid var(--accent); background: var(--panel2); text-align: left; display: flex; flex-direction: column; gap: 4px"><span style="font-weight: 600">Local</span><span style="font-size: 11px; color: var(--text3)">Apple speech, macOS 26+. Nothing leaves the Mac.</span></button>
+            <button style="padding: 10px; border-radius: 10px; border: 2px solid var(--line2); background: var(--panel2); text-align: left; display: flex; flex-direction: column; gap: 4px"><span style="font-weight: 600">Cloud</span><span style="font-size: 11px; color: var(--text3)">Audio sent, then deleted from the server.</span></button>
+          </div>
+          <label for="lang" style="font-size: 12px; font-weight: 600; color: var(--text2)">Language</label>
+          <button id="lang" aria-haspopup="listbox" style="height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2); display: flex; justify-content: space-between; align-items: center"><span>Auto-detect</span><span style="color: var(--text3)">▾</span></button>
+          <label for="prompt" style="font-size: 12px; font-weight: 600; color: var(--text2)">Prompt <span style="font-weight: 400; color: var(--text3)">names, clients, products</span></label>
+          <input id="prompt" value="Recscene, Resend, Slack" style="height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2); color: var(--text); font: inherit">
+          <button class="ghost" style="height: 32px; border-radius: 8px; border: 1px solid var(--line2); background: transparent">Re-generate transcript</button>
+          <p style="margin: 0; font-size: 11px; color: var(--text3)">Re-generating replaces the transcript and every edit you made to it.</p>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 8px">
+          <h3>Transcript file</h3>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px"><button class="ghost" style="height: 30px; border-radius: 8px; border: 1px solid var(--line2); background: transparent; font-size: 12px">Export .srt</button><button class="ghost" style="height: 30px; border-radius: 8px; border: 1px solid var(--line2); background: transparent; font-size: 12px">Regenerate with fillers</button></div>
+        </section>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Bottom: Timeline / Transcript tabs, Transcript active -->
+  <section aria-label="Edit by transcript" style="height: 236px; flex: none; background: var(--panel); border-top: 1px solid var(--line); display: flex; flex-direction: column">
+    <div style="height: 36px; display: flex; align-items: center; gap: 6px; padding: 0 12px; border-bottom: 1px solid var(--line)">
+      <div role="tablist" style="display: flex; gap: 2px; padding: 2px; border-radius: 8px; background: var(--panel2)">
+        <button role="tab" aria-selected="false" style="height: 26px; padding: 0 12px; border-radius: 6px; border: none; background: transparent; color: var(--text2)">Timeline</button>
+        <button role="tab" aria-selected="true" style="height: 26px; padding: 0 12px; border-radius: 6px; border: none; background: var(--panel); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.15)">Transcript</button>
+      </div>
+      <span style="width: 1px; height: 18px; background: var(--line2); margin: 0 6px"></span>
+      <button class="ghost" style="height: 28px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--line2); background: transparent; display: flex; align-items: center; gap: 6px; font-size: 12px"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--danger)"></span>Remove 6 filler words</button>
+      <button class="ghost" style="height: 28px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--line2); background: transparent; display: flex; align-items: center; gap: 6px; font-size: 12px"><span class="gap" style="height: 12px; padding: 0 4px">1.8 s</span>Tighten 4 pauses</button>
+      <div style="flex: 1 1 auto"></div>
+      <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2)"><input type="checkbox" checked style="accent-color: var(--accent)">Show deleted text</label>
+      <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2)"><input type="checkbox" style="accent-color: var(--accent)">Show hidden words</label>
+    </div>
+    <div style="flex: 1 1 auto; display: grid; grid-template-columns: minmax(0, 1fr) 220px; overflow: hidden">
+      <div role="textbox" aria-multiline="true" aria-label="Transcript" tabindex="0" style="padding: 14px 20px; overflow: auto; font-size: 15px; line-height: 1.9">
+        <span class="w">Hi,</span> <span class="w f1" title="Filler · tier 1">um,</span> <span class="w">in</span> <span class="w">this</span> <span class="w">video</span> <span class="w">I'll</span> <span class="w">show</span> <span class="w">you</span> <span class="w">how</span> <span class="w">billing</span> <span class="w">works.</span>
+        <span class="gap" title="Pause — click to select, then tighten it to a natural breath">· · · 2.4 s</span>
+        <span class="w f2" title="Filler · tier 2, highlighted only">So</span> <span class="w">first,</span> <span class="w del">let's,</span> <span class="w del f1">uh,</span> <span class="w del">let's</span> <span class="w">open</span> <span class="w sel">Settings</span> <span class="w sel">and</span> <span class="w sel">then</span> <span class="w sel">billing</span> <span class="w">and</span> <span class="w">pick</span> <span class="w">a</span> <span class="w">plan.</span>
+        <span class="gap">· · · 1.1 s</span>
+        <span class="w">The</span> <span class="w">yearly</span> <span class="w">plan</span> <span class="w">is</span> <span class="w f2">basically</span> <span class="w">the</span> <span class="w">one</span> <span class="w">most</span> <span class="w">teams</span> <span class="w">choose,</span> <span class="w hid" title="Hidden from captions">[laughs]</span> <span class="w">because</span> <span class="w">it</span> <span class="w">includes</span> <span class="w">every</span> <span class="w">feature.</span>
+        <span class="gap">· · · 1.8 s</span>
+        <span class="w">Next,</span> <span class="w f1">hmm,</span> <span class="w">we'll</span> <span class="w">connect</span> <span class="w">a</span> <span class="w">card</span> <span class="w">and</span> <span class="w">add</span> <span class="w">a</span> <span class="w">second</span> <span class="w">device.</span>
+      </div>
+      <div style="border-left: 1px solid var(--line); padding: 14px; display: flex; flex-direction: column; gap: 8px; font-size: 12px">
+        <span style="font-weight: 600">4 words selected · 00:18.7–00:19.9</span>
+        <button style="height: 32px; border-radius: 8px; border: none; background: var(--text); color: var(--bg); font-weight: 600; display: flex; align-items: center; justify-content: space-between; padding: 0 10px">Cut video <kbd style="font: 11px Inter; opacity: .7">⌫</kbd></button>
+        <button class="ghost" style="height: 32px; border-radius: 8px; border: 1px solid var(--line2); background: transparent; display: flex; align-items: center; justify-content: space-between; padding: 0 10px">Cut transcript only <kbd style="font: 11px Inter; color: var(--text3)">⌘⌫</kbd></button>
+        <button class="ghost" style="height: 32px; border-radius: 8px; border: 1px solid var(--line2); background: transparent; display: flex; align-items: center; justify-content: space-between; padding: 0 10px">Play this part</button>
+        <p style="margin: 4px 0 0; color: var(--text3); font-size: 11px">Type to correct the text. Struck-through words stay restorable; cuts show on the Clips track.</p>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const theme = this.props.theme ?? 'dark';
+    const items = [['zooms','Zooms','M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM16 16l5 5M11 8v6M8 11h6'],['clips','Clips','M6 4h12v16H6zM6 9h12M6 14h12'],['cursor','Cursor','M5 3l14 8-6 2-3 6z'],['camera','Camera','M4 7h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4zM17 10l4-2v8l-4-2'],['background','Background','M3 5h18v14H3zM3 15l5-5 4 4 3-3 6 6'],['masks','Masks','M4 6h16v12H4zM8 10h4v4H8'],['shortcuts','Shortcuts','M3 7h18v10H3zM7 11h1M11 11h1M15 11h1M7 14h10'],['captions','Captions','M4 5h16v14H4zM7 14h6M15 14h2M7 10h2M11 10h6'],['audio','Audio','M4 12h2M8 8v8M12 5v14M16 9v6M20 11v2'],['animation','Animation','M4 18c4-10 12-10 16 0M8 12l2-2M14 10l2 2']];
+    const rail = items.map(([id,label,d]) => ({ id,label,d, active:id==='captions', bg:id==='captions'?'var(--accentSoft)':'transparent', fg:id==='captions'?'var(--text)':'var(--text2)' }));
+    return { themeClass: theme==='light'?'light':'dark', rail };
+  }
+}
+</script>
+</body>
+</html>

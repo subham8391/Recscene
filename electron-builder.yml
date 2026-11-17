@@ -1,0 +1,25 @@
+appId: app.recscene.desktop
+productName: Recscene
+copyright: Copyright © 2026 Subham Das
+directories:
+  buildResources: build
+  output: dist
+files:
+  - out/**
+  - package.json
+asar: true
+mac:
+  category: public.app-category.video
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  extendInfo:
+    NSCameraUsageDescription: Recscene records your camera when you add it to a recording.
+    NSMicrophoneUsageDescription: Recscene records your microphone when you add it to a recording.
+    NSScreenCaptureUsageDescription: Recscene records your screen.
+dmg:
+  sign: false

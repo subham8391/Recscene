@@ -1,0 +1,33 @@
+# Recscene — decisions log
+
+**Name: Recscene** — "Record the screen. Make it a scene." Chosen 2026-11-17. recscene.com, .app, .io, .dev and .co were unregistered that day and no app or product used the name; trademark registers (USPTO, EUIPO) still need a search before launch.
+
+## Settled (2026-11-17)
+
+**Product**
+- A paid macOS app for people who make product demos, tutorials and bug reports: record the screen, get a polished video without editing skills.
+- The feature set follows the Screen Studio study in `research/` (292 specs). Recscene matches that behaviour feature for feature unless a line here says otherwise, so the specs are the acceptance criteria.
+- Data stays on the user's Mac. A project is a `.recscene` folder bundle (raw screen, camera and audio files plus a JSON project document). Cloud is only for sharing a rendered video by link, and only after M2.
+- Milestones:
+  - **M1 — daily driver:** record the screen with clicks and keys captured, automatic zooms, cursor smoothing, trim, background and padding, export MP4. Used for two weeks for the author's own demos.
+  - **M2 — private beta:** camera with layouts and cutout, microphone, masks, captions, GIF export, presets, 10–30 testers.
+  - **M3 — launch:** licensing, auto-update, shareable links, landing page, transcript editing, voice-overs.
+
+**Platform and stack**
+- macOS first, Apple silicon and Intel. Windows is not planned until after M3.
+- Electron + electron-vite + React 19 + TypeScript. Reason: the design is HTML-native, the reference app proves the architecture at this feature set, and the editor UI changes far more often than the capture code.
+- Screen, camera and audio capture go through a native Swift helper (ScreenCaptureKit, AVFoundation) under `native/`, talking to the main process over a local socket or stdio. Electron's `desktopCapturer` is not used: it cannot capture clicks, keystrokes, cursor positions or 60 fps at full resolution reliably.
+- Rendering (zooms, cursor, layouts, background) happens on the GPU in the renderer with WebGL/WebGPU; export encodes with the native helper (VideoToolbox) rather than ffmpeg in JavaScript.
+- Layering: `src/core` (pure domain, tested) → `src/main` (Electron, files, native bridge) → `src/preload` (typed bridge) → `src/renderer` (React). Core never imports the layers above it.
+- Tooling matches the author's other projects: npm, Node 24, ESLint flat config, vitest with v8 coverage, GitHub Actions on push and PR.
+
+**Design**
+- Dark is the editor default; light is the default for export, settings and the project list. Both come from one token set; nothing is styled outside the tokens.
+- Breakpoints: laptop 1280×800 (rail 68, inspector 312, timeline 236), tablet 1024×768, mobile 390×844 (companion role only: record remotely, light edits).
+- Track colours: zooms purple, clips yellow, camera layouts pink, masks teal, shortcuts blue, captions green, voice-overs orange.
+
+## Open
+- **Q1** Licensing model: one-time with a year of updates versus subscription. Decide before M3.
+- **Q2** Transcription and captions: on-device (whisper.cpp) versus a cloud service. Lean on-device for privacy; decide at M2.
+- **Q3** Whether the tablet and mobile designs ship at all in M1–M3 or stay as companion designs. Default: not before M3.
+- **Q4** Code signing and notarisation account: personal Apple Developer account, to be set up before M2 testers receive a build.

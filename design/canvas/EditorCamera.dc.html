@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Editor — Camera and Layouts panel (laptop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif}
+.ss{--bg:#F2F2F5;--panel:#FFFFFF;--panel2:#F6F6F8;--raised:#FFFFFF;--line:#E2E2E8;--line2:#CFCFD7;--text:#17171B;--text2:#5A5A64;--text3:#6F6F7A;--accent:#5F45F0;--accentSoft:#ECE8FF;--onAccent:#FFFFFF;--zoom:#6F57F2;--clip:#D9A41C;--layout:#DF4F80;--mask:#1E9A9A;--shortcut:#2F7FE0;--caption:#2A9D5E;--voice:#E0692A;--danger:#D14343;--stage:#E6E6EC;--shadow:0 10px 30px rgba(20,20,35,.12);--focus:0 0 0 3px rgba(95,69,240,.35)}
+.ss.dark{--bg:#0E0F11;--panel:#161719;--panel2:#1C1D21;--raised:#23242A;--line:#2A2B31;--line2:#383943;--text:#EDEDF2;--text2:#A6A7B1;--text3:#8E8F9A;--accent:#8F79FF;--accentSoft:#2A2546;--onAccent:#0E0F11;--zoom:#8F79FF;--clip:#F2C14E;--layout:#F06A98;--mask:#34BFBF;--shortcut:#5EA0F7;--caption:#45C77F;--voice:#F58D4D;--danger:#E36060;--stage:#07070A;--shadow:0 10px 30px rgba(0,0,0,.5);--focus:0 0 0 3px rgba(143,121,255,.4)}
+.ss *{box-sizing:border-box}
+.ss button{font:inherit;color:inherit;cursor:pointer}
+.ss button:focus-visible,.ss input:focus-visible{outline:none;box-shadow:var(--focus)}
+.ss .ghost:hover{background:var(--panel2)}
+.ss .ic{width:18px;height:18px;flex:none}
+.ss h3{margin:0;font-size:12px;font-weight:600;color:var(--text2)}
+a{color:#5F45F0}a:hover{color:#4A34C9}
+</style>
+</helmet>
+<div class="ss {{themeClass}}" style="width: 1280px; height: 800px; background: var(--bg); color: var(--text); display: flex; flex-direction: column; font-size: 13px; overflow: hidden; border-radius: 12px">
+
+  <header style="height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 14px; background: var(--panel); border-bottom: 1px solid var(--line); flex: none">
+    <div style="display: flex; gap: 8px; width: 60px" aria-hidden="true"><span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span></div>
+    <span style="font-weight: 600">Onboarding walkthrough v3</span><span style="color: var(--text3)">· saved</span>
+    <div style="flex: 1 1 auto; display: flex; justify-content: center; gap: 8px">
+      <button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Wide 16:9 ▾</button>
+      <button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Crop</button>
+      <button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Presets</button>
+    </div>
+    <button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Share link</button>
+    <button style="height: 30px; padding: 0 16px; border-radius: 8px; border: none; background: var(--accent); color: var(--onAccent); font-weight: 600">Export</button>
+  </header>
+
+  <div style="flex: 1 1 auto; display: flex; min-height: 0">
+    <nav aria-label="Editor panels" style="width: 68px; flex: none; background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 8px 6px; gap: 2px">
+      <sc-for list="{{rail}}" as="r" hint-placeholder-count="10">
+        <button aria-pressed="{{ r.active }}" style="height: 54px; border-radius: 8px; border: none; background: {{ r.bg }}; color: {{ r.fg }}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 10px; font-weight: 500">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="{{ r.d }}"/></svg><span>{{ r.label }}</span>
+        </button>
+      </sc-for>
+    </nav>
+
+    <main style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column">
+      <div style="flex: 1 1 auto; position: relative; margin: 16px; border-radius: 10px; background: var(--stage); overflow: hidden">
+        <div style="position: absolute; inset: 0; background: radial-gradient(circle at 30% 20%, #2f5d8a 0%, #1a2a44 55%, #0d1322 100%)">
+          <!-- Screen, shifted left to make room for a split-screen style camera when that layout is picked -->
+          <div style="position: absolute; left: 6%; top: 10%; width: {{ screenW }}; height: 80%; border-radius: 12px; background: #1f2026; box-shadow: 0 30px 60px rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.12); overflow: hidden">
+            <div style="height: 26px; background: #2a2b33"></div>
+            <div style="padding: 16px; display: flex; flex-direction: column; gap: 10px"><span style="height: 14px; width: 40%; background: #4a4b57; border-radius: 4px"></span><span style="height: 10px; width: 90%; background: #3a3b45; border-radius: 4px"></span><span style="height: 10px; width: 75%; background: #3a3b45; border-radius: 4px"></span><span style="height: 120px; width: 100%; background: #2f3038; border-radius: 6px"></span></div>
+          </div>
+          <!-- Camera: overlay / split / cutout -->
+          <sc-if value="{{ isOverlay }}" hint-placeholder-val="{{ true }}">
+            <div style="position: absolute; right: 7%; bottom: 10%; width: 190px; height: 190px; border-radius: 25%; background: linear-gradient(160deg, #e9c1a3, #a16a4c); box-shadow: 0 16px 40px rgba(0,0,0,.4); border: 2px solid rgba(255,255,255,.25); overflow: hidden">
+              <span style="position: absolute; left: 26%; top: 18%; width: 48%; height: 60%; border-radius: 50% 50% 45% 45%; background: #d9a483"></span>
+            </div>
+            <!-- 3×3 position grid overlay -->
+            <div aria-hidden="true" style="position: absolute; inset: 10% 6%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); pointer-events: none">
+              <sc-for list="{{grid}}" as="g" hint-placeholder-count="9"><span style="margin: 10px; border: 1px dashed rgba(255,255,255,.22); border-radius: 8px; display: grid; place-items: end; padding: 8px"><span style="width: 10px; height: 10px; border-radius: 50%; background: {{ g }}"></span></span></sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isSplit }}" hint-placeholder-val="{{ false }}">
+            <div style="position: absolute; right: 6%; top: 10%; width: 28%; height: 80%; border-radius: 12px; background: linear-gradient(160deg, #e9c1a3, #a16a4c); box-shadow: 0 30px 60px rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.12)"></div>
+          </sc-if>
+          <sc-if value="{{ isCutout }}" hint-placeholder-val="{{ false }}">
+            <div style="position: absolute; right: 8%; bottom: 0; width: 240px; height: 300px; border-radius: 120px 120px 0 0; background: linear-gradient(180deg, #e9c1a3 0%, #a16a4c 60%, #3b3a4a 100%); filter: drop-shadow(0 20px 30px rgba(0,0,0,.5))"></div>
+          </sc-if>
+          <div style="position: absolute; left: 14px; top: 14px; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,.55); color: #fff; font-size: 11px; display: flex; gap: 8px; align-items: center"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--layout)"></span>Default layout · {{ layoutName }}</div>
+        </div>
+      </div>
+      <div style="height: 44px; flex: none; display: flex; align-items: center; gap: 14px; padding: 0 20px; border-top: 1px solid var(--line); background: var(--panel)">
+        <span style="font-variant-numeric: tabular-nums; font-weight: 600">00:41.10</span><span style="color: var(--text3)">/ 02:05.00</span>
+        <div style="flex: 1 1 auto"></div>
+        <button aria-label="Play (Space)" style="width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--text); color: var(--bg); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l12 8-12 8z"/></svg></button>
+        <div style="flex: 1 1 auto"></div>
+        <span style="color: var(--text3); font-size: 11px">H hides camera · arrows move layout camera</span>
+      </div>
+    </main>
+
+    <aside aria-label="Camera settings" style="width: 312px; flex: none; background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; overflow: hidden">
+      <div style="height: 48px; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--line)"><span style="width: 10px; height: 10px; border-radius: 3px; background: var(--layout)"></span><span style="font-weight: 600">Camera</span><span style="color: var(--text3)">default layout</span></div>
+      <div style="flex: 1 1 auto; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 18px">
+
+        <section style="display: flex; flex-direction: column; gap: 8px">
+          <h3>Default layout</h3>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+            <sc-for list="{{layouts}}" as="l" hint-placeholder-count="3">
+              <button onClick="{{ l.pick }}" aria-pressed="{{ l.active }}" style="height: 70px; border-radius: 10px; border: 2px solid {{ l.border }}; background: var(--panel2); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 11px; font-weight: 500">
+                <span style="width: 44px; height: 26px; border-radius: 4px; background: var(--line2); position: relative; overflow: hidden"><span style="position: absolute; {{ l.thumb }} background: var(--layout)"></span></span>{{ l.name }}
+              </button>
+            </sc-for>
+          </div>
+          <p style="margin: 0; font-size: 11px; color: var(--text3)">Add layouts on the Layouts track to change this over time: fullscreen camera, hide camera, split, cutout.</p>
+        </section>
+
+        <sc-if value="{{ isOverlay }}" hint-placeholder-val="{{ true }}">
+        <section style="display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 14px; align-items: start">
+          <div style="display: flex; flex-direction: column; gap: 6px"><h3>Position</h3>
+            <div role="group" aria-label="Camera position" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; width: 96px">
+              <sc-for list="{{posCells}}" as="c" hint-placeholder-count="9"><button aria-label="{{ c.label }}" aria-pressed="{{ c.on }}" style="height: 28px; border-radius: 6px; border: 1px solid var(--line2); background: {{ c.bg }}"></button></sc-for>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <div><div style="display: flex; justify-content: space-between"><label for="cam-size" style="font-size: 12px; font-weight: 600; color: var(--text2)">Size</label><span style="font-variant-numeric: tabular-nums">35%</span></div><input id="cam-size" type="range" min="20" max="100" value="35" style="width: 100%; accent-color: var(--accent)"></div>
+            <div><div style="display: flex; justify-content: space-between"><label for="cam-round" style="font-size: 12px; font-weight: 600; color: var(--text2)">Roundness</label><span style="font-variant-numeric: tabular-nums">25%</span></div><input id="cam-round" type="range" min="0" max="50" value="25" style="width: 100%; accent-color: var(--accent)"></div>
+            <div role="group" aria-label="Camera shape" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1px solid var(--line2); border-radius: 8px; overflow: hidden"><button style="height: 28px; border: none; background: var(--accentSoft); font-weight: 600; font-size: 12px">Original</button><button style="height: 28px; border: none; border-left: 1px solid var(--line2); background: var(--panel2); color: var(--text2); font-size: 12px">Square</button></div>
+          </div>
+        </section>
+        </sc-if>
+        <sc-if value="{{ isSplit }}" hint-placeholder-val="{{ false }}">
+        <section style="display: flex; flex-direction: column; gap: 8px"><h3>Split ratio</h3>
+          <div role="group" aria-label="Split ratio" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1px solid var(--line2); border-radius: 8px; overflow: hidden"><button style="height: 30px; border: none; background: var(--accentSoft); font-weight: 600">½ · ½</button><button style="height: 30px; border: none; border-left: 1px solid var(--line2); background: var(--panel2); color: var(--text2)">⅔ · ⅓</button></div>
+          <label style="display: flex; justify-content: space-between; align-items: center"><span>Flip sides</span><input type="checkbox" style="width: 36px; height: 20px; accent-color: var(--accent)"></label>
+          <label style="display: flex; justify-content: space-between; align-items: center"><span>Fill <span style="color: var(--text3); font-size: 11px">Fullscreen / Padded</span></span><input type="checkbox" checked style="width: 36px; height: 20px; accent-color: var(--accent)"></label>
+        </section>
+        </sc-if>
+        <sc-if value="{{ isCutout }}" hint-placeholder-val="{{ false }}">
+        <section style="display: flex; flex-direction: column; gap: 10px"><h3>Cutout</h3>
+          <div role="group" aria-label="Camera position" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px"><button style="height: 30px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2); font-size: 12px">Left</button><button style="height: 30px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2); font-size: 12px">Centre</button><button aria-pressed="true" style="height: 30px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accentSoft); font-size: 12px; font-weight: 600">Right</button></div>
+          <div><div style="display: flex; justify-content: space-between"><label for="cut-size" style="font-size: 12px; font-weight: 600; color: var(--text2)">Camera size</label><span>48%</span></div><input id="cut-size" type="range" min="20" max="100" value="48" style="width: 100%; accent-color: var(--accent)"></div>
+          <div><div style="display: flex; justify-content: space-between"><label for="cut-edge" style="font-size: 12px; font-weight: 600; color: var(--text2)">Edge softness <span title="Shared by every cutout layout in the project" style="color: var(--text3)">⧈</span></label><span>30%</span></div><input id="cut-edge" type="range" min="0" max="100" value="30" style="width: 100%; accent-color: var(--accent)"></div>
+          <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; background: var(--panel2); font-size: 11px; color: var(--text2)"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--layout)"></span>Preparing camera cutout · 64%</div>
+        </section>
+        </sc-if>
+
+        <section style="display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 10px; background: var(--panel2)">
+          <label style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><span><span style="display: block; font-weight: 500">Make smaller during zoom</span><span style="display: block; font-size: 11px; color: var(--text3)">Shrinks to 70% so it never covers what you zoom into.</span></span><input type="checkbox" checked style="width: 36px; height: 20px; accent-color: var(--accent)"></label>
+          <label style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><span style="font-weight: 500">Mirror horizontally</span><input type="checkbox" style="width: 36px; height: 20px; accent-color: var(--accent)"></label>
+          <label style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><span><span style="display: block; font-weight: 500">Face tracking</span><span style="display: block; font-size: 11px; color: var(--text3)">Centres the picture on your face. Done locally.</span></span><input type="checkbox" style="width: 36px; height: 20px; accent-color: var(--accent)"></label>
+          <label style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><span><span style="display: block; font-weight: 500">Hide during silence</span><span style="display: block; font-size: 11px; color: var(--text3)">Minimum silence 5.0 s</span></span><input type="checkbox" checked style="width: 36px; height: 20px; accent-color: var(--accent)"></label>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; justify-content: space-between; align-items: center"><h3>Color grading</h3><button class="ghost" aria-label="Create a color preset or load a LUT file" style="width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--line2); background: transparent; font-size: 14px; line-height: 1">+</button></div>
+          <div style="display: flex; gap: 6px; overflow: hidden">
+            <sc-for list="{{looks}}" as="k" hint-placeholder-count="6">
+              <button aria-label="{{ k.name }}" aria-pressed="{{ k.on }}" style="width: 44px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 4px; border: none; background: transparent; padding: 0">
+                <span style="width: 44px; height: 44px; border-radius: 8px; background: {{ k.bg }}; border: 2px solid {{ k.border }}"></span><span style="font-size: 10px; color: var(--text2)">{{ k.name }}</span>
+              </button>
+            </sc-for>
+          </div>
+          <div><div style="display: flex; justify-content: space-between"><label for="lut-int" style="font-size: 12px; font-weight: 600; color: var(--text2)">Intensity</label><span>100%</span></div><input id="lut-int" type="range" min="0" max="100" value="100" style="width: 100%; accent-color: var(--accent)"></div>
+          <div><div style="display: flex; justify-content: space-between"><label for="sharp" style="font-size: 12px; font-weight: 600; color: var(--text2)">Sharpen</label><span>Off</span></div><input id="sharp" type="range" min="0" max="100" value="0" style="width: 100%; accent-color: var(--accent)"></div>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 8px">
+          <h3>Advanced</h3>
+          <div><div style="display: flex; justify-content: space-between"><label for="delay" style="font-size: 12px; font-weight: 600; color: var(--text2)">Camera delay</label><span>0 ms</span></div><input id="delay" type="range" min="-200" max="200" step="5" value="0" style="width: 100%; accent-color: var(--accent)"><p style="margin: 4px 0 0; font-size: 11px; color: var(--text3)">If lips move after the words, raise it; before, lower it.</p></div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px"><button class="ghost" style="height: 30px; border-radius: 8px; border: 1px solid var(--line2); background: transparent; font-size: 12px">Crop camera</button><button class="ghost" style="height: 30px; border-radius: 8px; border: 1px solid var(--line2); background: transparent; font-size: 12px">Hide camera · H</button></div>
+        </section>
+      </div>
+    </aside>
+  </div>
+
+  <section aria-label="Timeline" style="height: 236px; flex: none; background: var(--panel); border-top: 1px solid var(--line); display: flex; flex-direction: column">
+    <div style="height: 36px; display: flex; align-items: center; gap: 6px; padding: 0 12px; border-bottom: 1px solid var(--line)">
+      <button class="ghost" style="height: 28px; padding: 0 10px; border-radius: 6px; border: none; background: transparent; color: var(--layout); font-weight: 500">+ Layout ▾</button>
+      <span style="color: var(--text3); font-size: 11px">Camera overlay · Split screen · Camera cutout · Fullscreen camera · Hide camera</span>
+      <div style="flex: 1 1 auto"></div>
+      <label for="tl-zoom2" style="font-size: 11px; color: var(--text3)">Timeline zoom</label><input id="tl-zoom2" type="range" min="0" max="100" value="40" style="width: 120px; accent-color: var(--accent)">
+    </div>
+    <div style="flex: 1 1 auto; display: grid; grid-template-columns: 112px minmax(0, 1fr); overflow: hidden">
+      <div style="border-right: 1px solid var(--line); display: flex; flex-direction: column; font-size: 11px; color: var(--text2)">
+        <div style="height: 20px"></div>
+        <sc-for list="{{tracks}}" as="t" hint-placeholder-count="8"><div style="height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="width: 6px; height: 6px; border-radius: 2px; background: {{ t.color }}"></span>{{ t.name }}</div></sc-for>
+      </div>
+      <div style="position: relative; overflow: hidden">
+        <div style="height: 20px; display: flex; font-size: 10px; color: var(--text3); border-bottom: 1px solid var(--line)"><sc-for list="{{ruler}}" as="m" hint-placeholder-count="9"><span style="flex: 1 1 0; border-left: 1px solid var(--line2); padding-left: 4px; line-height: 20px">{{ m }}</span></sc-for></div>
+        <div style="height: 22px; position: relative; border-bottom: 1px solid var(--line)"><span style="position: absolute; left: 8%; width: 6%; top: 3px; height: 16px; border-radius: 4px; background: var(--zoom); opacity: .85"></span><span style="position: absolute; left: 30%; width: 8%; top: 3px; height: 16px; border-radius: 4px; background: var(--zoom); opacity: .85"></span><span style="position: absolute; left: 66%; width: 7%; top: 3px; height: 16px; border-radius: 4px; background: var(--zoom); opacity: .85"></span></div>
+        <div style="height: 22px; position: relative; border-bottom: 1px solid var(--line)"><span style="position: absolute; left: 0; width: 100%; top: 2px; height: 18px; border-radius: 4px; background: var(--clip); color: #1a1500; font-size: 10px; font-weight: 600; padding-left: 6px; line-height: 18px">1×</span></div>
+        <div style="height: 22px; position: relative; border-bottom: 1px solid var(--line)">
+          <span style="position: absolute; left: 0; width: 100%; top: 3px; height: 16px; border-radius: 4px; background: var(--layout); opacity: .25"></span>
+          <span style="position: absolute; left: 0; top: 3px; font-size: 10px; color: var(--text2); padding-left: 6px; line-height: 16px">Default · {{ layoutName }}</span>
+          <span style="position: absolute; left: 0; width: 9%; top: 3px; height: 16px; border-radius: 4px; background: var(--layout); color: #fff; font-size: 10px; padding-left: 6px; line-height: 16px">Fullscreen camera</span>
+          <span style="position: absolute; left: 44%; width: 12%; top: 3px; height: 16px; border-radius: 4px; background: var(--layout); color: #fff; font-size: 10px; padding-left: 6px; line-height: 16px">Hide camera</span>
+          <span style="position: absolute; left: 78%; width: 14%; top: 3px; height: 16px; border-radius: 4px; background: var(--layout); color: #fff; font-size: 10px; padding-left: 6px; line-height: 16px; box-shadow: 0 0 0 2px var(--text)">Split ½</span>
+        </div>
+        <div style="height: 22px; position: relative; border-bottom: 1px solid var(--line)"></div>
+        <div style="height: 22px; position: relative; border-bottom: 1px solid var(--line)"><span style="position: absolute; left: 20%; top: 3px; height: 16px; padding: 0 6px; border-radius: 4px; background: var(--shortcut); color: #fff; font-size: 10px; line-height: 16px">⌘K</span></div>
+        <div style="height: 22px; position: relative; border-bottom: 1px solid var(--line)"><span style="position: absolute; left: 2%; width: 92%; top: 3px; height: 16px; border-radius: 4px; background: var(--caption); opacity: .5"></span></div>
+        <div style="height: 22px; position: relative; border-bottom: 1px solid var(--line)"></div>
+        <div style="height: 22px; position: relative; display: flex; align-items: center; gap: 1px; padding: 0 2px"><sc-for list="{{wave}}" as="h" hint-placeholder-count="120"><span style="flex: 1 1 0; height: {{ h }}; background: var(--text3); opacity: .55; border-radius: 1px"></span></sc-for></div>
+        <div aria-hidden="true" style="position: absolute; left: 33%; top: 0; bottom: 0; width: 1px; background: var(--text)"><span style="position: absolute; top: 0; left: -6px; width: 13px; height: 13px; border-radius: 7px 7px 7px 0; background: var(--text); transform: rotate(-45deg)"></span></div>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { layout:'overlay' }; }
+  renderVals() {
+    const theme = this.props.theme ?? 'dark';
+    const items = [['zooms','Zooms','M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM16 16l5 5M11 8v6M8 11h6'],['clips','Clips','M6 4h12v16H6zM6 9h12M6 14h12'],['cursor','Cursor','M5 3l14 8-6 2-3 6z'],['camera','Camera','M4 7h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4zM17 10l4-2v8l-4-2'],['background','Background','M3 5h18v14H3zM3 15l5-5 4 4 3-3 6 6'],['masks','Masks','M4 6h16v12H4zM8 10h4v4H8'],['shortcuts','Shortcuts','M3 7h18v10H3zM7 11h1M11 11h1M15 11h1M7 14h10'],['captions','Captions','M4 5h16v14H4zM7 14h6M15 14h2M7 10h2M11 10h6'],['audio','Audio','M4 12h2M8 8v8M12 5v14M16 9v6M20 11v2'],['animation','Animation','M4 18c4-10 12-10 16 0M8 12l2-2M14 10l2 2']];
+    const rail = items.map(([id,label,d]) => ({ id,label,d, active:id==='camera', bg:id==='camera'?'var(--accentSoft)':'transparent', fg:id==='camera'?'var(--text)':'var(--text2)' }));
+    const L = this.state.layout;
+    const layouts = [
+      {id:'overlay', name:'Overlay', thumb:'right:3px;bottom:3px;width:12px;height:10px;border-radius:2px;'},
+      {id:'split', name:'Split', thumb:'right:0;top:0;bottom:0;width:40%;'},
+      {id:'cutout', name:'Cutout', thumb:'right:6px;bottom:0;width:14px;height:16px;border-radius:7px 7px 0 0;'}
+    ].map(l => ({...l, active:L===l.id, border:L===l.id?'var(--accent)':'var(--line2)', pick:()=>this.setState({layout:l.id})}));
+    const names = {overlay:'Camera overlay', split:'Split screen ½', cutout:'Camera cutout'};
+    const posCells = ['top left','top','top right','left','centre','right','bottom left','bottom','bottom right'].map((label,i)=>({label, on:i===8, bg:i===8?'var(--accent)':'var(--panel2)'}));
+    const tracks = [{name:'Zooms',color:'var(--zoom)'},{name:'Clips',color:'var(--clip)'},{name:'Layouts',color:'var(--layout)'},{name:'Masks',color:'var(--mask)'},{name:'Shortcuts',color:'var(--shortcut)'},{name:'Captions',color:'var(--caption)'},{name:'Voiceovers',color:'var(--voice)'},{name:'Audio',color:'var(--text3)'}];
+    const looks = [['Original','linear-gradient(160deg,#e9c1a3,#a16a4c)',true],['Studio','linear-gradient(160deg,#e6bd9c,#9d6648)',false],['Cinema','linear-gradient(160deg,#d9b08f,#4f6d78)',false],['Golden','linear-gradient(160deg,#f0c48f,#b07a3a)',false],['Moody','linear-gradient(160deg,#b89a8c,#3a3f52)',false],['Mono','linear-gradient(160deg,#d9d2c8,#4b4540)',false]].map(([name,bg,on])=>({name,bg,on,border:on?'var(--accent)':'transparent'}));
+    const wave = Array.from({length:120},(_,i)=> (4 + Math.round(8*Math.abs(Math.sin(i*0.6))+5*Math.abs(Math.cos(i*0.31)))) + 'px');
+    return {
+      themeClass: theme==='light'?'light':'dark', rail, layouts, posCells, tracks, looks, wave,
+      ruler:['0:00','0:15','0:30','0:45','1:00','1:15','1:30','1:45','2:00'],
+      grid: Array.from({length:9},(_,i)=> i===8 ? 'var(--layout)' : 'rgba(255,255,255,.35)'),
+      isOverlay: L==='overlay', isSplit: L==='split', isCutout: L==='cutout',
+      screenW: L==='split' ? '58%' : '88%', layoutName: names[L]
+    };
+  }
+}
+</script>
+</body>
+</html>

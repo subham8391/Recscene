@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Projects home on mobile</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif}
+.ss{--bg:#F2F2F5;--panel:#FFFFFF;--panel2:#F6F6F8;--line:#E2E2E8;--line2:#CFCFD7;--text:#17171B;--text2:#5A5A64;--text3:#6F6F7A;--accent:#5F45F0;--accentSoft:#ECE8FF;--onAccent:#FFFFFF;--rec:#E0393E;--clip:#D9A41C;--caption:#2A9D5E;--focus:0 0 0 3px rgba(95,69,240,.35)}
+.ss.dark{--bg:#0E0F11;--panel:#161719;--panel2:#1C1D21;--line:#2A2B31;--line2:#383943;--text:#EDEDF2;--text2:#A6A7B1;--text3:#8E8F9A;--accent:#8F79FF;--accentSoft:#2A2546;--onAccent:#0E0F11;--rec:#FF4A4F;--clip:#F2C14E;--caption:#45C77F;--focus:0 0 0 3px rgba(143,121,255,.4)}
+.ss *{box-sizing:border-box}
+.ss button{font:inherit;color:inherit;cursor:pointer}
+.ss button:focus-visible,.ss input:focus-visible,.ss a:focus-visible{outline:none;box-shadow:var(--focus)}
+.ss .ic{width:22px;height:22px;flex:none}
+a{color:#5F45F0}a:hover{color:#4A34C9}
+</style>
+</helmet>
+<div class="ss {{themeClass}}" style="width: 390px; height: 844px; background: var(--bg); color: var(--text); font-size: 15px; display: flex; flex-direction: column; overflow: hidden; border-radius: 44px">
+  <header style="padding: 58px 20px 12px; display: flex; flex-direction: column; gap: 12px">
+    <div style="display: flex; align-items: center; gap: 10px">
+      <h1 style="margin: 0; font-size: 26px; font-weight: 700">Projects</h1>
+      <div style="flex: 1 1 auto"></div>
+      <a href="MobileExport.dc.html" aria-label="Shareable links" style="width: 44px; height: 44px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); display: grid; place-items: center; color: var(--text)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 14a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 0 0-5-5l-1 1M14 10a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5l1-1"/></svg></a>
+      <button aria-label="Settings" style="width: 44px; height: 44px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.5-2.4.9a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.5a7 7 0 0 0-2 1.2L5 5.8l-2 3.5 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.5 2.4-.9a7 7 0 0 0 2 1.2L10 21h4l.5-2.5a7 7 0 0 0 2-1.2l2.4.9 2-3.5-2-1.5c.1-.4.1-.8.1-1.2z"/></svg></button>
+    </div>
+    <label for="mq" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search projects</label>
+    <input id="mq" placeholder="Search" style="height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--text); font: inherit">
+    <div style="display: flex; gap: 8px; overflow: hidden">
+      <sc-for list="{{chips}}" as="c" hint-placeholder-count="4"><button aria-pressed="{{ c.on }}" style="height: 34px; padding: 0 14px; border-radius: 17px; border: 1px solid {{ c.border }}; background: {{ c.bg }}; font-size: 13px; font-weight: 500; white-space: nowrap">{{ c.name }}</button></sc-for>
+    </div>
+  </header>
+
+  <div style="flex: 1 1 auto; overflow: auto; padding: 4px 20px 120px; display: flex; flex-direction: column; gap: 12px">
+    <section aria-label="Unfinished recording" style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; background: var(--panel); border: 1px solid var(--clip)">
+      <span style="width: 10px; height: 10px; border-radius: 50%; background: var(--clip); flex: none"></span>
+      <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto"><span style="font-weight: 600; font-size: 14px">Unfinished recording · 09:58</span><span style="font-size: 12px; color: var(--text2)">Recover it as a project or delete it.</span></div>
+      <button style="height: 36px; padding: 0 12px; border-radius: 10px; border: none; background: var(--text); color: var(--bg); font-weight: 600; font-size: 13px">Recover</button>
+    </section>
+    <sc-for list="{{projects}}" as="p" hint-placeholder-count="6">
+      <a href="MobileEditor.dc.html" style="display: flex; gap: 12px; padding: 10px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); text-decoration: none; color: var(--text); min-height: 44px">
+        <span style="width: 112px; height: 64px; border-radius: 8px; background: {{ p.bg }}; position: relative; flex: none"><span style="position: absolute; inset: 14% 16%; border-radius: 4px; background: rgba(20,20,28,.85)"></span><span style="position: absolute; right: 4px; bottom: 4px; padding: 1px 5px; border-radius: 4px; background: rgba(0,0,0,.65); color: #fff; font-size: 10px; font-variant-numeric: tabular-nums">{{ p.dur }}</span></span>
+        <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0; justify-content: center">
+          <span style="font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ p.name }}</span>
+          <span style="font-size: 12px; color: var(--text3)">{{ p.meta }}</span>
+          <sc-if value="{{ p.hasChip }}" hint-placeholder-val="{{ false }}"><span style="align-self: flex-start; height: 18px; padding: 0 7px; border-radius: 9px; background: var(--accentSoft); color: var(--accent); font-size: 10px; font-weight: 600; line-height: 18px">{{ p.chip }}</span></sc-if>
+        </span>
+      </a>
+    </sc-for>
+  </div>
+
+  <!-- Floating record button and tab bar -->
+  <a href="MobileRecord.dc.html" aria-label="New recording" style="position: absolute; left: 50%; bottom: 92px; transform: translateX(-50%); width: 64px; height: 64px; border-radius: 50%; background: var(--rec); display: grid; place-items: center; box-shadow: 0 10px 24px rgba(224,57,62,.4)"><span style="width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 3px solid rgba(255,255,255,.4)"></span></a>
+  <nav aria-label="Main" style="position: absolute; left: 0; right: 0; bottom: 0; height: 84px; padding: 8px 12px 24px; background: var(--panel); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr))">
+    <sc-for list="{{tabs}}" as="t" hint-placeholder-count="4">
+      <a href="#{{ t.id }}" aria-current="{{ t.on }}" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 44px; text-decoration: none; color: {{ t.fg }}; font-size: 11px; font-weight: 500"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="{{ t.d }}"/></svg>{{ t.name }}</a>
+    </sc-for>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const theme = this.props.theme ?? 'dark';
+    const chips = [['Recent',true],['Shared',false],['Exported',false],['Presets',false]].map(([name,on]) => ({ name, on, border: on?'var(--accent)':'var(--line2)', bg: on?'var(--accentSoft)':'var(--panel)' }));
+    const g = ['linear-gradient(135deg,#1b2b5a,#5a3a8a 45%,#c9608a)','linear-gradient(135deg,#0f3d3a,#176b5d 50%,#86c6a1)','linear-gradient(135deg,#3a1d5c,#7a2f6b)','linear-gradient(135deg,#1d3a5c,#0b1226)','linear-gradient(135deg,#6b4bd6,#2b1d6b)','linear-gradient(135deg,#e2b96b,#b0642f)'];
+    const rows = [['Area 2026-11-14 00:12','1:48','12 min ago · 1080p','Link shared'],['Onboarding walkthrough v3','2:05','Yesterday · 4K','Exporting 42%'],['Billing settings demo','1:21','Mon · captions',''],['iPhone app tour','0:58','Sun · device frame',''],['Support reply — login bug','0:31','Sat · GIF',''],['Launch teaser','0:24','3 Nov · 9:16','']];
+    const projects = rows.map((r,i) => ({ name:r[0], dur:r[1], meta:r[2], chip:r[3], hasChip: !!r[3], bg:g[i%g.length] }));
+    const tabs = [['projects','Projects','M4 6h16v12H4zM4 10h16',true],['record','Record','M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z',false],['links','Links','M10 14a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 0 0-5-5l-1 1M14 10a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5l1-1',false],['account','Account','M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0',false]].map(([id,name,d,on]) => ({ id,name,d,on, fg: on?'var(--accent)':'var(--text2)' }));
+    return { themeClass: theme==='light'?'light':'dark', chips, projects, tabs };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+/* Design tokens from the Recscene design canvas (docs/design/README.md).
+   Dark is the editor default; light is opted into with data-theme="light". */
+:root,
+[data-theme='dark'] {
+  --bg: #0e0f11;
+  --panel: #161719;
+  --panel2: #1c1d21;
+  --line: #2a2b31;
+  --line2: #383943;
+  --text: #ededf2;
+  --text2: #a6a7b1;
+  --text3: #8e8f9a;
+  --accent: #8f79ff;
+  --accentSoft: #2a2546;
+  --onAccent: #0e0f11;
+  --zoom: #8f79ff;
+  --clip: #f2c14e;
+  --layout: #f06a98;
+  --mask: #34bfbf;
+  --shortcut: #5ea0f7;
+  --caption: #45c77f;
+  --voice: #f58d4d;
+  --danger: #e36060;
+  --stage: #07070a;
+  color-scheme: dark;
+}
+
+[data-theme='light'] {
+  --bg: #f2f2f5;
+  --panel: #ffffff;
+  --panel2: #f6f6f8;
+  --line: #e2e2e8;
+  --line2: #cfcfd7;
+  --text: #17171b;
+  --text2: #5a5a64;
+  --text3: #6f6f7a;
+  --accent: #5f45f0;
+  --accentSoft: #ece8ff;
+  --onAccent: #ffffff;
+  --zoom: #6f57f2;
+  --clip: #d9a41c;
+  --layout: #df4f80;
+  --mask: #1e9a9a;
+  --shortcut: #2f7fe0;
+  --caption: #2a9d5e;
+  --voice: #e0692a;
+  --danger: #d14343;
+  --stage: #e6e6ec;
+  color-scheme: light;
+}
+
+:root {
+  --font: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --radius: 8px;
+  --rail-w: 68px;
+  --inspector-w: 312px;
+  --timeline-h: 236px;
+  --titlebar-h: 40px;
+}

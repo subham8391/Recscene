@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Editor — Masks panel (laptop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif}
+.ss{--bg:#F2F2F5;--panel:#FFFFFF;--panel2:#F6F6F8;--line:#E2E2E8;--line2:#CFCFD7;--text:#17171B;--text2:#5A5A64;--text3:#6F6F7A;--accent:#5F45F0;--accentSoft:#ECE8FF;--onAccent:#FFFFFF;--zoom:#6F57F2;--clip:#D9A41C;--layout:#DF4F80;--mask:#1E9A9A;--shortcut:#2F7FE0;--caption:#2A9D5E;--voice:#E0692A;--danger:#D14343;--stage:#E6E6EC;--focus:0 0 0 3px rgba(95,69,240,.35)}
+.ss.dark{--bg:#0E0F11;--panel:#161719;--panel2:#1C1D21;--line:#2A2B31;--line2:#383943;--text:#EDEDF2;--text2:#A6A7B1;--text3:#8E8F9A;--accent:#8F79FF;--accentSoft:#2A2546;--onAccent:#0E0F11;--zoom:#8F79FF;--clip:#F2C14E;--layout:#F06A98;--mask:#34BFBF;--shortcut:#5EA0F7;--caption:#45C77F;--voice:#F58D4D;--danger:#E36060;--stage:#07070A;--focus:0 0 0 3px rgba(143,121,255,.4)}
+.ss *{box-sizing:border-box}
+.ss button{font:inherit;color:inherit;cursor:pointer}
+.ss button:focus-visible,.ss input:focus-visible{outline:none;box-shadow:var(--focus)}
+.ss .ic{width:18px;height:18px;flex:none}
+.ss h3{margin:0;font-size:12px;font-weight:600;color:var(--text2)}
+.ss .sl{display:flex;flex-direction:column;gap:4px}
+.ss .sl .hd{display:flex;justify-content:space-between;font-size:12px}
+.ss .sl label{font-weight:600;color:var(--text2)}
+.ss .sl input{width:100%;accent-color:var(--accent)}
+.ss .card{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:10px;background:var(--panel2)}
+.ss .card label{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ss .card b{display:block;font-weight:500}
+.ss .card small{display:block;font-size:11px;color:var(--text3)}
+.ss .tog{width:36px;height:20px;accent-color:var(--accent);flex:none}
+.ss .ghost{height:30px;border-radius:8px;border:1px solid var(--line2);background:transparent;font-size:12px}
+.ss .hnd{position:absolute;width:10px;height:10px;border-radius:2px;background:#fff;border:1px solid var(--mask)}
+a{color:#5F45F0}a:hover{color:#4A34C9}
+</style>
+</helmet>
+<div class="ss {{themeClass}}" style="width: 1280px; height: 800px; background: var(--bg); color: var(--text); display: flex; flex-direction: column; font-size: 13px; overflow: hidden; border-radius: 12px">
+  <header style="height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 14px; background: var(--panel); border-bottom: 1px solid var(--line); flex: none">
+    <div style="display: flex; gap: 8px; width: 60px" aria-hidden="true"><span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span></div>
+    <span style="font-weight: 600">Support reply — login bug</span><span style="color: var(--text3)">· saved</span>
+    <div style="flex: 1 1 auto; display: flex; justify-content: center; gap: 8px"><button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Auto (16:9) ▾</button><button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Crop</button><button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Presets</button></div>
+    <button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Share link</button>
+    <button style="height: 30px; padding: 0 16px; border-radius: 8px; border: none; background: var(--accent); color: var(--onAccent); font-weight: 600">Export</button>
+  </header>
+
+  <div style="flex: 1 1 auto; display: flex; min-height: 0">
+    <nav aria-label="Editor panels" style="width: 68px; flex: none; background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 8px 6px; gap: 2px">
+      <sc-for list="{{rail}}" as="r" hint-placeholder-count="10"><button aria-pressed="{{ r.active }}" style="height: 54px; border-radius: 8px; border: none; background: {{ r.bg }}; color: {{ r.fg }}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 10px; font-weight: 500"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="{{ r.d }}"/></svg><span>{{ r.label }}</span></button></sc-for>
+    </nav>
+
+    <main style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column">
+      <div style="flex: 1 1 auto; position: relative; margin: 16px; border-radius: 10px; background: var(--stage); overflow: hidden">
+        <div style="position: absolute; inset: 0; background: linear-gradient(135deg, #0f3d3a 0%, #176b5d 50%, #86c6a1 100%)">
+          <div style="position: absolute; inset: 7% 10%; border-radius: 12px; background: #1f2026; box-shadow: 0 30px 60px rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.12); overflow: hidden">
+            <div style="height: 28px; background: #2a2b33"></div>
+            <div style="padding: 18px; display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 14px 18px; font-size: 12px; color: #9a9ba6">
+              <span>Account email</span><span style="color: #d8d9e0">sam@acme.example</span>
+              <span>API key</span><span style="color: #d8d9e0; font-family: ui-monospace, Menlo, monospace">sk_live_4f9c…a1e2</span>
+              <span>Card</span><span style="color: #d8d9e0">•••• 4242 · 09/28</span>
+              <span>Plan</span><span style="color: #d8d9e0">Yearly · renews 14 Mar</span>
+            </div>
+            <!-- Highlight dim layer -->
+            <sc-if value="{{ isHighlight }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position: absolute; inset: 0; background: rgba(0,0,0,{{ dim }})"></span></sc-if>
+            <!-- Mask rectangle -->
+            <div aria-label="Selected mask" style="position: absolute; left: 31%; top: 36%; width: 34%; height: 11%; border: 2px solid var(--mask); border-radius: 4px; background: {{ maskFill }}; backdrop-filter: {{ maskFilter }}">
+              <span class="hnd" style="left: -6px; top: -6px"></span><span class="hnd" style="right: -6px; top: -6px"></span><span class="hnd" style="left: -6px; bottom: -6px"></span><span class="hnd" style="right: -6px; bottom: -6px"></span>
+              <span style="position: absolute; left: 0; top: -22px; padding: 2px 6px; border-radius: 4px; background: var(--mask); color: #fff; font-size: 10px; white-space: nowrap">{{ maskName }} · 00:04.0 – 00:19.5</span>
+            </div>
+            <!-- Second mask, unselected -->
+            <div aria-hidden="true" style="position: absolute; left: 31%; top: 52%; width: 22%; height: 10%; border: 1px dashed var(--mask); border-radius: 4px; background: rgba(52,191,191,.12)"></div>
+          </div>
+          <div style="position: absolute; left: 14px; top: 14px; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,.55); color: #fff; font-size: 11px; display: flex; gap: 8px; align-items: center"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--mask)"></span>Mask 1 of 2 · {{ maskName }}</div>
+          <div style="position: absolute; right: 14px; top: 14px; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,.55); color: #fff; font-size: 11px">Preview is showing a different part of the recording than the one covered by the mask</div>
+        </div>
+      </div>
+      <div style="height: 44px; flex: none; display: flex; align-items: center; gap: 14px; padding: 0 20px; border-top: 1px solid var(--line); background: var(--panel)">
+        <span style="font-variant-numeric: tabular-nums; font-weight: 600">00:06.20</span><span style="color: var(--text3)">/ 00:31.00</span><div style="flex: 1 1 auto"></div>
+        <button aria-label="Play (Space)" style="width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--text); color: var(--bg); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l12 8-12 8z"/></svg></button>
+        <div style="flex: 1 1 auto"></div><span style="color: var(--text3); font-size: 11px">Key 4 focuses the Masks track · masks do not follow scrolling</span>
+      </div>
+    </main>
+
+    <aside aria-label="Mask settings" style="width: 312px; flex: none; background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; overflow: hidden">
+      <div style="height: 48px; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--line)"><span style="width: 10px; height: 10px; border-radius: 3px; background: var(--mask)"></span><span style="font-weight: 600">Mask</span><span style="color: var(--text3)">1 of 2</span></div>
+      <div style="flex: 1 1 auto; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 18px">
+
+        <section style="display: flex; flex-direction: column; gap: 8px"><h3>Mask type</h3>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+            <sc-for list="{{types}}" as="t" hint-placeholder-count="2">
+              <button onClick="{{ t.pick }}" aria-pressed="{{ t.on }}" style="padding: 10px; border-radius: 10px; border: 2px solid {{ t.border }}; background: var(--panel2); text-align: left; display: flex; flex-direction: column; gap: 4px"><span style="font-weight: 600">{{ t.name }}</span><span style="font-size: 11px; color: var(--text3)">{{ t.sub }}</span></button>
+            </sc-for>
+          </div>
+        </section>
+
+        <sc-if value="{{ isBlur }}" hint-placeholder-val="{{ true }}">
+          <section class="sl"><div class="hd"><label for="mblur">Blur strength</label><span>{{ blurLabel }}</span></div><input id="mblur" type="range" min="4" max="40" value="{{ blur }}" onInput="{{ setBlur }}"><small style="font-size: 11px; color: var(--text3)">Blur permanently removes the pixels in the export. The original stays inside the .recscene project.</small></section>
+        </sc-if>
+        <sc-if value="{{ isHighlight }}" hint-placeholder-val="{{ false }}">
+          <section class="sl"><div class="hd"><label for="mop">Dim everything else</label><span>{{ dimLabel }}</span></div><input id="mop" type="range" min="10" max="90" value="{{ dimVal }}" onInput="{{ setDim }}"><button class="ghost" style="margin-top: 4px">Apply highlight opacity to all masks</button></section>
+        </sc-if>
+
+        <section style="display: flex; flex-direction: column; gap: 8px"><h3>Size and position</h3>
+          <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; font-size: 11px">
+            <label style="display: flex; flex-direction: column; gap: 2px; color: var(--text3)">X<input value="612" style="height: 28px; padding: 0 6px; border-radius: 6px; border: 1px solid var(--line2); background: var(--panel2); color: var(--text); font: inherit; font-variant-numeric: tabular-nums"></label>
+            <label style="display: flex; flex-direction: column; gap: 2px; color: var(--text3)">Y<input value="318" style="height: 28px; padding: 0 6px; border-radius: 6px; border: 1px solid var(--line2); background: var(--panel2); color: var(--text); font: inherit; font-variant-numeric: tabular-nums"></label>
+            <label style="display: flex; flex-direction: column; gap: 2px; color: var(--text3)">W<input value="640" style="height: 28px; padding: 0 6px; border-radius: 6px; border: 1px solid var(--line2); background: var(--panel2); color: var(--text); font: inherit; font-variant-numeric: tabular-nums"></label>
+            <label style="display: flex; flex-direction: column; gap: 2px; color: var(--text3)">H<input value="96" style="height: 28px; padding: 0 6px; border-radius: 6px; border: 1px solid var(--line2); background: var(--panel2); color: var(--text); font: inherit; font-variant-numeric: tabular-nums"></label>
+          </div>
+          <p style="margin: 0; font-size: 11px; color: var(--text3)">Arrow keys nudge 1 px, ⇧ 10 px. A mask covers its whole time range at one position.</p>
+        </section>
+
+        <section class="card">
+          <label><span><b>Detect masked content shift</b><small>Experimental: moves the mask if the page scrolls.</small></span><input class="tog" type="checkbox"></label>
+          <label><span><b>Feather edge</b><small>Soft 6 px edge so the blur does not look cut out.</small></span><input class="tog" type="checkbox" checked></label>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; align-items: center; gap: 8px"><h3>Auto masks</h3><span style="height: 16px; padding: 0 6px; border-radius: 8px; background: var(--accentSoft); color: var(--accent); font-size: 10px; font-weight: 600; line-height: 16px">4.x</span></div>
+          <div class="card">
+            <label><span><b>Emails, phone numbers, cards, keys</b><small>Detected on device and blurred for their whole visible time.</small></span><input class="tog" type="checkbox" checked></label>
+            <label><span><b>Blur faces</b><small>Webcam and screen. On device.</small></span><input class="tog" type="checkbox"></label>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text2)"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--mask)"></span>3 suggestions found · <button class="ghost" style="height: 24px; padding: 0 8px">Review</button></div>
+          </div>
+        </section>
+
+        <section style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+          <button class="ghost">Copy mask</button><button class="ghost">Paste at playhead</button><button class="ghost">Disable all masks</button><button class="ghost" style="color: var(--danger)">Remove ⌫</button>
+        </section>
+      </div>
+    </aside>
+  </div>
+
+  <section aria-label="Timeline" style="height: 236px; flex: none; background: var(--panel); border-top: 1px solid var(--line); display: flex; flex-direction: column">
+    <div style="height: 36px; display: flex; align-items: center; gap: 6px; padding: 0 12px; border-bottom: 1px solid var(--line)">
+      <button style="height: 28px; padding: 0 10px; border-radius: 6px; border: none; background: var(--accentSoft); color: var(--mask); font-weight: 600">+ Mask</button>
+      <span style="font-size: 11px; color: var(--text3)">Click the Masks track to add · masks and highlights cannot overlap in one frame · "Not enough space in selected timeline position to add a new mask"</span>
+      <div style="flex: 1 1 auto"></div><label for="tlz5" style="font-size: 11px; color: var(--text3)">Timeline zoom</label><input id="tlz5" type="range" min="0" max="100" value="40" style="width: 120px; accent-color: var(--accent)">
+    </div>
+    <div style="flex: 1 1 auto; display: grid; grid-template-columns: 112px minmax(0, 1fr); overflow: hidden">
+      <div style="border-right: 1px solid var(--line); display: flex; flex-direction: column; font-size: 11px; color: var(--text2)"><div style="height: 20px"></div><sc-for list="{{tracks}}" as="t" hint-placeholder-count="8"><div style="height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 10px; background: {{ t.bg }}"><span style="width: 6px; height: 6px; border-radius: 2px; background: {{ t.color }}"></span>{{ t.name }}</div></sc-for></div>
+      <div style="position: relative; overflow: hidden">
+        <div style="height: 20px; display: flex; font-size: 10px; color: var(--text3); border-bottom: 1px solid var(--line)"><sc-for list="{{ruler}}" as="m" hint-placeholder-count="9"><span style="flex: 1 1 0; border-left: 1px solid var(--line2); padding-left: 4px; line-height: 20px">{{ m }}</span></sc-for></div>
+        <div style="height: 22px; position: relative; border-bottom: 1px solid var(--line)"><span style="position: absolute; left: 30%; width: 12%; top: 3px; height: 16px; border-radius: 4px; background: var(--zoom); opacity: .85"></span></div>
+        <div style="height: 22px; position: relative; border-bottom: 1px solid var(--line)"><span style="position: absolute; left: 0; width: 100%; top: 2px; height: 18px; border-radius: 4px; background: var(--clip); color: #1a1500; font-size: 10px; font-weight: 600; padding-left: 6px; line-height: 18px">1×</span></div>
+        <div style="height: 22px; border-bottom: 1px solid var(--line)"></div>
+        <div style="height: 22px; position: relative; border-bottom: 1px solid var(--line); background: var(--accentSoft)">
+          <span style="position: absolute; left: 13%; width: 50%; top: 3px; height: 16px; border-radius: 4px; background: var(--mask); color: #fff; font-size: 10px; padding-left: 6px; line-height: 16px; box-shadow: 0 0 0 2px var(--text)">{{ maskName }} · API key</span>
+          <span style="position: absolute; left: 66%; width: 22%; top: 3px; height: 16px; border-radius: 4px; border: 1px solid var(--mask); color: var(--mask); font-size: 10px; padding-left: 6px; line-height: 14px">Highlight · Plan</span>
+        </div>
+        <div style="height: 22px; border-bottom: 1px solid var(--line)"></div><div style="height: 22px; border-bottom: 1px solid var(--line)"></div><div style="height: 22px; border-bottom: 1px solid var(--line)"></div>
+        <div style="height: 22px; display: flex; align-items: center; gap: 1px; padding: 0 2px"><sc-for list="{{wave}}" as="h" hint-placeholder-count="120"><span style="flex: 1 1 0; height: {{ h }}; background: var(--text3); opacity: .55; border-radius: 1px"></span></sc-for></div>
+        <div aria-hidden="true" style="position: absolute; left: 20%; top: 0; bottom: 0; width: 1px; background: var(--text)"><span style="position: absolute; top: 0; left: -6px; width: 13px; height: 13px; border-radius: 7px 7px 7px 0; background: var(--text); transform: rotate(-45deg)"></span></div>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { type:'blur', blur:18, dim:60 }; }
+  renderVals() {
+    const theme = this.props.theme ?? 'dark';
+    const items = [['zooms','Zooms','M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM16 16l5 5M11 8v6M8 11h6'],['clips','Clips','M6 4h12v16H6zM6 9h12M6 14h12'],['cursor','Cursor','M5 3l14 8-6 2-3 6z'],['camera','Camera','M4 7h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4zM17 10l4-2v8l-4-2'],['background','Background','M3 5h18v14H3zM3 15l5-5 4 4 3-3 6 6'],['masks','Masks','M4 6h16v12H4zM8 10h4v4H8'],['shortcuts','Shortcuts','M3 7h18v10H3zM7 11h1M11 11h1M15 11h1M7 14h10'],['captions','Captions','M4 5h16v14H4zM7 14h6M15 14h2M7 10h2M11 10h6'],['audio','Audio','M4 12h2M8 8v8M12 5v14M16 9v6M20 11v2'],['animation','Animation','M4 18c4-10 12-10 16 0M8 12l2-2M14 10l2 2']];
+    const rail = items.map(([id,label,d]) => ({ id,label,d, active:id==='masks', bg:id==='masks'?'var(--accentSoft)':'transparent', fg:id==='masks'?'var(--text)':'var(--text2)' }));
+    const T = this.state.type;
+    const types = [['blur','Sensitive data','Blur the area for its whole range.'],['highlight','Highlight','Dim everything except the area.']].map(([id,name,sub]) => ({ id,name,sub, on:T===id, border:T===id?'var(--accent)':'var(--line2)', pick:()=>this.setState({type:id}) }));
+    const tracks = [{name:'Zooms',color:'var(--zoom)'},{name:'Clips',color:'var(--clip)'},{name:'Layouts',color:'var(--layout)'},{name:'Masks',color:'var(--mask)'},{name:'Shortcuts',color:'var(--shortcut)'},{name:'Captions',color:'var(--caption)'},{name:'Voiceovers',color:'var(--voice)'},{name:'Audio',color:'var(--text3)'}].map(t => ({...t, bg: t.name==='Masks'?'var(--accentSoft)':'transparent'}));
+    const wave = Array.from({length:120},(_,i)=> (4 + Math.round(8*Math.abs(Math.sin(i*0.9))+6*Math.abs(Math.sin(i*0.27)))) + 'px');
+    const blur = this.state.blur, dim = this.state.dim;
+    return {
+      themeClass: theme==='light'?'light':'dark', rail, types, tracks, wave,
+      ruler:['0:00','0:04','0:08','0:12','0:16','0:20','0:24','0:28','0:31'],
+      isBlur: T==='blur', isHighlight: T==='highlight',
+      maskName: T==='blur' ? 'Blur' : 'Highlight',
+      maskFill: T==='blur' ? 'rgba(52,191,191,.25)' : 'transparent',
+      maskFilter: T==='blur' ? 'blur('+blur+'px)' : 'none',
+      blur, blurLabel: blur+' px', setBlur: e=>this.setState({blur:Number(e.target.value)}),
+      dimVal: dim, dimLabel: dim+'%', dim: (dim/100).toFixed(2), setDim: e=>this.setState({dim:Number(e.target.value)})
+    };
+  }
+}
+</script>
+</body>
+</html>

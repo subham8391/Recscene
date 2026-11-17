@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Design system — tokens, type and components</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif}
+.ss{--bg:#F2F2F5;--panel:#FFFFFF;--panel2:#F6F6F8;--raised:#FFFFFF;--line:#E2E2E8;--line2:#CFCFD7;--text:#17171B;--text2:#5A5A64;--text3:#6F6F7A;--accent:#5F45F0;--accentSoft:#ECE8FF;--onAccent:#FFFFFF;--zoom:#6F57F2;--clip:#D9A41C;--layout:#DF4F80;--mask:#1E9A9A;--shortcut:#2F7FE0;--caption:#2A9D5E;--voice:#E0692A;--danger:#D14343;--stage:#E6E6EC;--shadow:0 10px 30px rgba(20,20,35,.12);--focus:0 0 0 3px rgba(95,69,240,.35)}
+.ss.dark{--bg:#0E0F11;--panel:#161719;--panel2:#1C1D21;--raised:#23242A;--line:#2A2B31;--line2:#383943;--text:#EDEDF2;--text2:#A6A7B1;--text3:#8E8F9A;--accent:#8F79FF;--accentSoft:#2A2546;--onAccent:#0E0F11;--zoom:#8F79FF;--clip:#F2C14E;--layout:#F06A98;--mask:#34BFBF;--shortcut:#5EA0F7;--caption:#45C77F;--voice:#F58D4D;--danger:#E36060;--stage:#07070A;--shadow:0 10px 30px rgba(0,0,0,.5);--focus:0 0 0 3px rgba(143,121,255,.4)}
+.ss *{box-sizing:border-box}
+.ss button{font:inherit;color:inherit;cursor:pointer}
+.ss button:focus-visible,.ss input:focus-visible{outline:none;box-shadow:var(--focus)}
+.ss h2{margin:0;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text3)}
+a{color:#5F45F0}a:hover{color:#4A34C9}
+</style>
+</helmet>
+<div style="width: 1400px; height: 1180px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); font-size: 13px; border-radius: 12px; overflow: hidden">
+
+  <sc-for list="{{themes}}" as="th" hint-placeholder-count="2">
+  <div class="ss {{ th.cls }}" style="background: var(--bg); color: var(--text); padding: 28px 32px; display: flex; flex-direction: column; gap: 22px; overflow: hidden">
+    <div style="display: flex; align-items: baseline; justify-content: space-between">
+      <h1 style="margin: 0; font-size: 22px; font-weight: 700">{{ th.title }}</h1>
+      <span style="color: var(--text3)">Inter · 8 px grid · radii 6 / 8 / 10 / 12</span>
+    </div>
+
+    <section style="display: flex; flex-direction: column; gap: 10px">
+      <h2>Surfaces and text</h2>
+      <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px">
+        <sc-for list="{{ th.surfaces }}" as="s" hint-placeholder-count="7">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <div style="height: 40px; border-radius: 8px; border: 1px solid var(--line2); background: {{ s.v }}"></div>
+            <span style="font-size: 11px; font-weight: 500">{{ s.n }}</span><span style="font-size: 10px; color: var(--text3); font-family: ui-monospace, Menlo, monospace">{{ s.hex }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 10px">
+      <h2>Track and status colours</h2>
+      <div style="display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px">
+        <sc-for list="{{ th.tracks }}" as="s" hint-placeholder-count="8">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <div style="height: 28px; border-radius: 6px; background: {{ s.v }}"></div>
+            <span style="font-size: 11px; font-weight: 500">{{ s.n }}</span><span style="font-size: 10px; color: var(--text3); font-family: ui-monospace, Menlo, monospace">{{ s.hex }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 24px">
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <h2>Type scale</h2>
+        <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line)">
+          <span style="font-size: 22px; font-weight: 700; line-height: 1.2">Window title 22 / 700</span>
+          <span style="font-size: 16px; font-weight: 600">Dialog heading 16 / 600</span>
+          <span style="font-size: 13px; font-weight: 600">Panel label 13 / 600</span>
+          <span style="font-size: 13px">Body and controls 13 / 400 — the default everywhere</span>
+          <span style="font-size: 12px; font-weight: 600; color: var(--text2)">Section heading 12 / 600 secondary</span>
+          <span style="font-size: 11px; color: var(--text3)">Helper text 11 / 400 tertiary — still 4.5:1 on its panel</span>
+          <span style="font-size: 10px; color: var(--text2)">Track chips and ruler 10 / 500</span>
+          <span style="font-variant-numeric: tabular-nums; font-weight: 600">00:12.40 / 01:48.00 — timecodes are tabular</span>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <h2>Spacing and layout</h2>
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); font-size: 12px">
+          <div style="display: flex; align-items: flex-end; gap: 6px">
+            <sc-for list="{{ th.space }}" as="sp" hint-placeholder-count="6"><span style="width: {{ sp }}; height: {{ sp }}; background: var(--accentSoft); border: 1px solid var(--accent); border-radius: 3px"></span></sc-for>
+            <span style="color: var(--text3); margin-left: 6px">4 · 8 · 12 · 16 · 24 · 32</span>
+          </div>
+          <div style="display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; color: var(--text2)">
+            <span style="font-weight: 600; color: var(--text)">Laptop</span><span>rail 68 · inspector 312 · timeline 236 · title bar 48</span>
+            <span style="font-weight: 600; color: var(--text)">Tablet</span><span>rail 56 · inspector 340 overlay sheet · timeline 200</span>
+            <span style="font-weight: 600; color: var(--text)">Mobile</span><span>tab bar 64 · bottom sheet · one scrubber strip · 44 px targets</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 10px">
+      <h2>Controls</h2>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+        <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line)">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap">
+            <button style="height: 30px; padding: 0 14px; border-radius: 8px; border: none; background: var(--accent); color: var(--onAccent); font-weight: 600">Export</button>
+            <button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Secondary</button>
+            <button style="height: 30px; padding: 0 12px; border-radius: 8px; border: none; background: transparent; color: var(--text2)">Ghost</button>
+            <button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: transparent; color: var(--danger)">Remove</button>
+            <button disabled style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel2); color: var(--text3); cursor: not-allowed">Disabled</button>
+          </div>
+          <div role="group" aria-label="Segmented control" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--line2); border-radius: 8px; overflow: hidden; max-width: 320px">
+            <button style="height: 32px; border: none; background: var(--accentSoft); font-weight: 600">Web</button>
+            <button style="height: 32px; border: none; border-left: 1px solid var(--line2); background: var(--panel2); color: var(--text2)">Medium</button>
+            <button style="height: 32px; border: none; border-left: 1px solid var(--line2); background: var(--panel2); color: var(--text2)">High</button>
+          </div>
+          <div style="display: flex; gap: 16px; align-items: center">
+            <label style="display: flex; align-items: center; gap: 8px"><input type="checkbox" checked style="width: 36px; height: 20px; accent-color: var(--accent)">Toggle on</label>
+            <label style="display: flex; align-items: center; gap: 8px"><input type="checkbox" style="width: 36px; height: 20px; accent-color: var(--accent)">Toggle off</label>
+            <label style="display: flex; align-items: center; gap: 8px"><input type="radio" name="{{ th.cls }}r" checked style="accent-color: var(--accent)">Radio</label>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px; max-width: 320px">
+            <div style="display: flex; justify-content: space-between"><label for="{{ th.cls }}-sl" style="font-size: 12px; font-weight: 600; color: var(--text2)">Slider with value</label><span style="font-variant-numeric: tabular-nums">1.5×</span></div>
+            <input id="{{ th.cls }}-sl" type="range" min="0" max="100" value="45" style="width: 100%; accent-color: var(--accent)">
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line)">
+          <div style="display: flex; gap: 8px">
+            <label for="{{ th.cls }}-in" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Project name</label>
+            <input id="{{ th.cls }}-in" value="Area 2026-11-14 00:12" style="height: 32px; flex: 1 1 auto; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2); color: var(--text); font: inherit">
+            <button aria-haspopup="listbox" style="height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2); display: flex; align-items: center; gap: 8px">1080p <span style="color: var(--text3)">▾</span></button>
+          </div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center">
+            <span style="height: 16px; padding: 0 6px; border-radius: 4px; background: var(--zoom); color: #fff; font-size: 10px; line-height: 16px">Zoom</span>
+            <span style="height: 16px; padding: 0 6px; border-radius: 4px; background: var(--clip); color: #1a1500; font-size: 10px; font-weight: 600; line-height: 16px">1× clip</span>
+            <span style="height: 16px; padding: 0 6px; border-radius: 4px; background: var(--layout); color: #fff; font-size: 10px; line-height: 16px">Layout</span>
+            <span style="height: 16px; padding: 0 6px; border-radius: 4px; background: var(--mask); color: #fff; font-size: 10px; line-height: 16px">Mask</span>
+            <span style="height: 16px; padding: 0 6px; border-radius: 4px; background: var(--shortcut); color: #fff; font-size: 10px; line-height: 16px">⌘C</span>
+            <span style="height: 16px; padding: 0 6px; border-radius: 4px; background: var(--caption); color: #fff; font-size: 10px; line-height: 16px">Caption</span>
+            <span style="height: 16px; padding: 0 6px; border-radius: 4px; background: var(--voice); color: #fff; font-size: 10px; line-height: 16px">Voice</span>
+            <span style="height: 16px; padding: 0 6px; border-radius: 4px; border: 1px dashed var(--zoom); color: var(--text3); font-size: 10px; line-height: 14px">disabled</span>
+            <span style="height: 16px; padding: 0 6px; border-radius: 4px; background: var(--zoom); color: #fff; font-size: 10px; line-height: 16px; box-shadow: 0 0 0 2px var(--text)">selected</span>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: flex-start">
+            <div role="status" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 10px; background: var(--raised); border: 1px solid var(--line2); box-shadow: var(--shadow); font-size: 12px"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--caption)"></span>Camera size applied to all layouts</div>
+            <div style="padding: 6px 10px; border-radius: 8px; background: var(--text); color: var(--bg); font-size: 11px">Tooltip · Hide shortcut <kbd style="font: 10px Inter; border: 1px solid currentColor; border-radius: 3px; padding: 0 3px">⌘C</kbd></div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; background: var(--panel2); border-left: 3px solid var(--clip); font-size: 12px; color: var(--text2)">Warning banner: Directional shadow is disabled for recordings on large screens.</div>
+        </div>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 10px">
+      <h2>Panel anatomy</h2>
+      <div style="display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 12px">
+        <div style="border-radius: 10px; background: var(--panel); border: 1px solid var(--line); overflow: hidden">
+          <div style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid var(--line)"><span style="width: 10px; height: 10px; border-radius: 3px; background: var(--layout)"></span><span style="font-weight: 600">Camera</span><span style="color: var(--text3); font-size: 11px">layout 2 of 3</span></div>
+          <div style="padding: 12px; display: flex; flex-direction: column; gap: 8px; font-size: 12px">
+            <span style="font-weight: 600; color: var(--text2)">Section heading</span>
+            <div style="display: flex; justify-content: space-between"><span>Row label</span><span style="color: var(--text3)">value</span></div>
+            <div style="height: 32px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--line2)"></div>
+            <span style="font-size: 11px; color: var(--text3)">Helper text sits under the control, never beside it.</span>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--text2); padding: 4px 0">
+          <span><strong style="color: var(--text)">Header</strong> — colour chip of the track, panel name, position within the track, close.</span>
+          <span><strong style="color: var(--text)">Sections</strong> — 12 px secondary headings, 18 px apart; grouped toggles sit in a tinted card.</span>
+          <span><strong style="color: var(--text)">Sliders</strong> — label left, live value right (tabular), range under, end labels in 10 px.</span>
+          <span><strong style="color: var(--text)">Shared values</strong> — a cube badge marks a control whose value applies to the whole project.</span>
+          <span><strong style="color: var(--text)">Destructive</strong> — red text on a bordered button, always last, with its key (⌫).</span>
+        </div>
+      </div>
+    </section>
+  </div>
+  </sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1400,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const mk = (cls, title, hexes, trackHex) => ({
+      cls, title,
+      surfaces: [
+        {n:'Background', v:'var(--bg)', hex:hexes[0]},{n:'Panel', v:'var(--panel)', hex:hexes[1]},{n:'Panel 2', v:'var(--panel2)', hex:hexes[2]},
+        {n:'Line', v:'var(--line2)', hex:hexes[3]},{n:'Text', v:'var(--text)', hex:hexes[4]},{n:'Text 2', v:'var(--text2)', hex:hexes[5]},{n:'Accent', v:'var(--accent)', hex:hexes[6]}
+      ],
+      tracks: [
+        {n:'Zoom', v:'var(--zoom)', hex:trackHex[0]},{n:'Clip', v:'var(--clip)', hex:trackHex[1]},{n:'Layout', v:'var(--layout)', hex:trackHex[2]},{n:'Mask', v:'var(--mask)', hex:trackHex[3]},
+        {n:'Shortcut', v:'var(--shortcut)', hex:trackHex[4]},{n:'Caption', v:'var(--caption)', hex:trackHex[5]},{n:'Voice', v:'var(--voice)', hex:trackHex[6]},{n:'Danger', v:'var(--danger)', hex:trackHex[7]}
+      ],
+      space: ['4px','8px','12px','16px','24px','32px']
+    });
+    return { themes: [
+      mk('light','Light mode',['#F2F2F5','#FFFFFF','#F6F6F8','#CFCFD7','#17171B','#5A5A64','#5F45F0'],['#6F57F2','#D9A41C','#DF4F80','#1E9A9A','#2F7FE0','#2A9D5E','#E0692A','#D14343']),
+      mk('dark','Dark mode',['#0E0F11','#161719','#1C1D21','#383943','#EDEDF2','#A6A7B1','#8F79FF'],['#8F79FF','#F2C14E','#F06A98','#34BFBF','#5EA0F7','#45C77F','#F58D4D','#E36060'])
+    ]};
+  }
+}
+</script>
+</body>
+</html>

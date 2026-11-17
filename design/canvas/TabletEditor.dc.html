@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Editor on tablet — inspector as a side sheet</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif}
+.ss{--bg:#F2F2F5;--panel:#FFFFFF;--panel2:#F6F6F8;--raised:#FFFFFF;--line:#E2E2E8;--line2:#CFCFD7;--text:#17171B;--text2:#5A5A64;--text3:#6F6F7A;--accent:#5F45F0;--accentSoft:#ECE8FF;--onAccent:#FFFFFF;--zoom:#6F57F2;--clip:#D9A41C;--layout:#DF4F80;--mask:#1E9A9A;--shortcut:#2F7FE0;--caption:#2A9D5E;--voice:#E0692A;--danger:#D14343;--stage:#E6E6EC;--shadow:0 16px 40px rgba(20,20,35,.2);--focus:0 0 0 3px rgba(95,69,240,.35)}
+.ss.dark{--bg:#0E0F11;--panel:#161719;--panel2:#1C1D21;--raised:#23242A;--line:#2A2B31;--line2:#383943;--text:#EDEDF2;--text2:#A6A7B1;--text3:#8E8F9A;--accent:#8F79FF;--accentSoft:#2A2546;--onAccent:#0E0F11;--zoom:#8F79FF;--clip:#F2C14E;--layout:#F06A98;--mask:#34BFBF;--shortcut:#5EA0F7;--caption:#45C77F;--voice:#F58D4D;--danger:#E36060;--stage:#07070A;--shadow:0 16px 40px rgba(0,0,0,.6);--focus:0 0 0 3px rgba(143,121,255,.4)}
+.ss *{box-sizing:border-box}
+.ss button{font:inherit;color:inherit;cursor:pointer}
+.ss button:focus-visible,.ss input:focus-visible{outline:none;box-shadow:var(--focus)}
+.ss .ic{width:20px;height:20px;flex:none}
+.ss h3{margin:0;font-size:12px;font-weight:600;color:var(--text2)}
+a{color:#5F45F0}a:hover{color:#4A34C9}
+</style>
+</helmet>
+<div class="ss {{themeClass}}" style="width: 1024px; height: 768px; background: var(--bg); color: var(--text); display: flex; flex-direction: column; font-size: 13px; overflow: hidden; border-radius: 18px; position: relative">
+
+  <header style="height: 48px; display: flex; align-items: center; gap: 10px; padding: 0 12px; background: var(--panel); border-bottom: 1px solid var(--line); flex: none">
+    <a href="Projects.dc.html" aria-label="Back to projects" style="width: 44px; height: 44px; display: grid; place-items: center; border-radius: 10px; color: var(--text)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+    <span style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Area 2026-11-14 00:12</span>
+    <div style="flex: 1 1 auto"></div>
+    <button style="height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line2); background: var(--panel2)">16:9 ▾</button>
+    <button aria-label="Crop" style="width: 44px; height: 36px; border-radius: 10px; border: 1px solid var(--line2); background: var(--panel2); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" style="width:18px;height:18px"><path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2"/></svg></button>
+    <button aria-label="Presets" style="width: 44px; height: 36px; border-radius: 10px; border: 1px solid var(--line2); background: var(--panel2); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" style="width:18px;height:18px"><path d="M4 7h16M4 12h10M4 17h7"/></svg></button>
+    <button aria-label="Command menu" style="width: 44px; height: 36px; border-radius: 10px; border: 1px solid var(--line2); background: var(--panel2); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" style="width:18px;height:18px"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button>
+    <a href="Export.dc.html" style="height: 36px; padding: 0 16px; border-radius: 10px; background: var(--accent); color: var(--onAccent); font-weight: 600; text-decoration: none; display: flex; align-items: center">Export</a>
+  </header>
+
+  <div style="flex: 1 1 auto; display: flex; min-height: 0; position: relative">
+    <nav aria-label="Editor panels" style="width: 56px; flex: none; background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; padding: 6px 0; gap: 2px">
+      <sc-for list="{{rail}}" as="r" hint-placeholder-count="10">
+        <button onClick="{{ r.pick }}" aria-label="{{ r.label }}" aria-pressed="{{ r.active }}" style="width: 44px; height: 44px; border-radius: 10px; border: none; background: {{ r.bg }}; color: {{ r.fg }}; display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="{{ r.d }}"/></svg></button>
+      </sc-for>
+    </nav>
+
+    <main style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column">
+      <div style="flex: 1 1 auto; margin: 12px; border-radius: 10px; background: var(--stage); overflow: hidden; position: relative">
+        <div style="position: absolute; inset: 0; background: linear-gradient(135deg, #1b2b5a 0%, #5a3a8a 45%, #c9608a 100%)">
+          <div style="position: absolute; inset: 8% 10%; border-radius: 10px; background: #1f2026; box-shadow: 0 24px 48px rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.12)"></div>
+          <div style="position: absolute; right: 7%; bottom: 8%; width: 120px; height: 120px; border-radius: 25%; background: linear-gradient(160deg, #e9c1a3, #a16a4c); border: 2px solid rgba(255,255,255,.25)"></div>
+          <span aria-hidden="true" style="position: absolute; left: 48%; top: 50%; width: 14px; height: 14px; border-radius: 50%; background: var(--zoom); box-shadow: 0 0 0 4px rgba(143,121,255,.35)"></span>
+        </div>
+      </div>
+      <div style="height: 56px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 16px; border-top: 1px solid var(--line); background: var(--panel)">
+        <span style="font-variant-numeric: tabular-nums; font-weight: 600">00:12.40</span><span style="color: var(--text3)">/ 01:48.00</span>
+        <div style="flex: 1 1 auto"></div>
+        <button aria-label="Back 1 s" style="width: 44px; height: 44px; border-radius: 12px; border: none; background: transparent; display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11 6v12L3 12zM20 6v12l-8-6z"/></svg></button>
+        <button aria-label="Play" style="width: 48px; height: 48px; border-radius: 50%; border: none; background: var(--text); color: var(--bg); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l12 8-12 8z"/></svg></button>
+        <button aria-label="Forward 1 s" style="width: 44px; height: 44px; border-radius: 12px; border: none; background: transparent; display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 6v12l8-6zM4 6v12l8-6z"/></svg></button>
+        <div style="flex: 1 1 auto"></div>
+        <button aria-label="Cut at playhead" style="width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line2); background: var(--panel2); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.5 7.5L20 19M8.5 16.5L20 5"/></svg></button>
+      </div>
+    </main>
+
+    <!-- Side sheet inspector -->
+    <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ true }}">
+      <aside aria-label="Zoom settings" style="position: absolute; right: 12px; top: 12px; bottom: 68px; width: 340px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line2); box-shadow: var(--shadow); display: flex; flex-direction: column; overflow: hidden">
+        <div style="height: 52px; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--line)"><span style="width: 10px; height: 10px; border-radius: 3px; background: var(--zoom)"></span><span style="font-weight: 600">Zoom</span><span style="color: var(--text3)">2 of 7</span><div style="flex: 1 1 auto"></div><button onClick="{{ closeSheet }}" aria-label="Close" style="width: 44px; height: 44px; border-radius: 10px; border: none; background: transparent; display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="width:16px;height:16px"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+        <div style="flex: 1 1 auto; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 18px">
+          <section style="display: flex; flex-direction: column; gap: 8px"><h3>Zoom style</h3>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px"><button aria-pressed="true" style="height: 64px; border-radius: 12px; border: 2px solid var(--accent); background: var(--panel2); font-weight: 500">Classic</button><button style="height: 64px; border-radius: 12px; border: 2px solid var(--line2); background: var(--panel2); font-weight: 500">Glass Loupe</button></div>
+          </section>
+          <section style="display: flex; flex-direction: column; gap: 8px"><h3>Zoom position</h3>
+            <div role="group" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1px solid var(--line2); border-radius: 10px; overflow: hidden"><button style="height: 44px; border: none; background: var(--accentSoft); font-weight: 600">Auto</button><button style="height: 44px; border: none; border-left: 1px solid var(--line2); background: var(--panel2); color: var(--text2)">Manual</button></div>
+          </section>
+          <section style="display: flex; flex-direction: column; gap: 8px">
+            <div style="display: flex; justify-content: space-between"><label for="tz" style="font-size: 12px; font-weight: 600; color: var(--text2)">Zoom level</label><span>200%</span></div>
+            <input id="tz" type="range" min="100" max="400" value="200" style="width: 100%; height: 44px; accent-color: var(--accent)">
+          </section>
+          <section style="display: flex; flex-direction: column; gap: 12px; padding: 12px; border-radius: 12px; background: var(--panel2)">
+            <label style="display: flex; align-items: center; justify-content: space-between; min-height: 44px"><span style="font-weight: 500">Instant animation</span><input type="checkbox" style="width: 44px; height: 24px; accent-color: var(--accent)"></label>
+            <label style="display: flex; align-items: center; justify-content: space-between; min-height: 44px"><span style="font-weight: 500">Start animation early</span><input type="checkbox" checked style="width: 44px; height: 24px; accent-color: var(--accent)"></label>
+          </section>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px"><button style="height: 44px; border-radius: 10px; border: 1px solid var(--line2); background: transparent">Split</button><button style="height: 44px; border-radius: 10px; border: 1px solid var(--line2); background: transparent">Duplicate</button><button style="height: 44px; border-radius: 10px; border: 1px solid var(--line2); background: transparent">Disable</button><button style="height: 44px; border-radius: 10px; border: 1px solid var(--line2); background: transparent; color: var(--danger)">Remove</button></div>
+        </div>
+      </aside>
+    </sc-if>
+  </div>
+
+  <section aria-label="Timeline" style="height: 200px; flex: none; background: var(--panel); border-top: 1px solid var(--line); display: flex; flex-direction: column">
+    <div style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid var(--line)">
+      <button style="height: 32px; padding: 0 12px; border-radius: 8px; border: none; background: transparent; color: var(--zoom); font-weight: 500">+ Zoom</button>
+      <button style="height: 32px; padding: 0 12px; border-radius: 8px; border: none; background: transparent; color: var(--layout); font-weight: 500">+ Layout</button>
+      <button style="height: 32px; padding: 0 12px; border-radius: 8px; border: none; background: transparent; color: var(--mask); font-weight: 500">+ Mask</button>
+      <div style="flex: 1 1 auto"></div>
+      <button onClick="{{ toggleTracks }}" style="height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2); font-size: 12px">{{ tracksLabel }}</button>
+      <span style="font-size: 11px; color: var(--text3)">pinch to zoom the timeline</span>
+    </div>
+    <div style="flex: 1 1 auto; display: grid; grid-template-columns: 96px minmax(0, 1fr); overflow: hidden">
+      <div style="border-right: 1px solid var(--line); display: flex; flex-direction: column; font-size: 11px; color: var(--text2)">
+        <sc-for list="{{tracks}}" as="t" hint-placeholder-count="4"><div style="height: {{ rowH }}; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="width: 6px; height: 6px; border-radius: 2px; background: {{ t.color }}"></span>{{ t.name }}</div></sc-for>
+      </div>
+      <div style="position: relative; overflow: hidden">
+        <sc-for list="{{tracks}}" as="t" hint-placeholder-count="4">
+          <div style="height: {{ rowH }}; position: relative; border-bottom: 1px solid var(--line)">
+            <sc-for list="{{ t.items }}" as="it" hint-placeholder-count="3"><span style="position: absolute; left: {{ it.l }}; width: {{ it.w }}; top: 4px; bottom: 4px; border-radius: 6px; background: {{ t.color }}; opacity: {{ it.o }}; color: {{ t.fg }}; font-size: 10px; padding-left: 6px; display: flex; align-items: center; overflow: hidden; white-space: nowrap">{{ it.label }}</span></sc-for>
+          </div>
+        </sc-for>
+        <div aria-hidden="true" style="position: absolute; left: 11.5%; top: 0; bottom: 0; width: 2px; background: var(--text)"><span style="position: absolute; top: -2px; left: -8px; width: 18px; height: 18px; border-radius: 9px 9px 9px 0; background: var(--text); transform: rotate(-45deg)"></span></div>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1024,"height":768}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { panel:'zooms', sheet:true, all:false }; }
+  renderVals() {
+    const theme = this.props.theme ?? 'dark';
+    const items = [['zooms','Zooms','M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM16 16l5 5M11 8v6M8 11h6'],['clips','Clips','M6 4h12v16H6zM6 9h12M6 14h12'],['cursor','Cursor','M5 3l14 8-6 2-3 6z'],['camera','Camera','M4 7h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4zM17 10l4-2v8l-4-2'],['background','Background','M3 5h18v14H3zM3 15l5-5 4 4 3-3 6 6'],['masks','Masks','M4 6h16v12H4zM8 10h4v4H8'],['shortcuts','Shortcuts','M3 7h18v10H3zM7 11h1M11 11h1M15 11h1M7 14h10'],['captions','Captions','M4 5h16v14H4zM7 14h6M15 14h2M7 10h2M11 10h6'],['audio','Audio','M4 12h2M8 8v8M12 5v14M16 9v6M20 11v2'],['animation','Animation','M4 18c4-10 12-10 16 0M8 12l2-2M14 10l2 2']];
+    const rail = items.map(([id,label,d]) => ({ id,label,d, active: this.state.panel===id && this.state.sheet, bg: (this.state.panel===id && this.state.sheet)?'var(--accentSoft)':'transparent', fg: this.state.panel===id?'var(--text)':'var(--text2)', pick: () => this.setState({ panel:id, sheet: !(this.state.panel===id && this.state.sheet) }) }));
+    const core = [
+      {name:'Zooms', color:'var(--zoom)', fg:'#fff', items:[{l:'4%',w:'7%',o:.85,label:''},{l:'10.5%',w:'3.3%',o:1,label:''},{l:'22%',w:'9%',o:.85,label:''},{l:'40%',w:'6%',o:.85,label:'Loupe'},{l:'76%',w:'8%',o:.85,label:''}]},
+      {name:'Clips', color:'var(--clip)', fg:'#1a1500', items:[{l:'0%',w:'31%',o:1,label:'1×'},{l:'31.3%',w:'6%',o:1,label:'3×'},{l:'40%',w:'60%',o:1,label:'1×'}]},
+      {name:'Layouts', color:'var(--layout)', fg:'#fff', items:[{l:'62%',w:'14%',o:1,label:'Fullscreen camera'}]},
+      {name:'Captions', color:'var(--caption)', fg:'#fff', items:[{l:'1%',w:'14%',o:.8,label:''},{l:'16%',w:'22%',o:.8,label:''},{l:'41%',w:'30%',o:.8,label:''},{l:'73%',w:'24%',o:.8,label:''}]}
+    ];
+    const extra = [
+      {name:'Masks', color:'var(--mask)', fg:'#fff', items:[{l:'18%',w:'10%',o:1,label:'Blur'}]},
+      {name:'Shortcuts', color:'var(--shortcut)', fg:'#fff', items:[{l:'9%',w:'4%',o:1,label:'⌘C'},{l:'81%',w:'5%',o:1,label:'⇧⌘R'}]},
+      {name:'Voiceovers', color:'var(--voice)', fg:'#fff', items:[{l:'55%',w:'16%',o:1,label:'AI'}]},
+      {name:'Audio', color:'var(--text3)', fg:'#fff', items:[{l:'0%',w:'100%',o:.35,label:''}]}
+    ];
+    const all = this.state.all;
+    const tracks = all ? core.concat(extra) : core;
+    return {
+      themeClass: theme==='light'?'light':'dark', rail, tracks,
+      rowH: all ? '20px' : '40px',
+      tracksLabel: all ? 'Show 4 tracks' : 'Show all 8 tracks',
+      toggleTracks: () => this.setState({ all: !all }),
+      sheetOpen: this.state.sheet, closeSheet: () => this.setState({ sheet:false })
+    };
+  }
+}
+</script>
+</body>
+</html>

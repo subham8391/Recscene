@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Projects home (laptop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif}
+.ss{--bg:#F2F2F5;--panel:#FFFFFF;--panel2:#F6F6F8;--raised:#FFFFFF;--line:#E2E2E8;--line2:#CFCFD7;--text:#17171B;--text2:#5A5A64;--text3:#6F6F7A;--accent:#5F45F0;--accentSoft:#ECE8FF;--onAccent:#FFFFFF;--caption:#2A9D5E;--clip:#D9A41C;--rec:#E0393E;--danger:#D14343;--shadow:0 10px 30px rgba(20,20,35,.12);--focus:0 0 0 3px rgba(95,69,240,.35)}
+.ss.dark{--bg:#0E0F11;--panel:#161719;--panel2:#1C1D21;--raised:#23242A;--line:#2A2B31;--line2:#383943;--text:#EDEDF2;--text2:#A6A7B1;--text3:#8E8F9A;--accent:#8F79FF;--accentSoft:#2A2546;--onAccent:#0E0F11;--caption:#45C77F;--clip:#F2C14E;--rec:#FF4A4F;--danger:#E36060;--shadow:0 10px 30px rgba(0,0,0,.5);--focus:0 0 0 3px rgba(143,121,255,.4)}
+.ss *{box-sizing:border-box}
+.ss button{font:inherit;color:inherit;cursor:pointer}
+.ss button:focus-visible,.ss input:focus-visible{outline:none;box-shadow:var(--focus)}
+.ss .card:hover{border-color:var(--line2);box-shadow:var(--shadow)}
+.ss .ic{width:16px;height:16px;flex:none}
+a{color:#5F45F0}a:hover{color:#4A34C9}
+</style>
+</helmet>
+<div class="ss {{themeClass}}" style="width: 1280px; height: 800px; background: var(--bg); color: var(--text); display: flex; font-size: 13px; overflow: hidden; border-radius: 12px">
+
+  <nav aria-label="Library" style="width: 220px; flex: none; background: var(--panel); border-right: 1px solid var(--line); padding: 14px 10px; display: flex; flex-direction: column; gap: 2px">
+    <div style="display: flex; gap: 8px; padding: 0 4px 16px" aria-hidden="true"><span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span></div>
+    <sc-for list="{{nav}}" as="n" hint-placeholder-count="6">
+      <a href="#{{ n.id }}" aria-current="{{ n.on }}" style="height: 34px; padding: 0 12px; border-radius: 8px; background: {{ n.bg }}; color: {{ n.fg }}; text-decoration: none; display: flex; align-items: center; gap: 10px; font-weight: 500"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="{{ n.d }}"/></svg>{{ n.name }}<span style="flex: 1 1 auto"></span><span style="font-size: 11px; color: var(--text3)">{{ n.count }}</span></a>
+    </sc-for>
+    <div style="flex: 1 1 auto"></div>
+    <div style="padding: 12px; border-radius: 10px; background: var(--panel2); display: flex; flex-direction: column; gap: 6px; font-size: 12px">
+      <span style="font-weight: 600">Storage</span>
+      <span aria-hidden="true" style="height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--accent) 0 38%, var(--line2) 38%)"></span>
+      <span style="color: var(--text2)">38 GB of projects · 212 GB free</span>
+    </div>
+  </nav>
+
+  <main style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column">
+    <header style="height: 64px; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid var(--line); background: var(--panel)">
+      <h1 style="margin: 0; font-size: 18px; font-weight: 700">Recent projects</h1>
+      <div style="flex: 1 1 auto"></div>
+      <label for="q" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search projects</label>
+      <input id="q" placeholder="Search projects" style="width: 240px; height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2); color: var(--text); font: inherit">
+      <button style="height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Create from video…</button>
+      <button style="height: 36px; padding: 0 16px; border-radius: 18px; border: none; background: var(--rec); color: #fff; font-weight: 700; display: flex; align-items: center; gap: 8px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #fff"></span>New recording</button>
+    </header>
+
+    <div style="flex: 1 1 auto; overflow: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 20px">
+      <section aria-label="Unfinished recordings" style="display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 12px; background: var(--panel); border: 1px solid var(--clip)">
+        <span style="width: 10px; height: 10px; border-radius: 50%; background: var(--clip)"></span>
+        <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 600">1 unfinished recording from 09:58 today</span><span style="font-size: 12px; color: var(--text2)">Recscene closed while recording. Recover it as a project or delete it.</span></div>
+        <div style="flex: 1 1 auto"></div>
+        <button style="height: 30px; padding: 0 12px; border-radius: 8px; border: none; background: var(--text); color: var(--bg); font-weight: 600">Recover</button>
+        <button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: transparent; color: var(--danger)">Delete</button>
+      </section>
+
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px">
+        <sc-for list="{{projects}}" as="p" hint-placeholder-count="8">
+          <a href="Main.dc.html" class="card" style="display: flex; flex-direction: column; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; text-decoration: none; color: var(--text)">
+            <span style="display: block; aspect-ratio: 16 / 9; background: {{ p.bg }}; position: relative">
+              <span style="position: absolute; inset: 14% 16%; border-radius: 6px; background: rgba(20,20,28,.85)"></span>
+              <span style="position: absolute; right: 8px; bottom: 8px; padding: 2px 6px; border-radius: 4px; background: rgba(0,0,0,.65); color: #fff; font-size: 11px; font-variant-numeric: tabular-nums">{{ p.dur }}</span>
+            </span>
+            <span style="display: flex; flex-direction: column; gap: 4px; padding: 10px 12px 12px">
+              <span style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ p.name }}</span>
+              <span style="font-size: 11px; color: var(--text3)">{{ p.meta }}</span>
+              <sc-if value="{{ p.hasChip }}" hint-placeholder-val="{{ false }}"><span style="margin-top: 4px; align-self: flex-start; height: 18px; padding: 0 7px; border-radius: 9px; background: {{ p.chipBg }}; color: {{ p.chipFg }}; font-size: 10px; font-weight: 600; line-height: 18px">{{ p.chip }}</span></sc-if>
+            </span>
+          </a>
+        </sc-for>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"light"},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const theme = this.props.theme ?? 'light';
+    const nav = [
+      ['recent','Recent','M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z','10',true],
+      ['all','All projects','M4 6h16v12H4zM4 10h16','42',false],
+      ['links','Shareable links','M10 14a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 0 0-5-5l-1 1M14 10a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5l1-1','12',false],
+      ['presets','Presets','M4 7h16M4 12h10M4 17h7','5',false],
+      ['exports','Recent exports','M12 3v12M7 10l5 5 5-5M4 21h16','',false],
+      ['trash','Trash','M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13','',false]
+    ].map(([id,name,d,count,on]) => ({ id,name,d,count,on, bg: on?'var(--accentSoft)':'transparent', fg: on?'var(--text)':'var(--text2)' }));
+    const g = ['linear-gradient(135deg,#1b2b5a,#5a3a8a 45%,#c9608a)','linear-gradient(135deg,#0f3d3a,#176b5d 50%,#86c6a1)','linear-gradient(135deg,#3a1d5c,#7a2f6b)','linear-gradient(135deg,#1d3a5c,#0b1226)','linear-gradient(135deg,#6b4bd6,#2b1d6b)','linear-gradient(135deg,#e2b96b,#b0642f)','linear-gradient(135deg,#2f5d8a,#1a2a44)','linear-gradient(135deg,#444,#111)'];
+    const rows = [
+      ['Area 2026-11-14 00:12','1:48','Edited 12 min ago · 1080p','Link shared','var(--accentSoft)','var(--accent)'],
+      ['Onboarding walkthrough v3','2:05','Edited yesterday · 4K','Exporting 42%','var(--panel2)','var(--text2)'],
+      ['Billing settings demo','1:21','Edited Mon · captions','',''],
+      ['iPhone app tour','0:58','Edited Sun · device frame','',''],
+      ['Support reply — login bug','0:31','Edited Sat','GIF','var(--panel2)','var(--text2)'],
+      ['Launch teaser','0:24','Edited 3 Nov · 9:16','Preset: Launch','var(--panel2)','var(--text2)'],
+      ['Weekly update 46','4:12','Edited 2 Nov','',''],
+      ['Keyboard shortcuts clip','0:19','Edited 30 Oct','','']
+    ];
+    const projects = rows.map((r,i) => ({ name:r[0], dur:r[1], meta:r[2], chip:r[3], hasChip: !!r[3], chipBg:r[4]||'', chipFg:r[5]||'', bg:g[i%g.length] }));
+    return { themeClass: theme==='light'?'light':'dark', nav, projects };
+  }
+}
+</script>
+</body>
+</html>

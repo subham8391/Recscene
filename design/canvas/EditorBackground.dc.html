@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Editor — Background and Screen panel (laptop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif}
+.ss{--bg:#F2F2F5;--panel:#FFFFFF;--panel2:#F6F6F8;--line:#E2E2E8;--line2:#CFCFD7;--text:#17171B;--text2:#5A5A64;--text3:#6F6F7A;--accent:#5F45F0;--accentSoft:#ECE8FF;--onAccent:#FFFFFF;--zoom:#6F57F2;--clip:#D9A41C;--layout:#DF4F80;--mask:#1E9A9A;--shortcut:#2F7FE0;--caption:#2A9D5E;--voice:#E0692A;--danger:#D14343;--stage:#E6E6EC;--focus:0 0 0 3px rgba(95,69,240,.35)}
+.ss.dark{--bg:#0E0F11;--panel:#161719;--panel2:#1C1D21;--line:#2A2B31;--line2:#383943;--text:#EDEDF2;--text2:#A6A7B1;--text3:#8E8F9A;--accent:#8F79FF;--accentSoft:#2A2546;--onAccent:#0E0F11;--zoom:#8F79FF;--clip:#F2C14E;--layout:#F06A98;--mask:#34BFBF;--shortcut:#5EA0F7;--caption:#45C77F;--voice:#F58D4D;--danger:#E36060;--stage:#07070A;--focus:0 0 0 3px rgba(143,121,255,.4)}
+.ss *{box-sizing:border-box}
+.ss button{font:inherit;color:inherit;cursor:pointer}
+.ss button:focus-visible,.ss input:focus-visible{outline:none;box-shadow:var(--focus)}
+.ss .ic{width:18px;height:18px;flex:none}
+.ss h3{margin:0;font-size:12px;font-weight:600;color:var(--text2)}
+.ss .sl{display:flex;flex-direction:column;gap:4px}
+.ss .sl .hd{display:flex;justify-content:space-between;font-size:12px}
+.ss .sl label{font-weight:600;color:var(--text2)}
+.ss .sl input{width:100%;accent-color:var(--accent)}
+.ss .seg{display:grid;border:1px solid var(--line2);border-radius:8px;overflow:hidden}
+.ss .seg button{height:30px;border:none;background:var(--panel2);color:var(--text2);font-size:12px}
+.ss .seg button+button{border-left:1px solid var(--line2)}
+.ss .seg button[aria-pressed="true"]{background:var(--accentSoft);color:var(--text);font-weight:600}
+.ss .card{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:10px;background:var(--panel2)}
+.ss .card label{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ss .card b{display:block;font-weight:500}
+.ss .card small{display:block;font-size:11px;color:var(--text3)}
+.ss .tog{width:36px;height:20px;accent-color:var(--accent);flex:none}
+a{color:#5F45F0}a:hover{color:#4A34C9}
+</style>
+</helmet>
+<div class="ss {{themeClass}}" style="width: 1280px; height: 800px; background: var(--bg); color: var(--text); display: flex; flex-direction: column; font-size: 13px; overflow: hidden; border-radius: 12px">
+  <header style="height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 14px; background: var(--panel); border-bottom: 1px solid var(--line); flex: none">
+    <div style="display: flex; gap: 8px; width: 60px" aria-hidden="true"><span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span></div>
+    <span style="font-weight: 600">Launch teaser</span><span style="color: var(--text3)">· preset "Launch"</span>
+    <div style="flex: 1 1 auto; display: flex; justify-content: center; gap: 8px"><button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Wide 16:9 ▾</button><button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Crop</button><button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accentSoft)">Presets · Launch</button></div>
+    <button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Share link</button>
+    <button style="height: 30px; padding: 0 16px; border-radius: 8px; border: none; background: var(--accent); color: var(--onAccent); font-weight: 600">Export</button>
+  </header>
+
+  <div style="flex: 1 1 auto; display: flex; min-height: 0">
+    <nav aria-label="Editor panels" style="width: 68px; flex: none; background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 8px 6px; gap: 2px">
+      <sc-for list="{{rail}}" as="r" hint-placeholder-count="10"><button aria-pressed="{{ r.active }}" style="height: 54px; border-radius: 8px; border: none; background: {{ r.bg }}; color: {{ r.fg }}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 10px; font-weight: 500"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="{{ r.d }}"/></svg><span>{{ r.label }}</span></button></sc-for>
+    </nav>
+
+    <main style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column">
+      <div style="flex: 1 1 auto; position: relative; margin: 16px; border-radius: 10px; background: var(--stage); overflow: hidden">
+        <div style="position: absolute; inset: 0; background: {{ stageBg }}">
+          <!-- Screen with padding, corners, inset and shadow -->
+          <div style="position: absolute; inset: {{ pad }}; border-radius: {{ corner }}; background: #1f2026; box-shadow: 0 34px 70px rgba(0,0,0,.5); outline: {{ inset }} solid rgba(255,255,255,.35); overflow: hidden">
+            <div style="height: 28px; background: #2a2b33"></div>
+            <div style="padding: 18px; display: flex; flex-direction: column; gap: 12px"><span style="height: 16px; width: 45%; background: #4a4b57; border-radius: 4px"></span><span style="height: 10px; width: 90%; background: #3a3b45; border-radius: 4px"></span><span style="height: 100px; width: 100%; background: #2f3038; border-radius: 6px"></span></div>
+          </div>
+          <div style="position: absolute; left: 14px; top: 14px; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,.55); color: #fff; font-size: 11px">{{ bgName }} · padding {{ padLabel }} · corners {{ cornerLabel }}</div>
+        </div>
+      </div>
+      <div style="height: 44px; flex: none; display: flex; align-items: center; gap: 14px; padding: 0 20px; border-top: 1px solid var(--line); background: var(--panel)">
+        <span style="font-variant-numeric: tabular-nums; font-weight: 600">00:03.00</span><span style="color: var(--text3)">/ 00:24.00</span><div style="flex: 1 1 auto"></div>
+        <button aria-label="Play (Space)" style="width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--text); color: var(--bg); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l12 8-12 8z"/></svg></button>
+        <div style="flex: 1 1 auto"></div><span style="color: var(--text3); font-size: 11px">Padding 0 hides the background entirely</span>
+      </div>
+    </main>
+
+    <aside aria-label="Background and screen settings" style="width: 312px; flex: none; background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; overflow: hidden">
+      <div style="height: 48px; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--line)"><span style="width: 10px; height: 10px; border-radius: 3px; background: linear-gradient(135deg, #5a3a8a, #c9608a)"></span><span style="font-weight: 600">Background &amp; Screen</span></div>
+      <div style="flex: 1 1 auto; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 18px">
+
+        <section style="display: flex; flex-direction: column; gap: 8px">
+          <div class="seg" role="tablist" aria-label="Background type" style="grid-template-columns: repeat(4, minmax(0, 1fr))">
+            <sc-for list="{{types}}" as="t" hint-placeholder-count="4"><button role="tab" aria-selected="{{ t.on }}" aria-pressed="{{ t.on }}" onClick="{{ t.pick }}">{{ t.name }}</button></sc-for>
+          </div>
+
+          <sc-if value="{{ isWallpaper }}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; gap: 6px; overflow: hidden; padding-bottom: 2px">
+              <sc-for list="{{collections}}" as="c" hint-placeholder-count="5"><button aria-pressed="{{ c.on }}" style="height: 24px; padding: 0 10px; border-radius: 12px; border: 1px solid {{ c.border }}; background: {{ c.bg }}; font-size: 11px; white-space: nowrap">{{ c.name }}</button></sc-for>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px">
+              <sc-for list="{{wallpapers}}" as="w" hint-placeholder-count="8"><button onClick="{{ w.pick }}" aria-label="{{ w.name }}" aria-pressed="{{ w.on }}" style="aspect-ratio: 16 / 10; border-radius: 6px; border: 2px solid {{ w.border }}; background: {{ w.css }}"></button></sc-for>
+            </div>
+            <div style="display: flex; gap: 8px"><button style="flex: 1 1 auto; height: 28px; border-radius: 8px; border: 1px solid var(--line2); background: transparent; font-size: 12px">Pick random wallpaper</button><button style="flex: 1 1 auto; height: 28px; border-radius: 8px; border: 1px solid var(--line2); background: transparent; font-size: 12px">Use macOS wallpaper</button></div>
+          </sc-if>
+          <sc-if value="{{ isGradient }}" hint-placeholder-val="{{ false }}">
+            <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px">
+              <sc-for list="{{gradients}}" as="g" hint-placeholder-count="10"><button onClick="{{ g.pick }}" aria-label="{{ g.name }}" aria-pressed="{{ g.on }}" style="aspect-ratio: 1; border-radius: 8px; border: 2px solid {{ g.border }}; background: {{ g.css }}"></button></sc-for>
+            </div>
+            <p style="margin: 0; font-size: 11px; color: var(--text3)">35 presets. Angle and stops are editable after picking one.</p>
+          </sc-if>
+          <sc-if value="{{ isColor }}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; gap: 8px; align-items: center"><input type="color" value="#1d3a5c" aria-label="Background colour" style="width: 44px; height: 32px; border: 1px solid var(--line2); border-radius: 8px; background: var(--panel2); padding: 2px"><input value="#1D3A5C" aria-label="Hex value" style="flex: 1 1 auto; height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2); color: var(--text); font: inherit; font-family: ui-monospace, Menlo, monospace"></div>
+            <div style="display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px"><sc-for list="{{palette}}" as="p" hint-placeholder-count="8"><button aria-label="{{ p }}" style="aspect-ratio: 1; border-radius: 6px; border: 1px solid var(--line2); background: {{ p }}"></button></sc-for></div>
+          </sc-if>
+          <sc-if value="{{ isImage }}" hint-placeholder-val="{{ false }}">
+            <button style="height: 72px; border-radius: 10px; border: 1px dashed var(--line2); background: var(--panel2); color: var(--text2); font-size: 12px">Drop an image or click to choose…</button>
+            <div class="sl"><div class="hd"><label for="bblur">Background blur</label><span>0 px</span></div><input id="bblur" type="range" min="0" max="60" value="0"></div>
+          </sc-if>
+        </section>
+
+        <section class="sl"><div class="hd"><label for="pad">Padding</label><span>{{ padLabel }}</span></div><input id="pad" type="range" min="0" max="30" value="{{ padVal }}" onInput="{{ setPad }}"></section>
+        <section class="sl"><div class="hd"><label for="cor">Rounded corners</label><span>{{ cornerLabel }}</span></div><input id="cor" type="range" min="0" max="40" value="{{ cornerVal }}" onInput="{{ setCorner }}"></section>
+        <section class="sl"><div class="hd"><label for="ins">Inset</label><span>{{ insetLabel }}</span></div><input id="ins" type="range" min="0" max="12" value="{{ insetVal }}" onInput="{{ setInset }}">
+          <div style="display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 11px; color: var(--text3)"><span>Inset colour</span><input type="range" min="0" max="100" value="60" aria-label="Inset balance" style="accent-color: var(--accent)"><span>opacity 35%</span></div>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 8px"><h3>Shadow</h3>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+            <div class="sl"><div class="hd"><label for="sh1">Intensity</label><span>60%</span></div><input id="sh1" type="range" min="0" max="100" value="60"></div>
+            <div class="sl"><div class="hd"><label for="sh2">Blur</label><span>70</span></div><input id="sh2" type="range" min="0" max="100" value="70"></div>
+            <div class="sl"><div class="hd"><label for="sh3">Distance</label><span>34</span></div><input id="sh3" type="range" min="0" max="100" value="34"></div>
+            <div class="sl"><div class="hd"><label for="sh4">Angle</label><span>90°</span></div><input id="sh4" type="range" min="0" max="360" value="90"></div>
+          </div>
+          <p style="margin: 0; padding: 6px 8px; border-radius: 6px; background: var(--panel2); border-left: 3px solid var(--clip); font-size: 11px; color: var(--text2)">Directional shadow is disabled for recordings on large screens.</p>
+        </section>
+
+        <section class="card">
+          <label><span><b>Snap to edges</b><small>Keep the screen aligned to the frame while zoomed. ⌘-drag to turn off.</small></span><input class="tog" type="checkbox" checked></label>
+          <label><span><b>Wrap in device mockup</b><small>Pick a frame; stretch to fit, or show all frames even if they don't match.</small></span><input class="tog" type="checkbox"></label>
+          <label><span><b>Always keep zoomed in</b><small>Crops to the aspect ratio and follows the cursor.</small></span><input class="tog" type="checkbox"></label>
+        </section>
+      </div>
+    </aside>
+  </div>
+
+  <section aria-label="Timeline" style="height: 236px; flex: none; background: var(--panel); border-top: 1px solid var(--line); display: flex; flex-direction: column">
+    <div style="height: 36px; display: flex; align-items: center; gap: 6px; padding: 0 12px; border-bottom: 1px solid var(--line)"><span style="font-size: 11px; color: var(--text3)">Background and screen settings apply to the whole project; save them as a preset to reuse</span><div style="flex: 1 1 auto"></div><label for="tlz4" style="font-size: 11px; color: var(--text3)">Timeline zoom</label><input id="tlz4" type="range" min="0" max="100" value="40" style="width: 120px; accent-color: var(--accent)"></div>
+    <div style="flex: 1 1 auto; display: grid; grid-template-columns: 112px minmax(0, 1fr); overflow: hidden">
+      <div style="border-right: 1px solid var(--line); display: flex; flex-direction: column; font-size: 11px; color: var(--text2)"><div style="height: 20px"></div><sc-for list="{{tracks}}" as="t" hint-placeholder-count="8"><div style="height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="width: 6px; height: 6px; border-radius: 2px; background: {{ t.color }}"></span>{{ t.name }}</div></sc-for></div>
+      <div style="position: relative; overflow: hidden">
+        <div style="height: 20px; display: flex; font-size: 10px; color: var(--text3); border-bottom: 1px solid var(--line)"><sc-for list="{{ruler}}" as="m" hint-placeholder-count="9"><span style="flex: 1 1 0; border-left: 1px solid var(--line2); padding-left: 4px; line-height: 20px">{{ m }}</span></sc-for></div>
+        <div style="height: 22px; position: relative; border-bottom: 1px solid var(--line)"><span style="position: absolute; left: 10%; width: 20%; top: 3px; height: 16px; border-radius: 4px; background: var(--zoom); opacity: .85"></span><span style="position: absolute; left: 55%; width: 25%; top: 3px; height: 16px; border-radius: 4px; background: var(--zoom); opacity: .85"></span></div>
+        <div style="height: 22px; position: relative; border-bottom: 1px solid var(--line)"><span style="position: absolute; left: 0; width: 100%; top: 2px; height: 18px; border-radius: 4px; background: var(--clip); color: #1a1500; font-size: 10px; font-weight: 600; padding-left: 6px; line-height: 18px">1×</span></div>
+        <div style="height: 22px; border-bottom: 1px solid var(--line)"></div><div style="height: 22px; border-bottom: 1px solid var(--line)"></div><div style="height: 22px; border-bottom: 1px solid var(--line)"></div>
+        <div style="height: 22px; position: relative; border-bottom: 1px solid var(--line)"><span style="position: absolute; left: 2%; width: 95%; top: 3px; height: 16px; border-radius: 4px; background: var(--caption); opacity: .5"></span></div>
+        <div style="height: 22px; border-bottom: 1px solid var(--line)"></div>
+        <div style="height: 22px; display: flex; align-items: center; gap: 1px; padding: 0 2px"><sc-for list="{{wave}}" as="h" hint-placeholder-count="120"><span style="flex: 1 1 0; height: {{ h }}; background: var(--text3); opacity: .55; border-radius: 1px"></span></sc-for></div>
+        <div aria-hidden="true" style="position: absolute; left: 12.5%; top: 0; bottom: 0; width: 1px; background: var(--text)"><span style="position: absolute; top: 0; left: -6px; width: 13px; height: 13px; border-radius: 7px 7px 7px 0; background: var(--text); transform: rotate(-45deg)"></span></div>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { type:'wallpaper', wp:0, gr:0, pad:8, corner:12, inset:2 }; }
+  renderVals() {
+    const theme = this.props.theme ?? 'dark';
+    const items = [['zooms','Zooms','M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM16 16l5 5M11 8v6M8 11h6'],['clips','Clips','M6 4h12v16H6zM6 9h12M6 14h12'],['cursor','Cursor','M5 3l14 8-6 2-3 6z'],['camera','Camera','M4 7h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4zM17 10l4-2v8l-4-2'],['background','Background','M3 5h18v14H3zM3 15l5-5 4 4 3-3 6 6'],['masks','Masks','M4 6h16v12H4zM8 10h4v4H8'],['shortcuts','Shortcuts','M3 7h18v10H3zM7 11h1M11 11h1M15 11h1M7 14h10'],['captions','Captions','M4 5h16v14H4zM7 14h6M15 14h2M7 10h2M11 10h6'],['audio','Audio','M4 12h2M8 8v8M12 5v14M16 9v6M20 11v2'],['animation','Animation','M4 18c4-10 12-10 16 0M8 12l2-2M14 10l2 2']];
+    const rail = items.map(([id,label,d]) => ({ id,label,d, active:id==='background', bg:id==='background'?'var(--accentSoft)':'transparent', fg:id==='background'?'var(--text)':'var(--text2)' }));
+    const T = this.state.type;
+    const types = [['wallpaper','Wallpaper'],['gradient','Gradient'],['color','Colour'],['image','Image']].map(([id,name]) => ({ id,name, on:T===id, pick:()=>this.setState({type:id}) }));
+    const wps = [['Midnight 2','linear-gradient(135deg,#1b2b5a,#5a3a8a 45%,#c9608a)'],['Sequoia','linear-gradient(135deg,#1d3a5c,#0b1226)'],['Sunset 10','linear-gradient(135deg,#e2b96b,#b0642f)'],['Energy 6','linear-gradient(135deg,#6b4bd6,#2b1d6b)'],['Glass rainbow','linear-gradient(135deg,#ff9a9e,#fad0c4 40%,#a1c4fd)'],['Tahoe dark','linear-gradient(135deg,#0f3d3a,#176b5d 50%,#86c6a1)'],['Loupe mono','linear-gradient(135deg,#444,#111)'],['Moonrise','linear-gradient(135deg,#3a1d5c,#7a2f6b)']];
+    const wallpapers = wps.map(([name,css],i) => ({ name, css, on: this.state.wp===i, border: this.state.wp===i?'var(--accent)':'transparent', pick:()=>this.setState({wp:i}) }));
+    const grs = [['Violet','linear-gradient(135deg,#6b4bd6,#c9608a)'],['Ocean','linear-gradient(135deg,#0f3d6b,#3bb1c9)'],['Peach','linear-gradient(135deg,#f6a06b,#f9d29d)'],['Mint','linear-gradient(135deg,#176b5d,#86c6a1)'],['Ember','linear-gradient(135deg,#7a1f1f,#f08a4b)'],['Slate','linear-gradient(135deg,#2a2f3a,#6d7587)'],['Candy','linear-gradient(135deg,#f06a98,#8f79ff)'],['Dawn','linear-gradient(135deg,#1b2b5a,#f2c14e)'],['Forest','linear-gradient(135deg,#0d2b1e,#2a9d5e)'],['Mono','linear-gradient(135deg,#111,#666)']];
+    const gradients = grs.map(([name,css],i) => ({ name, css, on: this.state.gr===i, border: this.state.gr===i?'var(--accent)':'transparent', pick:()=>this.setState({gr:i}) }));
+    const stageBg = T==='wallpaper' ? wps[this.state.wp][1] : T==='gradient' ? grs[this.state.gr][1] : T==='color' ? '#1D3A5C' : 'linear-gradient(135deg,#8a8f9a,#3a3f4a)';
+    const bgName = T==='wallpaper' ? 'Wallpaper · '+wps[this.state.wp][0] : T==='gradient' ? 'Gradient · '+grs[this.state.gr][0] : T==='color' ? 'Colour · #1D3A5C' : 'Image · blurred';
+    const tracks = [{name:'Zooms',color:'var(--zoom)'},{name:'Clips',color:'var(--clip)'},{name:'Layouts',color:'var(--layout)'},{name:'Masks',color:'var(--mask)'},{name:'Shortcuts',color:'var(--shortcut)'},{name:'Captions',color:'var(--caption)'},{name:'Voiceovers',color:'var(--voice)'},{name:'Audio',color:'var(--text3)'}];
+    const wave = Array.from({length:120},(_,i)=> (4 + Math.round(8*Math.abs(Math.sin(i*0.5))+6*Math.abs(Math.sin(i*0.19)))) + 'px');
+    const pad = this.state.pad, corner = this.state.corner, inset = this.state.inset;
+    return {
+      themeClass: theme==='light'?'light':'dark', rail, types, wallpapers, gradients, tracks, wave, stageBg, bgName,
+      isWallpaper:T==='wallpaper', isGradient:T==='gradient', isColor:T==='color', isImage:T==='image',
+      collections: ['macOS','Midnight','Sunset','Energy','Raycast','Glassmorphism'].map((name,i)=>({name, on:i===1, border:i===1?'var(--accent)':'var(--line2)', bg:i===1?'var(--accentSoft)':'var(--panel2)'})),
+      palette: ['#0E0F11','#1D3A5C','#5F45F0','#DF4F80','#D9A41C','#2A9D5E','#F2F2F5','#FFFFFF'],
+      ruler:['0:00','0:03','0:06','0:09','0:12','0:15','0:18','0:21','0:24'],
+      padVal: pad, padLabel: pad+'%', pad: pad+'%', setPad: e=>this.setState({pad:Number(e.target.value)}),
+      cornerVal: corner, cornerLabel: corner+' px', corner: corner+'px', setCorner: e=>this.setState({corner:Number(e.target.value)}),
+      insetVal: inset, insetLabel: inset+' px', inset: inset+'px', setInset: e=>this.setState({inset:Number(e.target.value)})
+    };
+  }
+}
+</script>
+</body>
+</html>

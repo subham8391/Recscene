@@ -1,0 +1,152 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font: 13px/1.45 var(--font);
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+.app {
+  height: 100%;
+  display: grid;
+  grid-template-columns: var(--rail-w) 1fr var(--inspector-w);
+  grid-template-rows: var(--titlebar-h) 1fr var(--timeline-h);
+  grid-template-areas:
+    'title title title'
+    'rail stage inspector'
+    'timeline timeline timeline';
+}
+
+.titlebar {
+  grid-area: title;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-left: 84px; /* room for the traffic lights */
+  padding-right: 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  -webkit-app-region: drag;
+}
+
+.titlebar__name {
+  font-weight: 600;
+}
+
+.titlebar__project {
+  color: var(--text2);
+}
+
+.titlebar__version {
+  margin-left: auto;
+  color: var(--text3);
+  font-size: 11px;
+}
+
+.rail {
+  grid-area: rail;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 6px;
+  border-right: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.rail__item {
+  height: 52px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text2);
+  font: inherit;
+  font-size: 11px;
+  cursor: default;
+}
+
+.rail__item:hover {
+  background: var(--panel2);
+  color: var(--text);
+}
+
+.stage {
+  grid-area: stage;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--stage);
+}
+
+.stage__frame {
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+  aspect-ratio: 16 / 9;
+  width: min(100%, 880px);
+  align-content: center;
+  border: 1px dashed var(--line2);
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+.stage__motto {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.stage__record {
+  height: 36px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--onAccent);
+  font: inherit;
+  font-weight: 600;
+}
+
+.inspector {
+  grid-area: inspector;
+  padding: 16px;
+  border-left: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.inspector h2 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.muted {
+  color: var(--text2);
+}
+
+.timeline {
+  grid-area: timeline;
+  display: grid;
+  grid-template-rows: 28px 1fr;
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.timeline__playhead {
+  padding: 6px 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text2);
+}
+
+.timeline__tracks {
+  background: var(--panel2);
+}

@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Editor — Audio panel (laptop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif}
+.ss{--bg:#F2F2F5;--panel:#FFFFFF;--panel2:#F6F6F8;--line:#E2E2E8;--line2:#CFCFD7;--text:#17171B;--text2:#5A5A64;--text3:#6F6F7A;--accent:#5F45F0;--accentSoft:#ECE8FF;--onAccent:#FFFFFF;--zoom:#6F57F2;--clip:#D9A41C;--layout:#DF4F80;--mask:#1E9A9A;--shortcut:#2F7FE0;--caption:#2A9D5E;--voice:#E0692A;--danger:#D14343;--stage:#E6E6EC;--focus:0 0 0 3px rgba(95,69,240,.35)}
+.ss.dark{--bg:#0E0F11;--panel:#161719;--panel2:#1C1D21;--line:#2A2B31;--line2:#383943;--text:#EDEDF2;--text2:#A6A7B1;--text3:#8E8F9A;--accent:#8F79FF;--accentSoft:#2A2546;--onAccent:#0E0F11;--zoom:#8F79FF;--clip:#F2C14E;--layout:#F06A98;--mask:#34BFBF;--shortcut:#5EA0F7;--caption:#45C77F;--voice:#F58D4D;--danger:#E36060;--stage:#07070A;--focus:0 0 0 3px rgba(143,121,255,.4)}
+.ss *{box-sizing:border-box}
+.ss button{font:inherit;color:inherit;cursor:pointer}
+.ss button:focus-visible,.ss input:focus-visible{outline:none;box-shadow:var(--focus)}
+.ss .ic{width:18px;height:18px;flex:none}
+.ss h3{margin:0;font-size:12px;font-weight:600;color:var(--text2)}
+.ss .sl{display:flex;flex-direction:column;gap:4px}
+.ss .sl .hd{display:flex;justify-content:space-between;font-size:12px}
+.ss .sl label{font-weight:600;color:var(--text2)}
+.ss .sl input{width:100%;accent-color:var(--accent)}
+.ss .card{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:10px;background:var(--panel2)}
+.ss .card label{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ss .card b{display:block;font-weight:500}
+.ss .card small{display:block;font-size:11px;color:var(--text3)}
+.ss .tog{width:36px;height:20px;accent-color:var(--accent);flex:none}
+.ss .ghost{height:30px;border-radius:8px;border:1px solid var(--line2);background:transparent;font-size:12px}
+.ss .mode{padding:8px 10px;border-radius:10px;background:var(--panel2);text-align:left;display:flex;flex-direction:column;gap:2px}
+a{color:#5F45F0}a:hover{color:#4A34C9}
+</style>
+</helmet>
+<div class="ss {{themeClass}}" style="width: 1280px; height: 800px; background: var(--bg); color: var(--text); display: flex; flex-direction: column; font-size: 13px; overflow: hidden; border-radius: 12px">
+  <header style="height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 14px; background: var(--panel); border-bottom: 1px solid var(--line); flex: none">
+    <div style="display: flex; gap: 8px; width: 60px" aria-hidden="true"><span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span></div>
+    <span style="font-weight: 600">Weekly update 46</span><span style="color: var(--text3)">· saved</span>
+    <div style="flex: 1 1 auto; display: flex; justify-content: center; gap: 8px"><button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Auto (16:9) ▾</button><button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Crop</button><button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Presets</button></div>
+    <button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Share link</button>
+    <button style="height: 30px; padding: 0 16px; border-radius: 8px; border: none; background: var(--accent); color: var(--onAccent); font-weight: 600">Export</button>
+  </header>
+
+  <div style="flex: 1 1 auto; display: flex; min-height: 0">
+    <nav aria-label="Editor panels" style="width: 68px; flex: none; background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 8px 6px; gap: 2px">
+      <sc-for list="{{rail}}" as="r" hint-placeholder-count="10"><button aria-pressed="{{ r.active }}" style="height: 54px; border-radius: 8px; border: none; background: {{ r.bg }}; color: {{ r.fg }}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 10px; font-weight: 500"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="{{ r.d }}"/></svg><span>{{ r.label }}</span></button></sc-for>
+    </nav>
+
+    <main style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column">
+      <div style="flex: 1 1 auto; position: relative; margin: 16px; border-radius: 10px; background: var(--stage); overflow: hidden">
+        <div style="position: absolute; inset: 0; background: linear-gradient(135deg, #2f5d8a 0%, #1a2a44 60%, #0d1322 100%)">
+          <div style="position: absolute; inset: 7% 10%; border-radius: 12px; background: #1f2026; box-shadow: 0 30px 60px rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.12)"></div>
+          <div style="position: absolute; right: 7%; bottom: 7%; width: 160px; height: 160px; border-radius: 24%; background: linear-gradient(160deg, #e9c1a3, #a16a4c); border: 2px solid rgba(255,255,255,.25)"></div>
+          <!-- Live meters -->
+          <div style="position: absolute; left: 14px; top: 14px; padding: 8px 10px; border-radius: 8px; background: rgba(0,0,0,.6); color: #fff; font-size: 11px; display: flex; flex-direction: column; gap: 6px; min-width: 190px">
+            <sc-for list="{{meters}}" as="m" hint-placeholder-count="4"><div style="display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 8px; align-items: center"><span>{{ m.name }}</span><span aria-hidden="true" style="height: 6px; border-radius: 3px; background: linear-gradient(90deg, {{ m.color }} 0 {{ m.level }}, rgba(255,255,255,.18) {{ m.level }})"></span></div></sc-for>
+          </div>
+        </div>
+      </div>
+      <div style="height: 44px; flex: none; display: flex; align-items: center; gap: 14px; padding: 0 20px; border-top: 1px solid var(--line); background: var(--panel)">
+        <span style="font-variant-numeric: tabular-nums; font-weight: 600">01:02.00</span><span style="color: var(--text3)">/ 04:12.00</span><div style="flex: 1 1 auto"></div>
+        <button aria-label="Play (Space)" style="width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--text); color: var(--bg); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l12 8-12 8z"/></svg></button>
+        <div style="flex: 1 1 auto"></div><span style="color: var(--text3); font-size: 11px">Audio is muted above 2× speed · right-click a clip to set its volume</span>
+      </div>
+    </main>
+
+    <aside aria-label="Audio settings" style="width: 312px; flex: none; background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; overflow: hidden">
+      <div style="height: 48px; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--line)"><span style="width: 10px; height: 10px; border-radius: 3px; background: var(--voice)"></span><span style="font-weight: 600">Audio</span></div>
+      <div style="flex: 1 1 auto; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 18px">
+
+        <section style="display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; align-items: center; justify-content: space-between"><h3>Microphone</h3><label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2)">Mute<input class="tog" type="checkbox"></label></div>
+          <div role="radiogroup" aria-label="Microphone audio mode" style="display: flex; flex-direction: column; gap: 6px">
+            <sc-for list="{{modes}}" as="m" hint-placeholder-count="5">
+              <button role="radio" aria-checked="{{ m.on }}" onClick="{{ m.pick }}" class="mode" style="border: 2px solid {{ m.border }}">
+                <span style="display: flex; align-items: center; gap: 8px; font-weight: 600"><span>{{ m.name }}</span><sc-if value="{{ m.beta }}" hint-placeholder-val="{{ false }}"><span style="height: 16px; padding: 0 6px; border-radius: 8px; background: var(--accentSoft); color: var(--accent); font-size: 10px; line-height: 16px">Beta</span></sc-if><span style="flex: 1 1 auto"></span><sc-if value="{{ m.busy }}" hint-placeholder-val="{{ false }}"><span style="font-size: 11px; color: var(--text3)">{{ m.task }}</span></sc-if></span>
+                <span style="font-size: 11px; color: var(--text3)">{{ m.sub }}</span>
+                <sc-if value="{{ m.busy }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--accent) 0 64%, var(--line2) 64%)"></span></sc-if>
+              </button>
+            </sc-for>
+          </div>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 10px">
+          <div class="sl"><div class="hd"><label for="sysv">System audio</label><span>100%</span></div><input id="sysv" type="range" min="0" max="100" value="100"><small style="font-size: 11px; color: var(--text3)">Needs the modern engine. Legacy recordings have no system audio.</small></div>
+          <div class="sl"><div class="hd"><label for="extv">External device audio</label><span>Muted</span></div><input id="extv" type="range" min="0" max="100" value="0"><small style="font-size: 11px; color: var(--text3)">iPhone or iPad audio when recording a device.</small></div>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; align-items: center; justify-content: space-between"><h3>Background music</h3><label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2)">Mute<input class="tog" type="checkbox"></label></div>
+          <div style="display: flex; gap: 6px; overflow: hidden"><sc-for list="{{genres}}" as="g" hint-placeholder-count="4"><button aria-pressed="{{ g.on }}" style="height: 24px; padding: 0 10px; border-radius: 12px; border: 1px solid {{ g.border }}; background: {{ g.bg }}; font-size: 11px; white-space: nowrap">{{ g.name }}</button></sc-for></div>
+          <div style="display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 10px; overflow: hidden">
+            <sc-for list="{{trackList}}" as="t" hint-placeholder-count="4">
+              <div style="display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 6px; border-bottom: 1px solid var(--line); background: {{ t.bg }}">
+                <button onClick="{{ t.pick }}" aria-label="Play {{ t.name }}" style="width: 28px; height: 28px; border-radius: 50%; border: none; background: var(--panel2); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width:12px;height:12px"><path d="{{ t.icon }}"/></svg></button>
+                <span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ t.name }}</span><span style="font-size: 10px; color: var(--text3)">{{ t.meta }}</span></span>
+                <sc-if value="{{ t.on }}" hint-placeholder-val="{{ false }}"><span style="height: 16px; padding: 0 6px; border-radius: 8px; background: var(--accentSoft); color: var(--accent); font-size: 10px; font-weight: 600; line-height: 16px">In use</span></sc-if>
+              </div>
+            </sc-for>
+          </div>
+          <div class="sl"><div class="hd"><label for="bgv">Music volume</label><span>5%</span></div><input id="bgv" type="range" min="0" max="100" value="5"></div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px"><button class="ghost">Add audio file…</button><button class="ghost">Open library folder</button></div>
+          <p style="margin: 0; font-size: 11px; color: var(--text3)">17 royalty-free tracks built in. Drop an mp3 or mp4 on the panel to use your own.</p>
+        </section>
+
+        <section class="card">
+          <label><span><b>Click sound</b><small>Apple Magic Mouse · 25%</small></span><input class="tog" type="checkbox" checked></label>
+          <label><span><b>Keep audio above 2× speed</b><small>Off: sped-up parts are silent.</small></span><input class="tog" type="checkbox"></label>
+        </section>
+      </div>
+    </aside>
+  </div>
+
+  <section aria-label="Timeline" style="height: 236px; flex: none; background: var(--panel); border-top: 1px solid var(--line); display: flex; flex-direction: column">
+    <div style="height: 36px; display: flex; align-items: center; gap: 6px; padding: 0 12px; border-bottom: 1px solid var(--line)">
+      <button aria-label="Enable audio scrubber (experimental)" style="width: 28px; height: 28px; border-radius: 6px; border: none; background: var(--accentSoft); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" style="width:15px;height:15px"><path d="M3 12h2l2-5 3 10 3-8 2 3h2"/><circle cx="19" cy="17" r="3"/></svg></button>
+      <span style="font-size: 11px; color: var(--text3)">Audio scrubber on · Voiceovers: AI Voiceover… · Record Voiceover…</span>
+      <div style="flex: 1 1 auto"></div><label for="tlz6" style="font-size: 11px; color: var(--text3)">Timeline zoom</label><input id="tlz6" type="range" min="0" max="100" value="40" style="width: 120px; accent-color: var(--accent)">
+    </div>
+    <div style="flex: 1 1 auto; display: grid; grid-template-columns: 112px minmax(0, 1fr); overflow: hidden">
+      <div style="border-right: 1px solid var(--line); display: flex; flex-direction: column; font-size: 11px; color: var(--text2)"><div style="height: 20px"></div><sc-for list="{{tracks}}" as="t" hint-placeholder-count="8"><div style="height: {{ t.h }}; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="width: 6px; height: 6px; border-radius: 2px; background: {{ t.color }}"></span>{{ t.name }}</div></sc-for></div>
+      <div style="position: relative; overflow: hidden">
+        <div style="height: 20px; display: flex; font-size: 10px; color: var(--text3); border-bottom: 1px solid var(--line)"><sc-for list="{{ruler}}" as="m" hint-placeholder-count="9"><span style="flex: 1 1 0; border-left: 1px solid var(--line2); padding-left: 4px; line-height: 20px">{{ m }}</span></sc-for></div>
+        <div style="height: 18px; position: relative; border-bottom: 1px solid var(--line)"><span style="position: absolute; left: 8%; width: 6%; top: 2px; height: 14px; border-radius: 4px; background: var(--zoom); opacity: .85"></span><span style="position: absolute; left: 44%; width: 9%; top: 2px; height: 14px; border-radius: 4px; background: var(--zoom); opacity: .85"></span></div>
+        <div style="height: 18px; position: relative; border-bottom: 1px solid var(--line)"><span style="position: absolute; left: 0; width: 58%; top: 2px; height: 14px; border-radius: 4px; background: var(--clip); color: #1a1500; font-size: 10px; font-weight: 600; padding-left: 6px; line-height: 14px">1× · 100%</span><span style="position: absolute; left: 58.3%; width: 12%; top: 2px; height: 14px; border-radius: 4px; background: var(--clip); color: #1a1500; font-size: 10px; font-weight: 600; padding-left: 6px; line-height: 14px">4× · muted</span><span style="position: absolute; left: 70.6%; width: 29.4%; top: 2px; height: 14px; border-radius: 4px; background: var(--clip); color: #1a1500; font-size: 10px; font-weight: 600; padding-left: 6px; line-height: 14px">1× · 60%</span></div>
+        <div style="height: 18px; border-bottom: 1px solid var(--line)"></div><div style="height: 18px; border-bottom: 1px solid var(--line)"></div><div style="height: 18px; border-bottom: 1px solid var(--line)"></div>
+        <div style="height: 18px; position: relative; border-bottom: 1px solid var(--line)"><span style="position: absolute; left: 2%; width: 96%; top: 2px; height: 14px; border-radius: 4px; background: var(--caption); opacity: .5"></span></div>
+        <div style="height: 18px; position: relative; border-bottom: 1px solid var(--line)"><span style="position: absolute; left: 24%; width: 14%; top: 2px; height: 14px; border-radius: 4px; background: var(--voice); color: #fff; font-size: 10px; padding-left: 6px; line-height: 14px">AI · Synchronized</span><span style="position: absolute; left: 62%; width: 10%; top: 2px; height: 14px; border-radius: 4px; background: var(--voice); color: #fff; font-size: 10px; padding-left: 6px; line-height: 14px; opacity: .8">Recorded</span></div>
+        <div style="height: 50px; position: relative; display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 0 2px">
+          <div style="display: flex; align-items: center; gap: 1px; height: 22px"><sc-for list="{{wave}}" as="h" hint-placeholder-count="120"><span style="flex: 1 1 0; height: {{ h }}; background: var(--voice); opacity: .75; border-radius: 1px"></span></sc-for></div>
+          <div style="display: flex; align-items: center; gap: 1px; height: 16px"><sc-for list="{{wave2}}" as="h" hint-placeholder-count="120"><span style="flex: 1 1 0; height: {{ h }}; background: var(--text3); opacity: .45; border-radius: 1px"></span></sc-for></div>
+          <span style="position: absolute; left: 6px; top: 4px; font-size: 9px; color: var(--text3)">mic</span><span style="position: absolute; left: 6px; bottom: 3px; font-size: 9px; color: var(--text3)">music · 5%</span>
+        </div>
+        <div aria-hidden="true" style="position: absolute; left: 24.6%; top: 0; bottom: 0; width: 1px; background: var(--text)"><span style="position: absolute; top: 0; left: -6px; width: 13px; height: 13px; border-radius: 7px 7px 7px 0; background: var(--text); transform: rotate(-45deg)"></span></div>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { mode:'noise-reduction', track:1 }; }
+  renderVals() {
+    const theme = this.props.theme ?? 'dark';
+    const items = [['zooms','Zooms','M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM16 16l5 5M11 8v6M8 11h6'],['clips','Clips','M6 4h12v16H6zM6 9h12M6 14h12'],['cursor','Cursor','M5 3l14 8-6 2-3 6z'],['camera','Camera','M4 7h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4zM17 10l4-2v8l-4-2'],['background','Background','M3 5h18v14H3zM3 15l5-5 4 4 3-3 6 6'],['masks','Masks','M4 6h16v12H4zM8 10h4v4H8'],['shortcuts','Shortcuts','M3 7h18v10H3zM7 11h1M11 11h1M15 11h1M7 14h10'],['captions','Captions','M4 5h16v14H4zM7 14h6M15 14h2M7 10h2M11 10h6'],['audio','Audio','M4 12h2M8 8v8M12 5v14M16 9v6M20 11v2'],['animation','Animation','M4 18c4-10 12-10 16 0M8 12l2-2M14 10l2 2']];
+    const rail = items.map(([id,label,d]) => ({ id,label,d, active:id==='audio', bg:id==='audio'?'var(--accentSoft)':'transparent', fg:id==='audio'?'var(--text)':'var(--text2)' }));
+    const M = this.state.mode;
+    const modes = [
+      ['channel-fix','Off','Plays your microphone as recorded.',false,''],
+      ['voice','Standard','Adjusts your voice to a consistent volume. Its character stays the same.',false,''],
+      ['loud','Loud','Boosts your voice to a consistent, loud volume.',false,'Leveling audio'],
+      ['noise-reduction','Noise reduction','Boosts your voice and reduces background noise and room echo.',false,'Reducing noise · 64%'],
+      ['podcast','Podcast','Gives your voice the depth and clarity of a studio recording. Experimental.',true,'Generating podcast audio']
+    ].map(([id,name,sub,beta,task]) => ({ id,name,sub,beta,task, on:M===id, busy: M===id && id!=='channel-fix' && id!=='voice', border:M===id?'var(--accent)':'transparent', pick:()=>this.setState({mode:id}) }));
+    const list = [['Soft Focus','Lo-fi · 2:40'],['Morning Light','Instrumental · 3:12'],['Pulse','Electronic · 2:05'],['Upbeat Launch','Commercial · 1:48']];
+    const trackList = list.map(([name,meta],i) => ({ name, meta, on: this.state.track===i, bg: this.state.track===i?'var(--accentSoft)':'transparent', icon: this.state.track===i ? 'M6 5h4v14H6zM14 5h4v14h-4z' : 'M7 4l12 8-12 8z', pick:()=>this.setState({track:i}) }));
+    const tracks = [{name:'Zooms',color:'var(--zoom)',h:'18px'},{name:'Clips',color:'var(--clip)',h:'18px'},{name:'Layouts',color:'var(--layout)',h:'18px'},{name:'Masks',color:'var(--mask)',h:'18px'},{name:'Shortcuts',color:'var(--shortcut)',h:'18px'},{name:'Captions',color:'var(--caption)',h:'18px'},{name:'Voiceovers',color:'var(--voice)',h:'18px'},{name:'Audio',color:'var(--voice)',h:'50px'}];
+    const wave = Array.from({length:120},(_,i)=> (3 + Math.round(10*Math.abs(Math.sin(i*0.8))+7*Math.abs(Math.sin(i*0.21)))) + 'px');
+    const wave2 = Array.from({length:120},(_,i)=> (2 + Math.round(5*Math.abs(Math.sin(i*0.35))+4*Math.abs(Math.cos(i*0.11)))) + 'px');
+    return {
+      themeClass: theme==='light'?'light':'dark', rail, modes, trackList, tracks, wave, wave2,
+      genres: ['All','Lo-fi','Instrumental','Electronic','Commercial'].map((name,i)=>({name, on:i===0, border:i===0?'var(--accent)':'var(--line2)', bg:i===0?'var(--accentSoft)':'var(--panel2)'})),
+      meters: [{name:'Microphone',level:'62%',color:'var(--voice)'},{name:'System',level:'38%',color:'var(--shortcut)'},{name:'Music',level:'8%',color:'var(--text3)'},{name:'Voiceover',level:'0%',color:'var(--voice)'}],
+      ruler:['0:00','0:30','1:00','1:30','2:00','2:30','3:00','3:30','4:00']
+    };
+  }
+}
+</script>
+</body>
+</html>

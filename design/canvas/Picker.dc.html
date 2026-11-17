@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Recording picker over the desktop (laptop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif}
+.ss{--bg:#F2F2F5;--panel:#FFFFFF;--panel2:#F6F6F8;--raised:#FFFFFF;--line:#E2E2E8;--line2:#CFCFD7;--text:#17171B;--text2:#5A5A64;--text3:#6F6F7A;--accent:#5F45F0;--accentSoft:#ECE8FF;--onAccent:#FFFFFF;--rec:#E0393E;--danger:#D14343;--shadow:0 24px 60px rgba(20,20,35,.25);--focus:0 0 0 3px rgba(95,69,240,.35)}
+.ss.dark{--bg:#0E0F11;--panel:#1A1B1F;--panel2:#222329;--raised:#2A2B32;--line:#2E2F36;--line2:#3C3D46;--text:#EDEDF2;--text2:#A6A7B1;--text3:#8E8F9A;--accent:#8F79FF;--accentSoft:#2A2546;--onAccent:#0E0F11;--rec:#FF4A4F;--danger:#E36060;--shadow:0 24px 60px rgba(0,0,0,.6);--focus:0 0 0 3px rgba(143,121,255,.4)}
+.ss *{box-sizing:border-box}
+.ss button{font:inherit;color:inherit;cursor:pointer}
+.ss button:focus-visible,.ss input:focus-visible{outline:none;box-shadow:var(--focus)}
+.ss .ic{width:18px;height:18px;flex:none}
+a{color:#5F45F0}a:hover{color:#4A34C9}
+</style>
+</helmet>
+<div class="ss {{themeClass}}" style="width: 1280px; height: 800px; position: relative; overflow: hidden; border-radius: 12px; color: var(--text); font-size: 13px; background: radial-gradient(circle at 70% 30%, #6b4bd6 0%, #2b1d6b 40%, #0b0a1f 100%)">
+
+  <!-- macOS menu bar -->
+  <div style="position: absolute; left: 0; right: 0; top: 0; height: 28px; background: rgba(20,20,30,.55); backdrop-filter: blur(20px); display: flex; align-items: center; gap: 18px; padding: 0 16px; color: #fff; font-size: 12px">
+    <span style="font-weight: 700"></span><span style="font-weight: 600">Recscene</span><span>File</span><span>Edit</span><span>View</span><span>Window</span><span>Help</span>
+    <div style="flex: 1 1 auto"></div>
+    <span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: var(--rec)"></span>Ready</span>
+    <span>Mon 17 Nov 10:42</span>
+  </div>
+
+  <!-- Desktop windows behind -->
+  <div aria-hidden="true" style="position: absolute; left: 120px; top: 90px; width: 760px; height: 520px; border-radius: 12px; background: #1f2026; box-shadow: 0 30px 60px rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.1); opacity: .9">
+    <div style="height: 28px; background: #2a2b33; border-radius: 12px 12px 0 0"></div>
+    <div style="padding: 20px; display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 20px"><div style="display: flex; flex-direction: column; gap: 10px"><span style="height: 10px; width: 80%; background: #3a3b45; border-radius: 4px"></span><span style="height: 10px; width: 60%; background: #3a3b45; border-radius: 4px"></span><span style="height: 10px; width: 70%; background: #3a3b45; border-radius: 4px"></span></div><div style="display: flex; flex-direction: column; gap: 12px"><span style="height: 16px; width: 50%; background: #4a4b57; border-radius: 4px"></span><span style="height: 10px; width: 95%; background: #3a3b45; border-radius: 4px"></span><span style="height: 160px; width: 100%; background: #2f3038; border-radius: 6px"></span></div></div>
+  </div>
+
+  <!-- Area selection on the desktop -->
+  <div aria-hidden="true" style="position: absolute; left: 160px; top: 140px; width: 640px; height: 400px; border: 2px dashed #fff; border-radius: 4px; box-shadow: 0 0 0 9999px rgba(0,0,0,.35)">
+    <span style="position: absolute; left: -5px; top: -5px; width: 10px; height: 10px; background: #fff; border-radius: 2px"></span><span style="position: absolute; right: -5px; top: -5px; width: 10px; height: 10px; background: #fff; border-radius: 2px"></span><span style="position: absolute; left: -5px; bottom: -5px; width: 10px; height: 10px; background: #fff; border-radius: 2px"></span><span style="position: absolute; right: -5px; bottom: -5px; width: 10px; height: 10px; background: #fff; border-radius: 2px"></span>
+    <span style="position: absolute; left: 50%; top: -30px; transform: translateX(-50%); padding: 3px 8px; border-radius: 6px; background: rgba(0,0,0,.7); color: #fff; font-size: 11px; font-variant-numeric: tabular-nums">1280 × 800 · minimum 150 × 150</span>
+  </div>
+
+  <!-- Picker panel -->
+  <div role="dialog" aria-label="New recording" style="position: absolute; left: 50%; top: 56%; transform: translate(-50%, -50%); width: 620px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line2); box-shadow: var(--shadow); display: flex; flex-direction: column; overflow: hidden">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 14px 16px 10px">
+      <span style="font-weight: 700; font-size: 15px">New recording</span><span style="color: var(--text3)">⌥⌘↩ opens this anywhere</span>
+      <div style="flex: 1 1 auto"></div>
+      <button aria-label="Recording settings" style="width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" style="width:15px;height:15px"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.5-2.4.9a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.5a7 7 0 0 0-2 1.2L5 5.8l-2 3.5 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.5 2.4-.9a7 7 0 0 0 2 1.2L10 21h4l.5-2.5a7 7 0 0 0 2-1.2l2.4.9 2-3.5-2-1.5c.1-.4.1-.8.1-1.2z"/></svg></button>
+      <button aria-label="Close" style="width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="width:14px;height:14px"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+
+    <!-- Source tabs -->
+    <div role="tablist" aria-label="Recording source" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 0 16px">
+      <sc-for list="{{sources}}" as="s" hint-placeholder-count="4">
+        <button role="tab" aria-selected="{{ s.on }}" onClick="{{ s.pick }}" style="height: 74px; border-radius: 12px; border: 2px solid {{ s.border }}; background: {{ s.bg }}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-weight: 500">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" style="width:22px;height:22px"><path d="{{ s.d }}"/></svg>{{ s.name }}
+        </button>
+      </sc-for>
+    </div>
+    <p style="margin: 8px 16px 0; font-size: 11px; color: var(--text3)">{{ sourceHint }}</p>
+
+    <!-- Area size fields -->
+    <sc-if value="{{ isArea }}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; gap: 8px; align-items: center; padding: 10px 16px 0">
+        <label for="aw" style="font-size: 12px; color: var(--text2)">Width</label><input id="aw" value="1280" style="width: 76px; height: 30px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2); color: var(--text); font: inherit; font-variant-numeric: tabular-nums">
+        <label for="ah" style="font-size: 12px; color: var(--text2)">Height</label><input id="ah" value="800" style="width: 76px; height: 30px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2); color: var(--text); font: inherit; font-variant-numeric: tabular-nums">
+        <button style="height: 30px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2); font-size: 12px">16:9 ▾</button>
+        <button style="height: 30px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2); font-size: 12px">Last area</button>
+      </div>
+    </sc-if>
+
+    <!-- Devices -->
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 12px 16px 0">
+      <button aria-haspopup="listbox" style="height: 56px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line2); background: var(--panel2); display: flex; align-items: center; gap: 10px; text-align: left">
+        <span style="width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(160deg, #e9c1a3, #a16a4c); flex: none"></span>
+        <span style="min-width: 0"><span style="display: block; font-size: 11px; color: var(--text3)">Camera</span><span style="display: block; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">FaceTime HD · 1080p</span></span>
+      </button>
+      <button aria-haspopup="listbox" style="height: 56px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line2); background: var(--panel2); display: flex; align-items: center; gap: 10px; text-align: left">
+        <span style="width: 36px; height: 36px; border-radius: 8px; background: var(--accentSoft); display: grid; place-items: center; flex: none"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>
+        <span style="min-width: 0; flex: 1 1 auto"><span style="display: block; font-size: 11px; color: var(--text3)">Microphone</span><span style="display: block; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">MacBook Pro Mic</span><span aria-hidden="true" style="display: block; margin-top: 4px; height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--accent) 0 62%, var(--line2) 62%)"></span></span>
+      </button>
+      <button aria-haspopup="listbox" aria-pressed="true" style="height: 56px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--accent); background: var(--accentSoft); display: flex; align-items: center; gap: 10px; text-align: left">
+        <span style="width: 36px; height: 36px; border-radius: 8px; background: var(--panel); display: grid; place-items: center; flex: none"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10zM16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/></svg></span>
+        <span style="min-width: 0"><span style="display: block; font-size: 11px; color: var(--text3)">System audio</span><span style="display: block; font-weight: 500">All apps</span></span>
+      </button>
+    </div>
+
+    <!-- Options -->
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; padding: 10px 16px 0">
+      <button aria-haspopup="listbox" style="height: 28px; padding: 0 10px; border-radius: 14px; border: 1px solid var(--line2); background: var(--panel2); font-size: 12px">Countdown · 3 s ▾</button>
+      <button aria-pressed="true" style="height: 28px; padding: 0 10px; border-radius: 14px; border: 1px solid var(--accent); background: var(--accentSoft); font-size: 12px">Speaker notes ⌥⌘.</button>
+      <button aria-pressed="true" style="height: 28px; padding: 0 10px; border-radius: 14px; border: 1px solid var(--accent); background: var(--accentSoft); font-size: 12px">Quick export widget</button>
+      <button aria-pressed="false" style="height: 28px; padding: 0 10px; border-radius: 14px; border: 1px solid var(--line2); background: var(--panel2); font-size: 12px">Hide camera preview</button>
+      <button aria-pressed="false" style="height: 28px; padding: 0 10px; border-radius: 14px; border: 1px solid var(--line2); background: var(--panel2); font-size: 12px">Modern engine · auto</button>
+    </div>
+
+    <!-- Footer -->
+    <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px 16px; margin-top: 4px; border-top: 1px solid var(--line)">
+      <span style="font-size: 11px; color: var(--text3)">Permissions: Screen ✓ · Camera ✓ · Mic ✓ · Accessibility ✓<br>Free space 212 GB · last project settings as default</span>
+      <div style="flex: 1 1 auto"></div>
+      <button style="height: 44px; padding: 0 22px; border-radius: 22px; border: none; background: var(--rec); color: #fff; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 10px"><span style="width: 12px; height: 12px; border-radius: 50%; background: #fff"></span>Record <kbd style="font: 11px Inter; opacity: .8; border: 1px solid rgba(255,255,255,.5); border-radius: 4px; padding: 0 4px">⇧⌘R</kbd></button>
+    </div>
+  </div>
+
+  <!-- Recording control widget (state shown for reference) -->
+  <div role="group" aria-label="Recording in progress controls" style="position: absolute; left: 24px; bottom: 24px; height: 48px; padding: 0 8px 0 14px; border-radius: 24px; background: var(--panel); border: 1px solid var(--line2); box-shadow: var(--shadow); display: flex; align-items: center; gap: 10px">
+    <span style="width: 10px; height: 10px; border-radius: 50%; background: var(--rec)"></span>
+    <span style="font-variant-numeric: tabular-nums; font-weight: 600">00:42</span>
+    <span style="width: 1px; height: 20px; background: var(--line2)"></span>
+    <button aria-label="Pause" style="width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--panel2); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width:14px;height:14px"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg></button>
+    <button aria-label="Add recording flag (⌘⌥⌃F)" style="width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--panel2); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="width:14px;height:14px"><path d="M5 21V4h12l-3 4 3 4H5"/></svg></button>
+    <button aria-label="Restart" style="width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--panel2); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="width:14px;height:14px"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v5h5"/></svg></button>
+    <button aria-label="Delete recording" style="width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--panel2); color: var(--danger); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="width:14px;height:14px"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
+    <button style="height: 32px; padding: 0 14px; border-radius: 16px; border: none; background: var(--rec); color: #fff; font-weight: 600">Stop</button>
+  </div>
+
+  <!-- Speaker notes prompter (state shown for reference) -->
+  <div role="region" aria-label="Speaker notes" style="position: absolute; right: 24px; bottom: 24px; width: 300px; border-radius: 12px; background: rgba(20,20,28,.82); color: #fff; border: 1px solid rgba(255,255,255,.15); backdrop-filter: blur(16px); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; line-height: 1.5">
+    <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: rgba(255,255,255,.7)"><span>Speaker notes · not recorded</span><div style="flex: 1 1 auto"></div><span>speed 1.0 · opacity 80%</span></div>
+    <p style="margin: 0">Welcome everyone. Today we set up billing, add a second device and export at 4K.</p>
+    <p style="margin: 0; color: rgba(255,255,255,.55)">Then show the shareable link and comments…</p>
+    <div style="display: flex; gap: 8px"><button style="height: 28px; padding: 0 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,.3); background: transparent; color: #fff; font-size: 12px">Start prompter ⌥⌘.</button><button style="height: 28px; padding: 0 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,.3); background: transparent; color: #fff; font-size: 12px">Font size</button></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { src:'area' }; }
+  renderVals() {
+    const theme = this.props.theme ?? 'dark';
+    const S = this.state.src;
+    const defs = [
+      ['display','Display','M3 5h18v12H3zM8 21h8M12 17v4','Move the mouse to the display you want and click to confirm.'],
+      ['window','Window','M3 5h18v14H3zM3 9h18','Click a window, or right-click Window to pick from a list. Full-screen apps: use Display.'],
+      ['area','Area','M4 4h4M16 4h4M4 20h4M16 20h4M4 4v4M4 16v4M20 4v4M20 16v4','Drag on the desktop to draw the area, or type a size. Minimum 150 × 150 px.'],
+      ['device','Device','M8 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM11 18h2','Plug in an iPhone or iPad, trust the Mac, unlock it. Taps are not recorded, so no automatic zooms.']
+    ];
+    const sources = defs.map(([id,name,d,hint]) => ({ id, name, d, hint, on: S===id, border: S===id?'var(--accent)':'var(--line2)', bg: S===id?'var(--accentSoft)':'var(--panel2)', pick: () => this.setState({src:id}) }));
+    return { themeClass: theme==='light'?'light':'dark', sources, isArea: S==='area', sourceHint: defs.find(x=>x[0]===S)[3] };
+  }
+}
+</script>
+</body>
+</html>

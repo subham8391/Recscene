@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Recording picker on tablet</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif}
+.ss{--bg:#F2F2F5;--panel:#FFFFFF;--panel2:#F6F6F8;--line:#E2E2E8;--line2:#CFCFD7;--text:#17171B;--text2:#5A5A64;--text3:#6F6F7A;--accent:#5F45F0;--accentSoft:#ECE8FF;--onAccent:#FFFFFF;--rec:#E0393E;--caption:#2A9D5E;--shadow:0 16px 40px rgba(20,20,35,.14);--focus:0 0 0 3px rgba(95,69,240,.35)}
+.ss.dark{--bg:#0E0F11;--panel:#1A1B1F;--panel2:#222329;--line:#2E2F36;--line2:#3C3D46;--text:#EDEDF2;--text2:#A6A7B1;--text3:#8E8F9A;--accent:#8F79FF;--accentSoft:#2A2546;--onAccent:#0E0F11;--rec:#FF4A4F;--caption:#45C77F;--shadow:0 16px 40px rgba(0,0,0,.6);--focus:0 0 0 3px rgba(143,121,255,.4)}
+.ss *{box-sizing:border-box}
+.ss button{font:inherit;color:inherit;cursor:pointer}
+.ss button:focus-visible,.ss input:focus-visible{outline:none;box-shadow:var(--focus)}
+.ss .ic{width:22px;height:22px;flex:none}
+a{color:#5F45F0}a:hover{color:#4A34C9}
+</style>
+</helmet>
+<div class="ss {{themeClass}}" style="width: 1024px; height: 768px; background: var(--bg); color: var(--text); font-size: 14px; border-radius: 18px; overflow: hidden; display: flex; flex-direction: column">
+  <header style="height: 56px; display: flex; align-items: center; gap: 12px; padding: 0 20px; background: var(--panel); border-bottom: 1px solid var(--line)">
+    <a href="Projects.dc.html" aria-label="Back to projects" style="width: 44px; height: 44px; display: grid; place-items: center; border-radius: 10px; color: var(--text)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+    <span style="font-weight: 700; font-size: 16px">New recording</span>
+    <div style="flex: 1 1 auto"></div>
+    <span style="font-size: 12px; color: var(--text3)">Permissions: Screen ✓ · Camera ✓ · Mic ✓</span>
+    <button aria-label="Recording settings" style="width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--line2); background: var(--panel2); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.5-2.4.9a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.5a7 7 0 0 0-2 1.2L5 5.8l-2 3.5 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.5 2.4-.9a7 7 0 0 0 2 1.2L10 21h4l.5-2.5a7 7 0 0 0 2-1.2l2.4.9 2-3.5-2-1.5c.1-.4.1-.8.1-1.2z"/></svg></button>
+  </header>
+
+  <div style="flex: 1 1 auto; display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; padding: 20px; min-height: 0">
+    <!-- Source choice + preview -->
+    <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+      <div role="tablist" aria-label="Recording source" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px">
+        <sc-for list="{{sources}}" as="s" hint-placeholder-count="4">
+          <button role="tab" aria-selected="{{ s.on }}" onClick="{{ s.pick }}" style="height: 92px; border-radius: 14px; border: 2px solid {{ s.border }}; background: {{ s.bg }}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; font-weight: 500"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" style="width:26px;height:26px"><path d="{{ s.d }}"/></svg>{{ s.name }}</button>
+        </sc-for>
+      </div>
+      <p style="margin: 0; font-size: 13px; color: var(--text2)">{{ hint }}</p>
+      <div style="flex: 1 1 auto; border-radius: 14px; background: radial-gradient(circle at 70% 30%, #6b4bd6 0%, #2b1d6b 40%, #0b0a1f 100%); position: relative; overflow: hidden; min-height: 0">
+        <div aria-hidden="true" style="position: absolute; inset: 12% 14%; border-radius: 10px; background: #1f2026; border: 1px solid rgba(255,255,255,.12)"></div>
+        <sc-if value="{{ isArea }}" hint-placeholder-val="{{ true }}">
+          <div aria-hidden="true" style="position: absolute; left: 20%; top: 18%; width: 56%; height: 58%; border: 2px dashed #fff; border-radius: 4px; box-shadow: 0 0 0 9999px rgba(0,0,0,.35)"><span style="position: absolute; left: 50%; top: -34px; transform: translateX(-50%); padding: 4px 10px; border-radius: 6px; background: rgba(0,0,0,.7); color: #fff; font-size: 12px; font-variant-numeric: tabular-nums">1200 × 720</span><span style="position: absolute; right: -14px; bottom: -14px; width: 28px; height: 28px; border-radius: 50%; background: #fff; border: 3px solid var(--accent)"></span></div>
+        </sc-if>
+        <div style="position: absolute; left: 14px; bottom: 14px; display: flex; gap: 8px">
+          <span style="padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,.6); color: #fff; font-size: 12px">Drag the handles · double-tap to fill the screen</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Devices and options -->
+    <div style="display: flex; flex-direction: column; gap: 12px; min-height: 0">
+      <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line)">
+        <button aria-haspopup="listbox" style="min-height: 56px; padding: 6px 10px; border-radius: 12px; border: 1px solid var(--line2); background: var(--panel2); display: flex; align-items: center; gap: 12px; text-align: left"><span style="width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(160deg, #e9c1a3, #a16a4c); flex: none"></span><span style="min-width: 0"><span style="display: block; font-size: 12px; color: var(--text3)">Camera</span><span style="display: block; font-weight: 500">Front camera · 1080p</span></span><span style="flex: 1 1 auto"></span><span style="color: var(--text3)">▾</span></button>
+        <button aria-haspopup="listbox" style="min-height: 56px; padding: 6px 10px; border-radius: 12px; border: 1px solid var(--line2); background: var(--panel2); display: flex; align-items: center; gap: 12px; text-align: left"><span style="width: 44px; height: 44px; border-radius: 10px; background: var(--accentSoft); display: grid; place-items: center; flex: none"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span style="min-width: 0; flex: 1 1 auto"><span style="display: block; font-size: 12px; color: var(--text3)">Microphone</span><span style="display: block; font-weight: 500">AirPods Pro</span><span aria-hidden="true" style="display: block; margin-top: 4px; height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--caption) 0 55%, var(--line2) 55%)"></span></span><span style="color: var(--text3)">▾</span></button>
+        <label style="min-height: 48px; padding: 0 10px; border-radius: 12px; border: 1px solid var(--line2); background: var(--panel2); display: flex; align-items: center; justify-content: space-between; gap: 12px"><span><span style="display: block; font-weight: 500">System audio</span><span style="display: block; font-size: 12px; color: var(--text3)">All apps</span></span><input type="checkbox" checked style="width: 44px; height: 24px; accent-color: var(--accent)"></label>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line)">
+        <label style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px"><span style="font-weight: 500">Countdown</span><span role="group" style="display: flex; border: 1px solid var(--line2); border-radius: 10px; overflow: hidden"><button style="height: 36px; padding: 0 12px; border: none; background: var(--panel2); color: var(--text2)">Off</button><button aria-pressed="true" style="height: 36px; padding: 0 12px; border: none; border-left: 1px solid var(--line2); background: var(--accentSoft); font-weight: 600">3 s</button><button style="height: 36px; padding: 0 12px; border: none; border-left: 1px solid var(--line2); background: var(--panel2); color: var(--text2)">5 s</button><button style="height: 36px; padding: 0 12px; border: none; border-left: 1px solid var(--line2); background: var(--panel2); color: var(--text2)">10 s</button></span></label>
+        <label style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px"><span style="font-weight: 500">Speaker notes</span><input type="checkbox" checked style="width: 44px; height: 24px; accent-color: var(--accent)"></label>
+        <label style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px"><span style="font-weight: 500">Quick export widget</span><input type="checkbox" checked style="width: 44px; height: 24px; accent-color: var(--accent)"></label>
+        <label style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px"><span style="font-weight: 500">Hide camera preview</span><input type="checkbox" style="width: 44px; height: 24px; accent-color: var(--accent)"></label>
+      </div>
+      <div style="flex: 1 1 auto"></div>
+      <button style="height: 60px; border-radius: 30px; border: none; background: var(--rec); color: #fff; font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 12px"><span style="width: 14px; height: 14px; border-radius: 50%; background: #fff"></span>Record</button>
+      <p style="margin: 0; text-align: center; font-size: 12px; color: var(--text3)">Stops from the status bar, the widget, or a hardware shortcut.</p>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"light"},"$preview":{"width":1024,"height":768}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { src:'area' }; }
+  renderVals() {
+    const theme = this.props.theme ?? 'light';
+    const S = this.state.src;
+    const defs = [
+      ['display','This screen','M3 5h18v12H3zM8 21h8M12 17v4','Records the whole screen, including notifications only if macOS allows them while sharing.'],
+      ['window','App window','M3 5h18v14H3zM3 9h18','Tap a window. Full-screen apps are better captured as the whole screen.'],
+      ['area','Area','M4 4h4M16 4h4M4 20h4M16 20h4M4 4v4M4 16v4M20 4v4M20 16v4','Drag the handles or type a size. Minimum 150 × 150. The last area is remembered.'],
+      ['device','iPhone','M8 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM11 18h2','Connect with a cable and trust this device. Taps are not recorded, so zooms are manual.']
+    ];
+    const sources = defs.map(([id,name,d,hint]) => ({ id, name, d, on: S===id, border: S===id?'var(--accent)':'var(--line2)', bg: S===id?'var(--accentSoft)':'var(--panel)', pick: () => this.setState({src:id}) }));
+    return { themeClass: theme==='light'?'light':'dark', sources, isArea: S==='area', hint: defs.find(x=>x[0]===S)[3] };
+  }
+}
+</script>
+</body>
+</html>

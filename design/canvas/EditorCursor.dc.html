@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Editor — Cursor panel (laptop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif}
+.ss{--bg:#F2F2F5;--panel:#FFFFFF;--panel2:#F6F6F8;--line:#E2E2E8;--line2:#CFCFD7;--text:#17171B;--text2:#5A5A64;--text3:#6F6F7A;--accent:#5F45F0;--accentSoft:#ECE8FF;--onAccent:#FFFFFF;--zoom:#6F57F2;--clip:#D9A41C;--layout:#DF4F80;--mask:#1E9A9A;--shortcut:#2F7FE0;--caption:#2A9D5E;--voice:#E0692A;--danger:#D14343;--stage:#E6E6EC;--focus:0 0 0 3px rgba(95,69,240,.35)}
+.ss.dark{--bg:#0E0F11;--panel:#161719;--panel2:#1C1D21;--line:#2A2B31;--line2:#383943;--text:#EDEDF2;--text2:#A6A7B1;--text3:#8E8F9A;--accent:#8F79FF;--accentSoft:#2A2546;--onAccent:#0E0F11;--zoom:#8F79FF;--clip:#F2C14E;--layout:#F06A98;--mask:#34BFBF;--shortcut:#5EA0F7;--caption:#45C77F;--voice:#F58D4D;--danger:#E36060;--stage:#07070A;--focus:0 0 0 3px rgba(143,121,255,.4)}
+.ss *{box-sizing:border-box}
+.ss button{font:inherit;color:inherit;cursor:pointer}
+.ss button:focus-visible,.ss input:focus-visible{outline:none;box-shadow:var(--focus)}
+.ss .ic{width:18px;height:18px;flex:none}
+.ss h3{margin:0;font-size:12px;font-weight:600;color:var(--text2)}
+.ss .sl{display:flex;flex-direction:column;gap:4px}
+.ss .sl .hd{display:flex;justify-content:space-between;font-size:12px}
+.ss .sl label{font-weight:600;color:var(--text2)}
+.ss .sl input{width:100%;accent-color:var(--accent)}
+.ss .seg{display:grid;border:1px solid var(--line2);border-radius:8px;overflow:hidden}
+.ss .seg button{height:30px;border:none;background:var(--panel2);color:var(--text2);font-size:12px}
+.ss .seg button+button{border-left:1px solid var(--line2)}
+.ss .seg button[aria-pressed="true"]{background:var(--accentSoft);color:var(--text);font-weight:600}
+.ss .card{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:10px;background:var(--panel2)}
+.ss .card label{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ss .card b{display:block;font-weight:500}
+.ss .card small{display:block;font-size:11px;color:var(--text3)}
+.ss .tog{width:36px;height:20px;accent-color:var(--accent);flex:none}
+a{color:#5F45F0}a:hover{color:#4A34C9}
+</style>
+</helmet>
+<div class="ss {{themeClass}}" style="width: 1280px; height: 800px; background: var(--bg); color: var(--text); display: flex; flex-direction: column; font-size: 13px; overflow: hidden; border-radius: 12px">
+  <header style="height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 14px; background: var(--panel); border-bottom: 1px solid var(--line); flex: none">
+    <div style="display: flex; gap: 8px; width: 60px" aria-hidden="true"><span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span></div>
+    <span style="font-weight: 600">Area 2026-11-14 00:12</span><span style="color: var(--text3)">· saved</span>
+    <div style="flex: 1 1 auto; display: flex; justify-content: center; gap: 8px"><button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Auto (16:9) ▾</button><button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Crop</button><button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Presets</button></div>
+    <button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2)">Share link</button>
+    <button style="height: 30px; padding: 0 16px; border-radius: 8px; border: none; background: var(--accent); color: var(--onAccent); font-weight: 600">Export</button>
+  </header>
+
+  <div style="flex: 1 1 auto; display: flex; min-height: 0">
+    <nav aria-label="Editor panels" style="width: 68px; flex: none; background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 8px 6px; gap: 2px">
+      <sc-for list="{{rail}}" as="r" hint-placeholder-count="10"><button aria-pressed="{{ r.active }}" style="height: 54px; border-radius: 8px; border: none; background: {{ r.bg }}; color: {{ r.fg }}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 10px; font-weight: 500"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="{{ r.d }}"/></svg><span>{{ r.label }}</span></button></sc-for>
+    </nav>
+
+    <main style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column">
+      <div style="flex: 1 1 auto; position: relative; margin: 16px; border-radius: 10px; background: var(--stage); overflow: hidden">
+        <div style="position: absolute; inset: 0; background: linear-gradient(135deg, #1b2b5a 0%, #5a3a8a 45%, #c9608a 100%)">
+          <div style="position: absolute; inset: 7% 10%; border-radius: 12px; background: #1f2026; box-shadow: 0 30px 60px rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.12); overflow: hidden">
+            <div style="height: 28px; background: #2a2b33"></div>
+            <div style="padding: 18px; display: flex; flex-direction: column; gap: 12px"><span style="height: 16px; width: 45%; background: #4a4b57; border-radius: 4px"></span><span style="height: 10px; width: 90%; background: #3a3b45; border-radius: 4px"></span><span style="height: 36px; width: 38%; background: #3a3b45; border-radius: 6px"></span><span style="height: 10px; width: 70%; background: #3a3b45; border-radius: 4px"></span></div>
+            <!-- Motion trail -->
+            <svg aria-hidden="true" viewBox="0 0 400 200" style="position: absolute; inset: 0; width: 100%; height: 100%"><path d="M60 150 C 140 60, 220 70, 300 110" fill="none" stroke="rgba(143,121,255,.5)" stroke-width="2" stroke-dasharray="4 6"/></svg>
+            <!-- Cursor, rotated as if chasing the mouse -->
+            <svg aria-hidden="true" viewBox="0 0 24 24" style="position: absolute; left: 70%; top: 52%; width: {{ cursorPx }}; height: {{ cursorPx }}; transform: rotate(14deg); filter: drop-shadow(0 2px 3px rgba(0,0,0,.5))"><path d="M5 3l14 8-6 2-3 6z" fill="#fff" stroke="#000" stroke-width="1.2"/></svg>
+            <sc-if value="{{ isCircle }}" hint-placeholder-val="{{ true }}"><span aria-hidden="true" style="position: absolute; left: calc(70% - 18px); top: calc(52% - 18px); width: 56px; height: 56px; border-radius: 50%; background: rgba(143,121,255,.35); border: 2px solid rgba(143,121,255,.9)"></span></sc-if>
+            <sc-if value="{{ isRipple }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position: absolute; left: calc(70% - 10px); top: calc(52% - 10px); width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(143,121,255,.9)"></span><span aria-hidden="true" style="position: absolute; left: calc(70% - 26px); top: calc(52% - 26px); width: 72px; height: 72px; border-radius: 50%; border: 2px solid rgba(143,121,255,.4)"></span></sc-if>
+          </div>
+          <div style="position: absolute; left: 14px; top: 14px; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,.55); color: #fff; font-size: 11px">Cursor · {{ styleName }} · {{ sizeLabel }} · click {{ clickName }}</div>
+        </div>
+      </div>
+      <div style="height: 44px; flex: none; display: flex; align-items: center; gap: 14px; padding: 0 20px; border-top: 1px solid var(--line); background: var(--panel)">
+        <span style="font-variant-numeric: tabular-nums; font-weight: 600">00:22.80</span><span style="color: var(--text3)">/ 01:48.00</span><div style="flex: 1 1 auto"></div>
+        <button aria-label="Play (Space)" style="width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--text); color: var(--bg); display: grid; place-items: center"><svg class="ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l12 8-12 8z"/></svg></button>
+        <div style="flex: 1 1 auto"></div><span style="color: var(--text3); font-size: 11px">Right-click a clip to hide the cursor or turn off smoothing for that part</span>
+      </div>
+    </main>
+
+    <aside aria-label="Cursor settings" style="width: 312px; flex: none; background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; overflow: hidden">
+      <div style="height: 48px; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--line)"><span style="width: 10px; height: 10px; border-radius: 3px; background: var(--text2)"></span><span style="font-weight: 600">Cursor</span><span style="color: var(--text3)">whole project</span></div>
+      <div style="flex: 1 1 auto; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 18px">
+
+        <section class="card">
+          <label><span><b>Show cursor</b><small>Hide it for the whole video; clips can hide it individually.</small></span><input class="tog" type="checkbox" checked></label>
+          <label><span><b>Always use default system cursor</b><small>Ignore the recorded cursor type (I-beam, hand, resize).</small></span><input class="tog" type="checkbox"></label>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 8px"><h3>Cursor set</h3>
+          <div class="seg" role="group" aria-label="Cursor set" style="grid-template-columns: repeat(3, minmax(0, 1fr))"><button aria-pressed="true">macOS</button><button>macOS Tahoe</button><button>Touch</button></div>
+        </section>
+
+        <section class="sl"><div class="hd"><label for="cs">Size</label><span style="font-variant-numeric: tabular-nums">{{ sizeLabel }}</span></div><input id="cs" type="range" min="50" max="400" value="{{ sizeVal }}" onInput="{{ setSize }}"><div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text3)"><span>0.5×</span><span>system size detected: 1.0×</span><span>4×</span></div></section>
+
+        <section style="display: flex; flex-direction: column; gap: 8px"><h3>Animation style</h3>
+          <div class="seg" role="group" aria-label="Animation style" style="grid-template-columns: repeat(4, minmax(0, 1fr))">
+            <sc-for list="{{styles}}" as="s" hint-placeholder-count="4"><button aria-pressed="{{ s.on }}" onClick="{{ s.pick }}">{{ s.name }}</button></sc-for>
+          </div>
+          <p style="margin: 0; font-size: 11px; color: var(--text3)">{{ styleHint }}</p>
+          <details style="border-radius: 10px; background: var(--panel2); padding: 8px 12px"><summary style="cursor: pointer; font-weight: 500; font-size: 12px">Customize spring</summary>
+            <div style="display: flex; flex-direction: column; gap: 10px; padding-top: 10px">
+              <div class="sl"><div class="hd"><label for="rig">Rigidity</label><span>{{ rig }}</span></div><input id="rig" type="range" min="100" max="800" value="{{ rig }}"><small style="font-size: 11px; color: var(--text3)">How much do I want to quickly get to the new position?</small></div>
+              <div class="sl"><div class="hd"><label for="smo">Smoothness</label><span>{{ smo }}</span></div><input id="smo" type="range" min="10" max="120" value="{{ smo }}"><small style="font-size: 11px; color: var(--text3)">How much resistance do I feel when I move quickly?</small></div>
+              <div class="sl"><div class="hd"><label for="mom">Momentum</label><span>{{ mom }}</span></div><input id="mom" type="range" min="1" max="6" value="{{ mom }}"><small style="font-size: 11px; color: var(--text3)">How hard is it to change my current speed?</small></div>
+            </div>
+          </details>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 8px"><h3>Click effect</h3>
+          <div class="seg" role="group" aria-label="Click effect" style="grid-template-columns: repeat(3, minmax(0, 1fr))">
+            <sc-for list="{{clicks}}" as="c" hint-placeholder-count="3"><button aria-pressed="{{ c.on }}" onClick="{{ c.pick }}">{{ c.name }}</button></sc-for>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px"><label for="ccol" style="font-size: 12px; font-weight: 600; color: var(--text2)">Colour</label><input id="ccol" type="color" value="#8f79ff" style="width: 36px; height: 28px; border: 1px solid var(--line2); border-radius: 6px; background: var(--panel2); padding: 2px"><div style="flex: 1 1 auto"></div><label for="csnd" style="font-size: 12px; font-weight: 600; color: var(--text2)">Click sound</label><button id="csnd" aria-haspopup="listbox" style="height: 28px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line2); background: var(--panel2); font-size: 12px">Magic Mouse ▾</button></div>
+          <div class="sl"><div class="hd"><label for="cvol">Sound volume</label><span>25%</span></div><input id="cvol" type="range" min="0" max="100" value="25"></div>
+        </section>
+
+        <section class="card">
+          <label><span><b>Hide cursor when idle</b><small>After 2.0 s without movement; fades back in on the next move.</small></span><input class="tog" type="checkbox" checked></label>
+          <label><span><b>Rotate while moving</b><small>Tilts slightly as if chasing the mouse.</small></span><input class="tog" type="checkbox" checked></label>
+          <label><span><b>Stop movement at the end</b><small>Returns to its first position near the end of the video.</small></span><input class="tog" type="checkbox"></label>
+          <label><span><b>Remove shakes</b><small>Filters tiny jitters below the threshold.</small></span><input class="tog" type="checkbox" checked></label>
+          <label><span><b>Loop cursor position</b><small>Ends where it started so loops are seamless.</small></span><input class="tog" type="checkbox"></label>
+        </section>
+      </div>
+    </aside>
+  </div>
+
+  <section aria-label="Timeline" style="height: 236px; flex: none; background: var(--panel); border-top: 1px solid var(--line); display: flex; flex-direction: column">
+    <div style="height: 36px; display: flex; align-items: center; gap: 6px; padding: 0 12px; border-bottom: 1px solid var(--line)"><span style="font-size: 11px; color: var(--text3)">Clip context menu: Hide mouse cursor · Disable smooth movement · Set speed · Set volume</span><div style="flex: 1 1 auto"></div><label for="tlz3" style="font-size: 11px; color: var(--text3)">Timeline zoom</label><input id="tlz3" type="range" min="0" max="100" value="40" style="width: 120px; accent-color: var(--accent)"></div>
+    <div style="flex: 1 1 auto; display: grid; grid-template-columns: 112px minmax(0, 1fr); overflow: hidden">
+      <div style="border-right: 1px solid var(--line); display: flex; flex-direction: column; font-size: 11px; color: var(--text2)"><div style="height: 20px"></div><sc-for list="{{tracks}}" as="t" hint-placeholder-count="8"><div style="height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="width: 6px; height: 6px; border-radius: 2px; background: {{ t.color }}"></span>{{ t.name }}</div></sc-for></div>
+      <div style="position: relative; overflow: hidden">
+        <div style="height: 20px; display: flex; font-size: 10px; color: var(--text3); border-bottom: 1px solid var(--line)"><sc-for list="{{ruler}}" as="m" hint-placeholder-count="9"><span style="flex: 1 1 0; border-left: 1px solid var(--line2); padding-left: 4px; line-height: 20px">{{ m }}</span></sc-for></div>
+        <div style="height: 22px; position: relative; border-bottom: 1px solid var(--line)"><span style="position: absolute; left: 4%; width: 7%; top: 3px; height: 16px; border-radius: 4px; background: var(--zoom); opacity: .85"></span><span style="position: absolute; left: 22%; width: 9%; top: 3px; height: 16px; border-radius: 4px; background: var(--zoom); opacity: .85"></span></div>
+        <div style="height: 22px; position: relative; border-bottom: 1px solid var(--line)"><span style="position: absolute; left: 0; width: 40%; top: 2px; height: 18px; border-radius: 4px; background: var(--clip); color: #1a1500; font-size: 10px; font-weight: 600; padding-left: 6px; line-height: 18px">1×</span><span style="position: absolute; left: 40.3%; width: 25%; top: 2px; height: 18px; border-radius: 4px; background: var(--clip); color: #1a1500; font-size: 10px; font-weight: 600; padding-left: 6px; line-height: 18px; box-shadow: 0 0 0 2px var(--text)">1× · cursor hidden · smoothing off</span><span style="position: absolute; left: 65.6%; width: 34%; top: 2px; height: 18px; border-radius: 4px; background: var(--clip); color: #1a1500; font-size: 10px; font-weight: 600; padding-left: 6px; line-height: 18px">1×</span></div>
+        <div style="height: 22px; border-bottom: 1px solid var(--line)"></div><div style="height: 22px; border-bottom: 1px solid var(--line)"></div>
+        <div style="height: 22px; position: relative; border-bottom: 1px solid var(--line)"><span style="position: absolute; left: 9%; top: 3px; height: 16px; padding: 0 6px; border-radius: 4px; background: var(--shortcut); color: #fff; font-size: 10px; line-height: 16px">⌘C</span></div>
+        <div style="height: 22px; border-bottom: 1px solid var(--line)"></div><div style="height: 22px; border-bottom: 1px solid var(--line)"></div>
+        <div style="height: 22px; display: flex; align-items: center; gap: 1px; padding: 0 2px"><sc-for list="{{wave}}" as="h" hint-placeholder-count="120"><span style="flex: 1 1 0; height: {{ h }}; background: var(--text3); opacity: .55; border-radius: 1px"></span></sc-for></div>
+        <div aria-hidden="true" style="position: absolute; left: 21%; top: 0; bottom: 0; width: 1px; background: var(--text)"><span style="position: absolute; top: 0; left: -6px; width: 13px; height: 13px; border-radius: 7px 7px 7px 0; background: var(--text); transform: rotate(-45deg)"></span></div>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { style:'smooth', click:'circle', size:150 }; }
+  renderVals() {
+    const theme = this.props.theme ?? 'dark';
+    const items = [['zooms','Zooms','M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM16 16l5 5M11 8v6M8 11h6'],['clips','Clips','M6 4h12v16H6zM6 9h12M6 14h12'],['cursor','Cursor','M5 3l14 8-6 2-3 6z'],['camera','Camera','M4 7h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4zM17 10l4-2v8l-4-2'],['background','Background','M3 5h18v14H3zM3 15l5-5 4 4 3-3 6 6'],['masks','Masks','M4 6h16v12H4zM8 10h4v4H8'],['shortcuts','Shortcuts','M3 7h18v10H3zM7 11h1M11 11h1M15 11h1M7 14h10'],['captions','Captions','M4 5h16v14H4zM7 14h6M15 14h2M7 10h2M11 10h6'],['audio','Audio','M4 12h2M8 8v8M12 5v14M16 9v6M20 11v2'],['animation','Animation','M4 18c4-10 12-10 16 0M8 12l2-2M14 10l2 2']];
+    const rail = items.map(([id,label,d]) => ({ id,label,d, active:id==='cursor', bg:id==='cursor'?'var(--accentSoft)':'transparent', fg:id==='cursor'?'var(--text)':'var(--text2)' }));
+    const presets = { smooth:{name:'Smooth',rig:470,smo:70,mom:3,hint:'Fluid, cinematic movement. Rigidity 470 · smoothness 70 · momentum 3.'}, medium:{name:'Medium',rig:340,smo:60,mom:3,hint:'A little quicker to settle. Rigidity 340 · smoothness 60 · momentum 3.'}, rapid:{name:'Rapid',rig:530,smo:40,mom:1,hint:'Snaps to the target with almost no lag. Rigidity 530 · smoothness 40 · momentum 1.'}, none:{name:'None',rig:0,smo:0,mom:0,hint:'Raw recorded movement. Best for drop-down menus and precise pointing.'} };
+    const S = this.state.style, P = presets[S];
+    const styles = Object.keys(presets).map(id => ({ name: presets[id].name, on: S===id, pick: () => this.setState({style:id}) }));
+    const C = this.state.click;
+    const clicks = [['none','None'],['circle','Circle'],['ripple','Ripple']].map(([id,name]) => ({ name, on:C===id, pick:()=>this.setState({click:id}) }));
+    const tracks = [{name:'Zooms',color:'var(--zoom)'},{name:'Clips',color:'var(--clip)'},{name:'Layouts',color:'var(--layout)'},{name:'Masks',color:'var(--mask)'},{name:'Shortcuts',color:'var(--shortcut)'},{name:'Captions',color:'var(--caption)'},{name:'Voiceovers',color:'var(--voice)'},{name:'Audio',color:'var(--text3)'}];
+    const wave = Array.from({length:120},(_,i)=> (4 + Math.round(8*Math.abs(Math.sin(i*0.7))+6*Math.abs(Math.sin(i*0.23)))) + 'px');
+    const size = this.state.size;
+    return {
+      themeClass: theme==='light'?'light':'dark', rail, styles, clicks, tracks, wave,
+      ruler:['0:00','0:12','0:24','0:36','0:48','1:00','1:12','1:24','1:36'],
+      styleName: P.name, styleHint: P.hint, rig: P.rig, smo: P.smo, mom: P.mom,
+      sizeVal: size, sizeLabel: (size/100).toFixed(1)+'×', cursorPx: Math.round(14*size/100)+'px',
+      setSize: (e) => this.setState({ size: Number(e.target.value) }),
+      isCircle: C==='circle', isRipple: C==='ripple', clickName: clicks.find(c=>c.on).name.toLowerCase()
+    };
+  }
+}
+</script>
+</body>
+</html>

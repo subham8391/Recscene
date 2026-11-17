@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Settings window (laptop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif}
+.ss{--bg:#F2F2F5;--panel:#FFFFFF;--panel2:#F6F6F8;--raised:#FFFFFF;--line:#E2E2E8;--line2:#CFCFD7;--text:#17171B;--text2:#5A5A64;--text3:#6F6F7A;--accent:#5F45F0;--accentSoft:#ECE8FF;--onAccent:#FFFFFF;--caption:#2A9D5E;--clip:#D9A41C;--danger:#D14343;--shadow:0 24px 60px rgba(20,20,35,.25);--focus:0 0 0 3px rgba(95,69,240,.35)}
+.ss.dark{--bg:#0E0F11;--panel:#1A1B1F;--panel2:#222329;--raised:#2A2B32;--line:#2E2F36;--line2:#3C3D46;--text:#EDEDF2;--text2:#A6A7B1;--text3:#8E8F9A;--accent:#8F79FF;--accentSoft:#2A2546;--onAccent:#0E0F11;--caption:#45C77F;--clip:#F2C14E;--danger:#E36060;--shadow:0 24px 60px rgba(0,0,0,.6);--focus:0 0 0 3px rgba(143,121,255,.4)}
+.ss *{box-sizing:border-box}
+.ss button{font:inherit;color:inherit;cursor:pointer}
+.ss button:focus-visible,.ss input:focus-visible{outline:none;box-shadow:var(--focus)}
+.ss .row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--line)}
+.ss .row:last-child{border-bottom:none}
+.ss .lbl{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ss .lbl b{font-weight:500}
+.ss .lbl small{font-size:11px;color:var(--text3)}
+.ss .sel{height:30px;padding:0 10px;border-radius:8px;border:1px solid var(--line2);background:var(--panel2);display:flex;align-items:center;gap:8px;white-space:nowrap}
+.ss .tog{width:36px;height:20px;accent-color:var(--accent);flex:none}
+.ss kbd{font:12px Inter;border:1px solid var(--line2);border-radius:6px;padding:3px 8px;background:var(--panel2)}
+a{color:#5F45F0}a:hover{color:#4A34C9}
+</style>
+</helmet>
+<div class="ss {{themeClass}}" style="width: 1280px; height: 800px; position: relative; overflow: hidden; border-radius: 12px; color: var(--text); font-size: 13px; background: radial-gradient(circle at 20% 80%, #1d3a5c 0%, #0b1226 60%, #06070f 100%)">
+  <div aria-hidden="true" style="position: absolute; left: 0; right: 0; top: 0; height: 28px; background: rgba(20,20,30,.55); display: flex; align-items: center; gap: 18px; padding: 0 16px; color: #fff; font-size: 12px"><span style="font-weight: 700"></span><span style="font-weight: 600">Recscene</span><span>File</span><span>Edit</span><span>View</span><span>Window</span><span>Help</span></div>
+
+  <div role="dialog" aria-label="Settings" style="position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%); width: 900px; height: 640px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line2); box-shadow: var(--shadow); display: grid; grid-template-columns: 220px minmax(0, 1fr); overflow: hidden">
+    <nav aria-label="Settings sections" style="background: var(--panel2); border-right: 1px solid var(--line); padding: 44px 10px 10px; display: flex; flex-direction: column; gap: 2px; position: relative">
+      <div style="position: absolute; left: 14px; top: 14px; display: flex; gap: 8px" aria-hidden="true"><span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span></div>
+      <sc-for list="{{tabs}}" as="t" hint-placeholder-count="7">
+        <button onClick="{{ t.pick }}" aria-current="{{ t.on }}" style="height: 34px; padding: 0 12px; border-radius: 8px; border: none; background: {{ t.bg }}; color: {{ t.fg }}; text-align: left; font-weight: 500; display: flex; align-items: center; gap: 10px"><span style="width: 8px; height: 8px; border-radius: 2px; background: {{ t.dot }}"></span>{{ t.name }}</button>
+      </sc-for>
+      <div style="flex: 1 1 auto"></div>
+      <div style="padding: 10px 12px; font-size: 11px; color: var(--text3); line-height: 1.5">Recscene 1.0.0 (1)<br>You are up to date</div>
+    </nav>
+
+    <div style="padding: 24px 28px; overflow: auto; display: flex; flex-direction: column; gap: 6px">
+      <h2 style="margin: 0 0 8px; font-size: 18px; font-weight: 700">{{ title }}</h2>
+
+      <sc-if value="{{ isGeneral }}" hint-placeholder-val="{{ false }}">
+        <div class="row"><div class="lbl"><b>Start at login</b><small>Opens quietly in the menu bar.</small></div><input class="tog" type="checkbox" checked></div>
+        <div class="row"><div class="lbl"><b>Hide Dock icon</b><small>Hidden when no project is open and nothing is recording.</small></div><input class="tog" type="checkbox"></div>
+        <div class="row"><div class="lbl"><b>Projects folder</b><small>~/Recscene Projects</small></div><button class="sel">Change…</button></div>
+        <div class="row"><div class="lbl"><b>Presets folder</b><small>~/Documents/Recscene Presets · needs the Documents permission</small></div><button class="sel">Change…</button></div>
+        <div class="row"><div class="lbl"><b>Autosave project</b><small>Every 30 seconds while editing.</small></div><input class="tog" type="checkbox" checked></div>
+        <div class="row"><div class="lbl"><b>Appearance</b><small>Follows macOS, or force one mode.</small></div><div role="group" style="display: flex; border: 1px solid var(--line2); border-radius: 8px; overflow: hidden"><button style="height: 28px; padding: 0 10px; border: none; background: var(--accentSoft); font-weight: 600; font-size: 12px">System</button><button style="height: 28px; padding: 0 10px; border: none; border-left: 1px solid var(--line2); background: var(--panel2); color: var(--text2); font-size: 12px">Light</button><button style="height: 28px; padding: 0 10px; border: none; border-left: 1px solid var(--line2); background: var(--panel2); color: var(--text2); font-size: 12px">Dark</button></div></div>
+        <div class="row"><div class="lbl"><b>Analytics</b><small>Usage data only. Never the content of recordings.</small></div><input class="tog" type="checkbox"></div>
+      </sc-if>
+
+      <sc-if value="{{ isRecording }}" hint-placeholder-val="{{ true }}">
+        <div class="row"><div class="lbl"><b>Recording engine</b><small>Modern (ScreenCaptureKit) needs macOS 13. Legacy cannot record system audio.</small></div><button class="sel" aria-haspopup="listbox">Auto <span style="color: var(--text3)">▾</span></button></div>
+        <div class="row"><div class="lbl"><b>Countdown</b><small>Delay before capture starts.</small></div><div role="group" style="display: flex; border: 1px solid var(--line2); border-radius: 8px; overflow: hidden"><button style="height: 28px; padding: 0 10px; border: none; background: var(--panel2); color: var(--text2); font-size: 12px">None</button><button style="height: 28px; padding: 0 10px; border: none; border-left: 1px solid var(--line2); background: var(--accentSoft); font-weight: 600; font-size: 12px">3 s</button><button style="height: 28px; padding: 0 10px; border: none; border-left: 1px solid var(--line2); background: var(--panel2); color: var(--text2); font-size: 12px">5 s</button><button style="height: 28px; padding: 0 10px; border: none; border-left: 1px solid var(--line2); background: var(--panel2); color: var(--text2); font-size: 12px">10 s</button></div></div>
+        <div class="row"><div class="lbl"><b>Create zooms automatically</b><small>Groups clicks within 2.5 s into one zoom.</small></div><input class="tog" type="checkbox" checked></div>
+        <div class="row"><div class="lbl"><b>Maximum camera resolution</b><small>If your webcam supports it. Higher costs performance while recording.</small></div><button class="sel" aria-haspopup="listbox">1080p <span style="color: var(--text3)">▾</span></button></div>
+        <div class="row"><div class="lbl"><b>Improve microphone audio</b><small>Levels the voice and reduces noise during recording.</small></div><input class="tog" type="checkbox" checked></div>
+        <div class="row"><div class="lbl"><b>Show recording widget</b><small>Elapsed time, pause, flag, restart, delete. Not captured in the output.</small></div><input class="tog" type="checkbox" checked></div>
+        <div class="row"><div class="lbl"><b>Show quick export widget after recording</b><small>Share, Save, Copy or Edit without opening the editor.</small></div><input class="tog" type="checkbox" checked></div>
+        <div class="row"><div class="lbl"><b>Use last project settings for new recordings</b><small>Otherwise the default preset applies.</small></div><input class="tog" type="checkbox"></div>
+        <div class="row"><div class="lbl"><b>Low disk space warning</b><small>Warn before recording when free space is low.</small></div><input class="tog" type="checkbox" checked></div>
+      </sc-if>
+
+      <sc-if value="{{ isShortcuts }}" hint-placeholder-val="{{ false }}">
+        <p style="margin: 0 0 6px; font-size: 12px; color: var(--text3)">Click a shortcut to reassign it. Global shortcuts work from any app.</p>
+        <div class="row"><div class="lbl"><b>Start / stop recording</b><small>Global</small></div><button class="sel"><kbd>⇧⌘R</kbd></button></div>
+        <div class="row"><div class="lbl"><b>Open recording picker</b><small>Global · also stops a running recording</small></div><button class="sel"><kbd>⌥⌘↩</kbd></button></div>
+        <div class="row"><div class="lbl"><b>Create recording flag</b><small>Global · shows as a timeline marker</small></div><button class="sel"><kbd>⌘⌥⌃F</kbd></button></div>
+        <div class="row"><div class="lbl"><b>Speaker notes prompter</b><small>Global</small></div><button class="sel"><kbd>⌥⌘.</kbd></button></div>
+        <div class="row"><div class="lbl"><b>Command menu</b><small>Editor</small></div><button class="sel"><kbd>⌘K</kbd></button></div>
+        <div class="row"><div class="lbl"><b>Cut at playhead</b><small>Editor · hold ⌥ for scissors</small></div><button class="sel"><kbd>C</kbd></button></div>
+        <div class="row"><div class="lbl"><b>Toggle zoom loupe mode</b><small>Editor · 4.1</small></div><button class="sel"><kbd>L</kbd></button></div>
+        <div class="row"><div class="lbl"><b>Shortcuts guide</b><small>Editor</small></div><button class="sel"><kbd>⌘/</kbd></button></div>
+      </sc-if>
+
+      <sc-if value="{{ isAccount }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 12px; background: var(--panel2); border: 1px solid var(--line)">
+          <span style="width: 44px; height: 44px; border-radius: 50%; background: var(--accentSoft); display: grid; place-items: center; font-weight: 700; color: var(--accent)">SD</span>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><b style="font-weight: 600">you@example.com</b><span style="font-size: 12px; color: var(--text2)">Yearly plan · renews 14 Mar 2027 · 2 of 3 devices</span></div>
+          <div style="flex: 1 1 auto"></div>
+          <button class="sel">Manage in dashboard</button>
+        </div>
+        <div class="row"><div class="lbl"><b>Devices</b><small>MacBook Pro (this Mac) · Mac Studio</small></div><button class="sel">Disconnect a device…</button></div>
+        <div class="row"><div class="lbl"><b>Shareable links</b><small>12 links · 3.4 GB used</small></div><button class="sel">Manage links</button></div>
+        <div class="row"><div class="lbl"><b>Beta updates</b><small>Current beta 4.2.1 · needs an active subscription</small></div><input class="tog" type="checkbox"></div>
+        <div class="row"><div class="lbl"><b>Sign out</b><small>Keeps your projects on disk.</small></div><button class="sel" style="color: var(--danger)">Sign out</button></div>
+      </sc-if>
+
+      <sc-if value="{{ isOther }}" hint-placeholder-val="{{ false }}">
+        <div class="row"><div class="lbl"><b>Default export settings</b><small>Your latest export settings are used as default.</small></div><button class="sel">Reset</button></div>
+        <div class="row"><div class="lbl"><b>Default preset for new projects</b><small>None</small></div><button class="sel" aria-haspopup="listbox">Choose… <span style="color: var(--text3)">▾</span></button></div>
+        <div class="row"><div class="lbl"><b>Skip network certificate validation</b><small>Only if the account check fails behind a corporate proxy.</small></div><input class="tog" type="checkbox"></div>
+        <div class="row"><div class="lbl"><b>Enhanced shareable link uploads</b><small>Experimental</small></div><input class="tog" type="checkbox"></div>
+        <div class="row"><div class="lbl"><b>Audio composer</b><small>Swift composer or ffmpeg fallback.</small></div><button class="sel" aria-haspopup="listbox">Swift <span style="color: var(--text3)">▾</span></button></div>
+        <div class="row"><div class="lbl"><b>Share diagnostics info</b><small>App version, macOS, Mac model, camera and mic names.</small></div><button class="sel">Copy report</button></div>
+      </sc-if>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { tab:'recording' }; }
+  renderVals() {
+    const theme = this.props.theme ?? 'dark';
+    const T = this.state.tab;
+    const defs = [['general','General','var(--text3)'],['recording','Recording','#E0393E'],['editing','Editing','var(--accent)'],['shortcuts','Shortcuts','var(--clip)'],['advanced','Advanced','var(--text3)'],['experimental','Experimental','var(--caption)'],['account','Account','var(--accent)']];
+    const tabs = defs.map(([id,name,dot]) => ({ id, name, dot, on: T===id, bg: T===id?'var(--accentSoft)':'transparent', fg: T===id?'var(--text)':'var(--text2)', pick: () => this.setState({tab:id}) }));
+    return {
+      themeClass: theme==='light'?'light':'dark', tabs,
+      title: defs.find(d=>d[0]===T)[1],
+      isGeneral: T==='general', isRecording: T==='recording', isShortcuts: T==='shortcuts', isAccount: T==='account',
+      isOther: T==='editing' || T==='advanced' || T==='experimental'
+    };
+  }
+}
+</script>
+</body>
+</html>
