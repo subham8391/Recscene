@@ -1208,3 +1208,90 @@ input[type='color'] {
 .laypick__thumb--split span { right: 0; top: 0; bottom: 0; width: 40%; border-radius: 0 4px 4px 0; }
 .laypick__thumb--only-camera span { inset: 0; border-radius: 4px; }
 .laypick__thumb--only-screen span { display: none; }
+
+/* Masks (specs 189–198): drawn in the video's space so they zoom with it */
+.masks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.masks__dim,
+.masks__blur,
+.masks__sel,
+.masks__ghost {
+  position: absolute;
+}
+
+.masks__dim {
+  inset: 0;
+  pointer-events: none;
+}
+
+.masks__blur {
+  overflow: hidden;
+}
+
+.masks__blur--feather {
+  mask-image: linear-gradient(to right, transparent, #000 6px, #000 calc(100% - 6px), transparent), linear-gradient(to bottom, transparent, #000 6px, #000 calc(100% - 6px), transparent);
+  mask-composite: intersect;
+  -webkit-mask-composite: source-in;
+}
+
+.masks__sel {
+  border: 2px solid var(--mask);
+  border-radius: 4px;
+  pointer-events: auto;
+  cursor: move;
+}
+
+.masks__sel--off {
+  border-style: dashed;
+  opacity: 0.7;
+}
+
+.masks__tag {
+  position: absolute;
+  left: 0;
+  top: -22px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--mask);
+  color: #fff;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.masks__h {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  border: 1px solid var(--mask);
+  border-radius: 2px;
+}
+
+.masks__h--nw { left: -6px; top: -6px; cursor: nwse-resize; }
+.masks__h--n { left: calc(50% - 5px); top: -6px; cursor: ns-resize; }
+.masks__h--ne { right: -6px; top: -6px; cursor: nesw-resize; }
+.masks__h--e { right: -6px; top: calc(50% - 5px); cursor: ew-resize; }
+.masks__h--se { right: -6px; bottom: -6px; cursor: nwse-resize; }
+.masks__h--s { left: calc(50% - 5px); bottom: -6px; cursor: ns-resize; }
+.masks__h--sw { left: -6px; bottom: -6px; cursor: nesw-resize; }
+.masks__h--w { left: -6px; top: calc(50% - 5px); cursor: ew-resize; }
+
+.masks__ghost {
+  border: 1px dashed var(--mask);
+  border-radius: 4px;
+  background: rgba(52, 191, 191, 0.12);
+  pointer-events: auto;
+}
+
+.card--warn {
+  border: 1px solid var(--mask);
+}
+
+.tl__zi--mask {
+  background: var(--mask);
+  color: #04303a;
+}

@@ -4,8 +4,11 @@ import { gradientCss, screenLayout, shadowCss, withAlpha } from '@core/editor/ba
 import { cameraAtRest, cameraStep, cameraViewport, cursorAt, targetViewport, viewportTransform, type CameraState, type CursorSample } from '@core/editor/camera'
 import { zoomAt } from '@core/editor/zooms'
 import { cameraMotionAtRest, cameraMotionStep, cameraTimeMs, effectiveLayout, motionBox, placeCamera, type CameraMotion } from '@core/editor/cameraLayout'
+import { activeMask, type MaskRegion } from '@core/editor/masks'
 import type { Project } from '@core/project'
 import { CursorLayer } from './CursorLayer'
+import { MaskLayer } from './MaskLayer'
+import { drawMask } from './maskDraw'
 
 export interface StageHandle {
   /** Renders the current frame at `height` px into a PNG (specs 77–78). */
@@ -35,6 +38,11 @@ interface Props {
   /** Media url of the project's own background image, when the type is image. */
   backgroundImageUrl: string | null
   assetsUrl: string
+  /** Masks (specs 189–198): the selected one shows its drag rectangle. */
+  selectedMaskId: string | null
+  onMaskRegionPreview: (id: string, region: MaskRegion) => void
+  onMaskRegionCommit: (id: string, region: MaskRegion) => void
+  onSelectMask: (id: string | null) => void
   onDuration?: (ms: number) => void
   /** Reports where the recording sits on screen, for overlays such as the crop tool. */
   onBox?: (box: Box) => void
@@ -45,7 +53,7 @@ interface Props {
  * The preview canvas (spec 48): the output box in the project's aspect ratio
  * with the (cropped) recording contained inside. Effects arrive with their specs.
  */
-export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, screenUrl, micUrl, cameraUrl, sourceMs, playing, rate, micVolume, previewMaxHeight, cursor, sourceDurationMs, clipState, clickSoundUrl, backgroundImageUrl, assetsUrl, onDuration, onBox, children }, ref) {
+export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, screenUrl, micUrl, cameraUrl, sourceMs, playing, rate, micVolume, previewMaxHeight, cursor, sourceDurationMs, clipState, clickSoundUrl, backgroundImageUrl, assetsUrl, selectedMaskId, onMaskRegionPreview, onMaskRegionCommit, onSelectMask, onDuration, onBox, children }, ref) {
   const live = useRef({ sourceMs, playing, rate, clipState, innerWidth: 0 })
   useEffect(() => {
     live.current = { ...live.current, sourceMs, playing, rate, clipState }
@@ -243,6 +251,8 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
       ctx.translate(box.x + box.width / 2 - cam.center.x * box.width * cam.scale, box.y + box.height / 2 - cam.center.y * box.height * cam.scale)
       ctx.scale(cam.scale, cam.scale)
       ctx.drawImage(v, sx, sy, sw, sh, 0, 0, box.width, box.height)
+      const am = activeMask(project.masks, sourceMs)
+      if (am) drawMask(ctx, am, v, crop, { width: box.width, height: box.height }, canvas.width)
       ctx.restore()
       ctx.restore()
       // Webcam (148–164) at the box the stage shows right now, scaled to the export frame.
@@ -294,6 +304,18 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
         <div className="stage__inner" style={{ left: inner.x - output.x, top: inner.y - output.y, width: inner.width, height: inner.height, borderRadius: radius }}>
           <div ref={cameraLayer} className="stage__camera">
             <video ref={video} className="stage__video" src={screenUrl} crossOrigin="anonymous" playsInline preload="auto" style={{ left: videoLeft - (inner.x - output.x), top: videoTop - (inner.y - output.y), width: videoWidth, height: videoHeight }} onLoadedMetadata={(e) => onDuration?.(Math.round(e.currentTarget.duration * 1000))} />
+            <div className="stage__cursorhost stage__maskhost" style={{ left: videoLeft - (inner.x - output.x), top: videoTop - (inner.y - output.y), width: videoWidth, height: videoHeight }}>
+              <MaskLayer
+                masks={project.masks}
+                active={activeMask(project.masks, sourceMs)}
+                selectedId={selectedMaskId}
+                frame={{ width: videoWidth, height: videoHeight }}
+                outputWidth={output.width}
+                onRegionPreview={onMaskRegionPreview}
+                onRegionCommit={onMaskRegionCommit}
+                onSelect={onSelectMask}
+              />
+            </div>
             <div className="stage__cursorhost" style={{ left: videoLeft - (inner.x - output.x), top: videoTop - (inner.y - output.y), width: videoWidth, height: videoHeight }}>
               <CursorLayer
                 samples={cursor}

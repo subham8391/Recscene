@@ -2,7 +2,7 @@
  * The editor's action registry (specs 49, 52–58, 63–65, 72–78): one list
  * that drives keyboard handling, the ⌘K command menu and the shortcuts guide.
  */
-export type ActionGroup = 'Playback' | 'Slice' | 'Zoom' | 'Camera' | 'View' | 'Editor' | 'Project' | 'Sidebar' | 'Export' | 'Clipboard' | 'Help'
+export type ActionGroup = 'Playback' | 'Slice' | 'Zoom' | 'Camera' | 'Mask' | 'View' | 'Editor' | 'Project' | 'Sidebar' | 'Export' | 'Clipboard' | 'Help'
 
 export interface ActionDef {
   id: string
@@ -60,6 +60,17 @@ export const ACTIONS: readonly ActionDef[] = [
   { id: 'setLayoutModeDefault', label: 'Set camera layout mode to default (both)', group: 'Camera' },
   { id: 'setLayoutModeFullscreen', label: 'Set camera layout mode to fullscreen', group: 'Camera' },
   { id: 'setLayoutModeHide', label: 'Set camera layout mode to hide', group: 'Camera' },
+  { id: 'addSensitiveDataMask', label: 'Add sensitive data mask', group: 'Mask' },
+  { id: 'addHighlightMask', label: 'Add highlight mask', group: 'Mask' },
+  { id: 'changeMaskTypeToHighlight', label: 'Change mask type to highlight', group: 'Mask' },
+  { id: 'changeMaskTypeToSensitiveData', label: 'Change mask type to sensitive data', group: 'Mask' },
+  { id: 'toggleMaskDisabled', label: 'Toggle mask disabled', group: 'Mask' },
+  { id: 'disableAllMasks', label: 'Disable all masks', group: 'Mask' },
+  { id: 'copyMask', label: 'Copy mask', group: 'Mask' },
+  { id: 'applyHighlightOpacityToAll', label: 'Apply highlight mask opacity to all masks', group: 'Mask' },
+  { id: 'focusTimelineOnMask', label: 'Focus the timeline on the mask', group: 'Mask' },
+  { id: 'focusTimelineOnMaskStart', label: 'Focus the timeline on the mask start', group: 'Mask' },
+  { id: 'removeAllMasks', label: 'Remove all masks', group: 'Mask' },
   { id: 'cut', label: 'Cut zoom', group: 'Clipboard', shortcut: 'Cmd+X' },
   { id: 'paste', label: 'Paste slice settings', group: 'Clipboard', shortcut: 'Cmd+V' },
   { id: 'undo', label: 'Undo', group: 'Editor', shortcut: 'Cmd+Z' },

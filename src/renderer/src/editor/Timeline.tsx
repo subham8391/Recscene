@@ -5,6 +5,7 @@ import { panView, rulerTicks, sliderToZoom, timeAtX, visibleLabel, xAtTime, zoom
 import { waveformBars } from '@core/editor/waveform'
 import { isAutoType, moveZoom, type ZoomRange } from '@core/editor/zooms'
 import { LAYOUT_NAMES, moveLayout, type CameraLayout } from '@core/editor/cameraLayout'
+import { maskLabel, moveMask, type Mask } from '@core/editor/masks'
 import { outputToSource } from '@core/editor/clips'
 import type { Project } from '@core/project'
 import { formatClock } from '@core/recordingPicker'
@@ -51,6 +52,12 @@ interface Props {
   onAddLayoutAt: (sourceMs: number) => void
   onLayoutPreview: (layouts: CameraLayout[]) => void
   onLayoutCommit: (layouts: CameraLayout[]) => void
+  /** Masks track (specs 189, 192). */
+  selectedMaskId: string | null
+  onSelectMask: (id: string | null) => void
+  onAddMaskAt: (sourceMs: number) => void
+  onMaskPreview: (masks: Mask[]) => void
+  onMaskCommit: (masks: Mask[]) => void
   micUrl?: string
   showWaveform: boolean
   smoothWaveform: boolean
@@ -68,9 +75,10 @@ const TRACKS: { id: TrackId; name: string; color: string; key: string; forced?: 
 
 /** The timeline (specs 50–51, 58–62, 80–87): toolbar, ruler, clips with trim handles, tracks, waveform, playhead. */
 export function Timeline(props: Props): React.JSX.Element {
-  const { project, clips, sourceDurationMs, markers, durationMs, timeMs, view, setView, visible, toggleTrack, onSeek, onPreview, selectedClipId, onSelectClip, onTrimPreview, onTrimCommit, onRemoveTrim, onJoin, selectedZoomId, onSelectZoom, onAddZoomAt, onZoomPreview, onZoomCommit, hasCamera, selectedLayoutId, onSelectLayout, onAddLayoutAt, onLayoutPreview, onLayoutCommit, micUrl, showWaveform, smoothWaveform, alwaysShowScrollbar, audioScrubber, onToggleAudioScrubber } = props
+  const { project, clips, sourceDurationMs, markers, durationMs, timeMs, view, setView, visible, toggleTrack, onSeek, onPreview, selectedClipId, onSelectClip, onTrimPreview, onTrimCommit, onRemoveTrim, onJoin, selectedZoomId, onSelectZoom, onAddZoomAt, onZoomPreview, onZoomCommit, hasCamera, selectedLayoutId, onSelectLayout, onAddLayoutAt, onLayoutPreview, onLayoutCommit, selectedMaskId, onSelectMask, onAddMaskAt, onMaskPreview, onMaskCommit, micUrl, showWaveform, smoothWaveform, alwaysShowScrollbar, audioScrubber, onToggleAudioScrubber } = props
   const zoomDrag = useRef<{ id: string; mode: 'move' | 'start' | 'end'; startX: number; origin: ZoomRange[]; moved: boolean } | null>(null)
   const layoutDrag = useRef<{ id: string; mode: 'move' | 'start' | 'end'; startX: number; origin: CameraLayout[]; moved: boolean } | null>(null)
+  const maskDrag = useRef<{ id: string; mode: 'move' | 'start' | 'end'; startX: number; origin: Mask[]; moved: boolean } | null>(null)
   const lane = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(1)
   const [tracksOpen, setTracksOpen] = useState(false)
@@ -138,7 +146,23 @@ export function Timeline(props: Props): React.JSX.Element {
     layoutDrag.current = { id, mode, startX: e.clientX, origin: project.layouts, moved: false }
     onSelectLayout(id)
   }
+  const onMaskDown = (id: string, mode: 'move' | 'start' | 'end') => (e: React.MouseEvent) => {
+    e.stopPropagation()
+    maskDrag.current = { id, mode, startX: e.clientX, origin: project.masks, moved: false }
+    onSelectMask(id)
+  }
   const onMouseMove = (e: React.MouseEvent): void => {
+    const md = maskDrag.current
+    if (md) {
+      const m = md.origin.find((x) => x.id === md.id)
+      if (!m) return
+      const clip = clips.find((c) => m.sourceStartMs >= c.sourceStartMs && m.sourceStartMs <= c.sourceEndMs) ?? clips[0]
+      const deltaMs = ((e.clientX - md.startX) / width) * view.visibleMs * (clip?.speed ?? 1)
+      md.moved = true
+      const patch = md.mode === 'move' ? { startMs: m.sourceStartMs + deltaMs, endMs: m.sourceEndMs + deltaMs } : md.mode === 'start' ? { startMs: m.sourceStartMs + deltaMs } : { endMs: m.sourceEndMs + deltaMs }
+      onMaskPreview(moveMask(md.origin, md.id, patch, sourceDurationMs))
+      return
+    }
     const ld = layoutDrag.current
     if (ld) {
       const l = ld.origin.find((x) => x.id === ld.id)
@@ -174,6 +198,9 @@ export function Timeline(props: Props): React.JSX.Element {
     onTrimPreview(trimClip(d.origin, d.id, d.edge, target, sourceDurationMs))
   }
   const onMouseUp = (): void => {
+    const md = maskDrag.current
+    maskDrag.current = null
+    if (md?.moved) onMaskCommit(project.masks)
     const ld = layoutDrag.current
     layoutDrag.current = null
     if (ld?.moved) onLayoutCommit(project.layouts)
@@ -261,7 +288,19 @@ export function Timeline(props: Props): React.JSX.Element {
             })}
           </div>
           {rows.map((t) => (
-            <div key={t.id} className="tl__row" data-track={t.id} title={t.id === 'zooms' ? 'Click or drag to add zoom on cursor' : t.id === 'layouts' ? (hasCamera ? 'Click to create a new camera layout' : 'No camera recorded') : undefined} onClick={(e) => { if (e.target !== e.currentTarget) return; if (t.id === 'zooms') { e.stopPropagation(); onAddZoomAt(outputToSource(clips, timeFromEvent(e))) } else if (t.id === 'layouts' && hasCamera) { e.stopPropagation(); onAddLayoutAt(outputToSource(clips, timeFromEvent(e))) } }}>
+            <div key={t.id} className="tl__row" data-track={t.id} title={t.id === 'zooms' ? 'Click or drag to add zoom on cursor' : t.id === 'layouts' ? (hasCamera ? 'Click to create a new camera layout' : 'No camera recorded') : t.id === 'masks' ? 'Click or drag to create a new mask' : undefined} onClick={(e) => { if (e.target !== e.currentTarget) return; if (t.id === 'zooms') { e.stopPropagation(); onAddZoomAt(outputToSource(clips, timeFromEvent(e))) } else if (t.id === 'layouts' && hasCamera) { e.stopPropagation(); onAddLayoutAt(outputToSource(clips, timeFromEvent(e))) } else if (t.id === 'masks') { e.stopPropagation(); onAddMaskAt(outputToSource(clips, timeFromEvent(e))) } }}>
+              {t.id === 'masks' && project.masks.map((m) => {
+                const a = atOutput(m.sourceStartMs)
+                const b = atOutput(m.sourceEndMs)
+                if (a === null || b === null) return null
+                return (
+                  <div key={m.id} className={`tl__zi tl__zi--mask${m.isDisabled ? ' tl__zi--off' : ''}${m.id === selectedMaskId ? ' tl__zi--on' : ''}`} style={{ left: x(a), width: Math.max(2, x(b) - x(a)) }} onMouseDown={onMaskDown(m.id, 'move')} onClick={(e) => { e.stopPropagation(); if (!maskDrag.current) onSelectMask(m.id) }} title={`${maskLabel(m)} · ${formatClock(m.sourceEndMs - m.sourceStartMs)}`}>
+                    <span className="tl__zi__label">{maskLabel(m)}</span>
+                    <span className="tl__handle tl__handle--start" onMouseDown={onMaskDown(m.id, 'start')} />
+                    <span className="tl__handle tl__handle--end" onMouseDown={onMaskDown(m.id, 'end')} />
+                  </div>
+                )
+              })}
               {t.id === 'layouts' && project.layouts.map((l) => {
                 const a = atOutput(l.sourceStartMs)
                 const b = atOutput(l.sourceEndMs)

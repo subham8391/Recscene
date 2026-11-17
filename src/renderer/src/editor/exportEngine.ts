@@ -15,7 +15,9 @@ import { activeClickEffects, cursorAtRest, cursorBlurPx, cursorRotation, cursorS
 import { outputSize, videoBitrate, type ExportProgress, type ExportSettings, type ExportTarget } from '@core/editor/exportSettings'
 import { zoomAt } from '@core/editor/zooms'
 import { cameraMotionAtRest, cameraMotionStep, cameraTimeMs, effectiveLayout, motionBox, placeCamera, type CameraMotion } from '@core/editor/cameraLayout'
+import { activeMask } from '@core/editor/masks'
 import type { Project } from '@core/project'
+import { drawMask } from './maskDraw'
 
 export interface ExportInput {
   project: Project
@@ -270,6 +272,9 @@ export async function runExport(
     const sw = crop ? crop.width * video.videoWidth : video.videoWidth
     const sh = crop ? crop.height * video.videoHeight : video.videoHeight
     ctx.drawImage(video, sx, sy, sw, sh, 0, 0, screen.width, screen.height)
+    // Masks (189–198) over the recording, before the cursor
+    const am = activeMask(project.masks, sourceMs)
+    if (am) drawMask(ctx, am, video, crop, { width: screen.width, height: screen.height }, size.width)
     // Cursor (125–147) in screen space
     const tgt = cursorTarget(samples, sourceMs, { startMs: 0, endMs: input.sourceDurationMs, config: cfg, clipHidden: !!clip?.hideCursor })
     const smooth = !cfg.disableMouseMovementSpring && !clip?.disableSmoothMouseMovement

@@ -12,6 +12,7 @@ import {
   mergeWith,
   outputDurationMs,
   outputToSource,
+  sourceToOutput,
   removeClip,
   removeTrim,
   resetAllClips,
@@ -25,6 +26,7 @@ import {
 } from '@core/editor/clips'
 import { applyCropAspect, cropFromFractions, cropToFractions } from '@core/editor/crop'
 import { addZoomAt, automaticZooms, duplicateZoom, removeZoom, setAllDisabled, splitZoom, stepZoomLevel, updateZoom, zoomSettings, type ZoomRange, type ZoomSettings } from '@core/editor/zooms'
+import { addMaskAt, applyOpacityToAll, disableAllMasks, maskAt, maskSettings, nudgeRegion, pasteMaskSettings, removeMask, splitMask, updateMask, type Mask, type MaskSettings, type MaskType } from '@core/editor/masks'
 import { addLayoutAt, applyCameraSizeToAll, layoutAt, layoutSettings, pasteLayoutSettings, removeLayout, splitLayout, stepPosition, updateLayout, type CameraLayout, type LayoutSettings, type LayoutType, type MoveDirection } from '@core/editor/cameraLayout'
 import { appPrefsFrom } from '@core/appPrefs'
 import { canRedo, canUndo, createHistory, record, redo, undo } from '@core/editor/history'
@@ -51,6 +53,7 @@ import { formatTimecode } from '@core/time'
 import type { OpenedProject } from '@core/projectFile'
 import { BackgroundPanel } from './BackgroundPanel'
 import { CameraPanel, LayoutPanel } from './CameraPanel'
+import { MaskPanel } from './MaskPanel'
 import { ClipPanel } from './ClipPanel'
 import { CommandMenu } from './CommandMenu'
 import { CursorPanel } from './CursorPanel'
@@ -86,7 +89,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   const [pb, setPb] = useState<PlaybackState>(() => initialPlayback(prefs.playbackLoop))
   const [preview, setPreview] = useState<number | null>(null)
   const [view, setView] = useState<TimelineView>(() => initialView(opened.project.recording.durationMs))
-  const [visible, setVisible] = useState<TrackVisibility>({ zooms: true, layouts: !!opened.media.camera, masks: false, shortcuts: opened.project.recording.keys.length > 0 })
+  const [visible, setVisible] = useState<TrackVisibility>({ zooms: true, layouts: !!opened.media.camera, masks: opened.project.masks.length > 0, shortcuts: opened.project.recording.keys.length > 0 })
   const [layout, setLayout] = useState<LayoutState>('edit')
   const [panel, setPanel] = useState('background')
   const [overlay, setOverlay] = useState<'command' | 'guide' | null>(null)
@@ -105,6 +108,9 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   const [selectedLayoutId, setSelectedLayoutId] = useState<string | null>(null)
   const [draftLayouts, setDraftLayouts] = useState<CameraLayout[] | null>(null)
   const [layoutClipboard, setLayoutClipboard] = useState<LayoutSettings | null>(null)
+  const [selectedMaskId, setSelectedMaskId] = useState<string | null>(null)
+  const [draftMasks, setDraftMasks] = useState<Mask[] | null>(null)
+  const [maskClipboard, setMaskClipboard] = useState<MaskSettings | null>(null)
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
   const [recBox, setRecBox] = useState<Box>({ x: 0, y: 0, width: 0, height: 0 })
@@ -120,7 +126,10 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   const selectedLayout = layouts.find((l) => l.id === selectedLayoutId) ?? null
   const selectedLayoutIndex = selectedLayout ? layouts.indexOf(selectedLayout) : -1
   const hasCamera = !!opened.media.camera && !!project.recording.camera
-  const shownProject = draftZooms || draftLayouts ? { ...project, zooms: draftZooms ?? project.zooms, layouts: draftLayouts ?? project.layouts } : project
+  const masks = draftMasks ?? project.masks
+  const selectedMask = masks.find((m) => m.id === selectedMaskId) ?? null
+  const selectedMaskIndex = selectedMask ? masks.indexOf(selectedMask) : -1
+  const shownProject = draftZooms || draftLayouts || draftMasks ? { ...project, zooms: draftZooms ?? project.zooms, layouts: draftLayouts ?? project.layouts, masks: draftMasks ?? project.masks } : project
   const durationMs = outputDurationMs(clips)
   const sourceMs = outputToSource(clips, preview ?? pb.timeMs)
   const currentClip = clipAtOutput(clips, pb.timeMs)?.clip ?? null
@@ -213,6 +222,33 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
 
   const setZooms = (next: ZoomRange[]): void => edit({ ...project, zooms: next })
   const setLayouts = (next: CameraLayout[]): void => edit({ ...project, layouts: next })
+  const setMasks = (next: Mask[]): void => edit({ ...project, masks: next })
+  const selectMask = (id: string | null): void => {
+    setSelectedMaskId(id)
+    if (id) {
+      setSelectedClipId(null)
+      setSelectedZoomId(null)
+      setSelectedLayoutId(null)
+    }
+  }
+  /** Specs 189–190, 192, 195: a new mask at a time, from a type or the copied settings. */
+  const addMask = (sourceMsAt: number, type: MaskType = 'sensitive-data', settings?: MaskSettings): void => {
+    const r = addMaskAt(masks, sourceMsAt, sourceDurationMs, type, settings)
+    if (r.error) return notify(r.error)
+    setMasks(r.masks)
+    setVisible((v) => ({ ...v, masks: true }))
+    selectMask(r.mask?.id ?? null)
+    if (settings) notify('Mask applied')
+  }
+  /** Spec 196: show the mask's range on the timeline and seek to its start. */
+  const focusMask = (mask: Mask, jump: boolean): void => {
+    const a = sourceToOutput(clips, mask.sourceStartMs)
+    const b = sourceToOutput(clips, mask.sourceEndMs)
+    if (a === null) return notify('The mask lies in a cut part of the recording')
+    const len = Math.max(1000, (b ?? durationMs) - a)
+    setView(keepVisible({ startMs: Math.max(0, a - len * 0.25), visibleMs: len * 1.5 }, a, durationMs))
+    if (jump) setPb((p) => seek(p, a, durationMs))
+  }
   const addLayout = (sourceMsAt: number, type: LayoutType = 'only-camera'): void => {
     if (!hasCamera) return notify('No camera recorded')
     if (project.config.hideCamera) {
@@ -274,7 +310,24 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
         case 'toggleWaveform': return setPrefs({ hideAudioWaveform: !prefs.hideAudioWaveform })
         case 'toggleSmoothWaveform': return setPrefs({ enableSmoothWaveform: !prefs.enableSmoothWaveform })
         case 'toggleTimelineScrollbar': return setPrefs({ alwaysShowTimelineScrollbar: !prefs.alwaysShowTimelineScrollbar })
-        case 'closeSidebarItem': return void (setOverlay(null), setSelectedClipId(null), setSelectedZoomId(null), setSelectedLayoutId(null), setCropping(false))
+        case 'closeSidebarItem': return void (setOverlay(null), setSelectedClipId(null), setSelectedZoomId(null), setSelectedLayoutId(null), setSelectedMaskId(null), setCropping(false))
+        case 'addSensitiveDataMask': return addMask(outputToSource(clips, pb.timeMs), 'sensitive-data')
+        case 'addHighlightMask': return addMask(outputToSource(clips, pb.timeMs), 'highlight')
+        case 'changeMaskTypeToHighlight': return selectedMask ? setMasks(updateMask(masks, selectedMask.id, { type: 'highlight' })) : undefined
+        case 'changeMaskTypeToSensitiveData': return selectedMask ? setMasks(updateMask(masks, selectedMask.id, { type: 'sensitive-data' })) : undefined
+        case 'toggleMaskDisabled': return selectedMask ? setMasks(updateMask(masks, selectedMask.id, { isDisabled: !selectedMask.isDisabled })) : undefined
+        case 'disableAllMasks': return setMasks(disableAllMasks(masks))
+        case 'copyMask':
+          if (!selectedMask) return
+          setMaskClipboard(maskSettings(selectedMask))
+          return notify('Mask copied')
+        case 'applyHighlightOpacityToAll':
+          if (!selectedMask) return
+          setMasks(applyOpacityToAll(masks, selectedMask.highlightMaskOpacity))
+          return notify('Highlight mask opacity applied to all masks')
+        case 'focusTimelineOnMask': return selectedMask ? focusMask(selectedMask, true) : undefined
+        case 'focusTimelineOnMaskStart': return selectedMask ? focusMask(selectedMask, true) : undefined
+        case 'removeAllMasks': return void (setSelectedMaskId(null), setMasks([]))
         case 'toggleHideCamera': return hasCamera ? edit({ ...project, config: { ...project.config, hideCamera: !project.config.hideCamera } }) : notify('No camera recorded')
         case 'addLayout': return addLayout(outputToSource(clips, pb.timeMs), 'only-camera')
         case 'addBothLayout': return addLayout(outputToSource(clips, pb.timeMs), 'both')
@@ -318,6 +371,11 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           setZooms(removeZoom(zooms, selectedZoom.id))
           return notify('Zoom range copied')
         case 'splitSliceAtCurrentTime': {
+          if (selectedMask) {
+            const r = splitMask(masks, outputToSource(clips, pb.timeMs))
+            if (r.error) return notify(r.error)
+            return setMasks(r.masks)
+          }
           if (selectedLayout) {
             const r = splitLayout(layouts, outputToSource(clips, pb.timeMs))
             if (r.error) return notify(r.error)
@@ -333,6 +391,10 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           return setClips(r.clips)
         }
         case 'removeSlice': {
+          if (selectedMask) {
+            setSelectedMaskId(null)
+            return setMasks(removeMask(masks, selectedMask.id))
+          }
           if (selectedLayout) {
             setSelectedLayoutId(null)
             return setLayouts(removeLayout(layouts, selectedLayout.id))
@@ -361,6 +423,13 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           return setClips(resetAllClips(sourceDurationMs))
         case 'crop': return void (setPb((p) => ({ ...p, playing: false })), setCropping(true))
         case 'paste': {
+          if (maskClipboard && (selectedMask || (!zoomClipboard && !clipboard && !layoutClipboard))) {
+            if (selectedMask) {
+              setMasks(pasteMaskSettings(masks, selectedMask.id, maskClipboard))
+              return notify('Mask applied')
+            }
+            return addMask(outputToSource(clips, pb.timeMs), maskClipboard.type, maskClipboard)
+          }
           if (selectedLayout && layoutClipboard) {
             setLayouts(pasteLayoutSettings(layouts, selectedLayout.id, layoutClipboard))
             return notify('Layout settings pasted')
@@ -411,7 +480,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [durationMs, pb.timeMs, prefs, project, save, closeProject, setPrefs, clips, selectedClip, currentClip, clipboard, sourceDurationMs, setClips, zooms, selectedZoom, zoomClipboard, defaultZoomLevel, setZooms, layouts, selectedLayout, layoutClipboard, hasCamera, setLayouts, addLayout, moveLayoutCamera]
+    [durationMs, pb.timeMs, prefs, project, save, closeProject, setPrefs, clips, selectedClip, currentClip, clipboard, sourceDurationMs, setClips, zooms, selectedZoom, zoomClipboard, defaultZoomLevel, setZooms, layouts, selectedLayout, layoutClipboard, hasCamera, setLayouts, addLayout, moveLayoutCamera, masks, selectedMask, maskClipboard, setMasks, addMask, focusMask]
   )
 
   useEffect(() => window.recscene.onEditorAction(run), [run])
@@ -421,6 +490,16 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
       if (overlay) return
       const target = e.target as HTMLElement | null
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+      if (selectedMask && !e.metaKey && !e.altKey && !e.ctrlKey && e.key.startsWith('Arrow')) {
+        const step = e.shiftKey ? 10 : 1
+        const d: Record<string, [number, number]> = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }
+        const v = d[e.key]
+        if (v) {
+          e.preventDefault()
+          setMasks(updateMask(masks, selectedMask.id, { region: nudgeRegion(selectedMask.region, v[0], v[1], project.recording.screen) }))
+          return
+        }
+      }
       if (selectedLayout && !e.metaKey && !e.altKey && !e.ctrlKey && !e.shiftKey) {
         const arrows: Record<string, string> = { ArrowUp: 'moveLayoutCameraUp', ArrowDown: 'moveLayoutCameraDown', ArrowLeft: 'moveLayoutCameraLeft', ArrowRight: 'moveLayoutCameraRight', '1': 'setLayoutModeDefault', '2': 'setLayoutModeFullscreen', '3': 'setLayoutModeHide' }
         const id = arrows[e.key]
@@ -476,7 +555,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
             )}
           </div>
           <button type="button" className={`btn btn--ghost${cropping ? ' btn--on' : ''}`} aria-pressed={cropping} title="Crop the recording (specs 100–101)" onClick={() => run('crop')}>Crop</button>
-          <button type="button" className="btn btn--ghost" disabled title="Masks arrive with specs 189–198">Mask</button>
+          <button type="button" className={`btn btn--ghost${selectedMask ? ' btn--on' : ''}`} title="Add a sensitive data mask at the playhead (specs 189–198)" onClick={() => run('addSensitiveDataMask')}>Mask</button>
         </div>
         <button type="button" className="btn btn--ghost" disabled title="Shareable links arrive with specs 236–245">Share link</button>
         <button type="button" className="btn btn--accent" title="Export ⌘E" onClick={() => run('export')}>Export</button>
@@ -508,6 +587,10 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           screenUrl={opened.media.screen}
           micUrl={opened.media.mic}
           cameraUrl={opened.media.camera}
+          selectedMaskId={selectedMaskId}
+          onMaskRegionPreview={(id, region) => setDraftMasks(updateMask(masks, id, { region }))}
+          onMaskRegionCommit={(id, region) => { setDraftMasks(null); setMasks(updateMask(project.masks, id, { region })) }}
+          onSelectMask={selectMask}
           sourceMs={sourceMs}
           playing={pb.playing && preview === null && !cropping}
           rate={pb.speed * (currentClip?.speed ?? 1)}
@@ -562,7 +645,21 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
 
       {sidebar && (
         <aside className="inspector" aria-label="Inspector">
-          {selectedLayout ? (
+          {selectedMask ? (
+            <>
+              <div className="inspector__head"><span className="tl__dot" style={{ background: 'var(--mask)' }} /><h2>Mask</h2><span className="muted">{selectedMaskIndex + 1} of {masks.length}</span><span className="tl__spacer" /><button type="button" className="btn btn--ghost btn--sm" onClick={() => setSelectedMaskId(null)}>Close <kbd>⎋</kbd></button></div>
+              <MaskPanel
+                masks={masks}
+                mask={selectedMask}
+                index={selectedMaskIndex}
+                recording={project.recording.screen}
+                offRange={maskAt(masks, sourceMs)?.id !== selectedMask.id}
+                hasClipboard={maskClipboard !== null}
+                onMask={(patch) => setMasks(updateMask(masks, selectedMask.id, patch))}
+                onAction={run}
+              />
+            </>
+          ) : selectedLayout ? (
             <>
               <div className="inspector__head"><span className="tl__dot" style={{ background: 'var(--layout)' }} /><h2>Camera layout</h2><span className="muted">{selectedLayoutIndex + 1} of {layouts.length}</span><span className="tl__spacer" /><button type="button" className="btn btn--ghost btn--sm" onClick={() => setSelectedLayoutId(null)}>Close <kbd>⎋</kbd></button></div>
               <LayoutPanel
@@ -683,16 +780,21 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           onRemoveTrim={(id, edge) => setClips(removeTrim(clips, id, edge, sourceDurationMs))}
           onJoin={(rightId) => setClips(joinClips(clips, rightId))}
           selectedZoomId={selectedZoomId}
-          onSelectZoom={(id) => { setSelectedZoomId(id); if (id) { setSelectedClipId(null); setSelectedLayoutId(null) } }}
+          onSelectZoom={(id) => { setSelectedZoomId(id); if (id) { setSelectedClipId(null); setSelectedLayoutId(null); setSelectedMaskId(null) } }}
           onAddZoomAt={(ms) => addZoom(ms)}
           onZoomPreview={setDraftZooms}
           onZoomCommit={() => { const next = draftZooms; setDraftZooms(null); if (next) setZooms(next) }}
           hasCamera={hasCamera}
           selectedLayoutId={selectedLayoutId}
-          onSelectLayout={(id) => { setSelectedLayoutId(id); if (id) { setSelectedZoomId(null); setSelectedClipId(null) } }}
+          onSelectLayout={(id) => { setSelectedLayoutId(id); if (id) { setSelectedZoomId(null); setSelectedClipId(null); setSelectedMaskId(null) } }}
           onAddLayoutAt={(ms) => addLayout(ms)}
           onLayoutPreview={setDraftLayouts}
           onLayoutCommit={() => { const next = draftLayouts; setDraftLayouts(null); if (next) setLayouts(next) }}
+          selectedMaskId={selectedMaskId}
+          onSelectMask={selectMask}
+          onAddMaskAt={(ms) => addMask(ms)}
+          onMaskPreview={setDraftMasks}
+          onMaskCommit={() => { const next = draftMasks; setDraftMasks(null); if (next) setMasks(next) }}
           micUrl={opened.media.mic}
           showWaveform={!prefs.hideAudioWaveform}
           smoothWaveform={prefs.enableSmoothWaveform}
