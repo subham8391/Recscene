@@ -48,6 +48,49 @@ enum Media {
         return (try await probe(path: output), true)
     }
 
+    /// Spec 233: the renderer encodes video; this joins it with the mixed audio (a WAV) into an MP4.
+    /// The WAV is first encoded to AAC, then both compressed tracks are composed and passed through.
+    static func mux(video: String, audio: String?, output: String) async throws -> Double {
+        let target = URL(fileURLWithPath: output)
+        try? FileManager.default.removeItem(at: target)
+        let composition = AVMutableComposition()
+        let videoAsset = AVURLAsset(url: URL(fileURLWithPath: video))
+        guard let videoTrack = try await videoAsset.loadTracks(withMediaType: .video).first else { throw ProtocolError.unreadable("No video track to mux") }
+        let videoDuration = try await videoAsset.load(.duration)
+        guard let compVideo = composition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else { throw ProtocolError.writer("composition video track") }
+        try compVideo.insertTimeRange(CMTimeRange(start: .zero, duration: videoDuration), of: videoTrack, at: .zero)
+
+        var aacURL: URL?
+        if let audio {
+            let wavAsset = AVURLAsset(url: URL(fileURLWithPath: audio))
+            if let wavTrack = try await wavAsset.loadTracks(withMediaType: .audio).first {
+                let m4a = target.deletingPathExtension().appendingPathExtension("audio.m4a")
+                try? FileManager.default.removeItem(at: m4a)
+                guard let aac = AVAssetExportSession(asset: wavAsset, presetName: AVAssetExportPresetAppleM4A) else { throw ProtocolError.writer("AAC encoder") }
+                aac.outputURL = m4a
+                aac.outputFileType = .m4a
+                await aac.export()
+                if let error = aac.error { throw ProtocolError.writer("AAC encoding failed: \(error.localizedDescription)") }
+                let aacAsset = AVURLAsset(url: m4a)
+                if let aacTrack = try await aacAsset.loadTracks(withMediaType: .audio).first, let compAudio = composition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid) {
+                    let d = try await aacAsset.load(.duration)
+                    try compAudio.insertTimeRange(CMTimeRange(start: .zero, duration: CMTimeMinimum(d, videoDuration)), of: aacTrack, at: .zero)
+                    aacURL = m4a
+                }
+                _ = wavTrack
+            }
+        }
+        guard let export = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetPassthrough) else { throw ProtocolError.writer("MP4 export") }
+        export.outputURL = target
+        export.outputFileType = .mp4
+        export.shouldOptimizeForNetworkUse = true
+        await export.export()
+        if let aacURL { try? FileManager.default.removeItem(at: aacURL) }
+        if let error = export.error { throw ProtocolError.writer("Mux failed: \(error.localizedDescription)") }
+        let duration = try await AVURLAsset(url: target).load(.duration)
+        return CMTimeGetSeconds(duration) * 1000
+    }
+
     /// Decodes GIF frames with ImageIO and writes them as H.264 at their own delays.
     private static func convertGIF(_ source: URL, to target: URL) async throws {
         guard let src = CGImageSourceCreateWithURL(source as CFURL, nil), CGImageSourceGetCount(src) > 0,

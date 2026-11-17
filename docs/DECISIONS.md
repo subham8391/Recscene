@@ -17,7 +17,7 @@
 - macOS first, Apple silicon and Intel. Windows is not planned until after M3.
 - Electron + electron-vite + React 19 + TypeScript. Reason: the design is HTML-native, the reference app proves the architecture at this feature set, and the editor UI changes far more often than the capture code.
 - Screen, camera and audio capture go through a native Swift helper (ScreenCaptureKit, AVFoundation) under `native/`, talking to the main process over a local socket or stdio. Electron's `desktopCapturer` is not used: it cannot capture clicks, keystrokes, cursor positions or 60 fps at full resolution reliably.
-- Rendering (zooms, cursor, layouts, background) happens on the GPU in the renderer with WebGL/WebGPU; export encodes with the native helper (VideoToolbox) rather than ffmpeg in JavaScript.
+- Rendering (zooms, cursor, layouts, background) happens in the renderer; the preview is DOM and CSS transforms, export redraws every frame on a canvas with the same maths and encodes H.264 through WebCodecs (the platform encoder) into an MP4 stream. The native helper joins the mixed audio as AAC. No ffmpeg in JavaScript. **Amended 2026-11-17:** the earlier plan to encode in the helper is replaced by WebCodecs, which keeps rendering and encoding in one process.
 - Layering: `src/core` (pure domain, tested) → `src/main` (Electron, files, native bridge) → `src/preload` (typed bridge) → `src/renderer` (React). Core never imports the layers above it.
 - Tooling matches the author's other projects: npm, Node 24, ESLint flat config, vitest with v8 coverage, GitHub Actions on push and PR.
 

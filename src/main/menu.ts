@@ -85,7 +85,7 @@ export function installMenu(actions: MenuActions): void {
     },
     {
       label: 'Export',
-      submenu: [{ label: 'Export Current Frame as Image…', click: send('exportFrame') }]
+      submenu: [{ label: 'Export Video…', accelerator: 'CommandOrControl+E', click: send('export') }, { label: 'Export Current Frame as Image…', click: send('exportFrame') }]
     },
     { role: 'windowMenu' },
     { role: 'help', submenu: [{ label: 'Shortcuts Guide', accelerator: 'CommandOrControl+/', click: send('shortcutsGuide') }, { label: 'Recscene Website', click: () => void shell.openExternal('https://recscene.app') }] }

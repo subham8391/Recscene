@@ -158,6 +158,10 @@ export class CaptureClient extends EventEmitter {
     return this.send({ cmd: 'import', path, output }, 'imported')
   }
 
+  mux(video: string, audio: string | null, output: string): Promise<Extract<HelperEvent, { event: 'muxed' }>> {
+    return this.send({ cmd: 'mux', video, audio, output }, 'muxed')
+  }
+
   dispose(): void {
     this.process?.kill()
     this.process = null

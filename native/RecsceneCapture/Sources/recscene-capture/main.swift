@@ -40,6 +40,9 @@ func handle(_ command: Command) async {
         case .probe(let path):
             let info = try await Media.probe(path: path)
             output.send(.probed(durationMs: info.durationMs, width: info.width, height: info.height, hasAudio: info.hasAudio))
+        case let .mux(video, audio, outputPath):
+            let ms = try await Media.mux(video: video, audio: audio, output: outputPath)
+            output.send(.muxed(output: outputPath, durationMs: ms))
         case let .importVideo(path, outputPath):
             let (info, converted) = try await Media.importVideo(path: path, output: outputPath)
             output.send(.imported(output: outputPath, durationMs: info.durationMs, width: info.width, height: info.height, converted: converted))

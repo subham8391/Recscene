@@ -87,6 +87,8 @@ enum Command {
     case probe(path: String)
     /// Copies or converts a video or GIF into `output` as H.264 .mov.
     case importVideo(path: String, output: String)
+    /// Writes `output` (.mp4) with the video track of `video` passed through and `audio` (.wav) encoded as AAC.
+    case mux(video: String, audio: String?, output: String)
 
     static func parse(_ line: String) throws -> Command {
         guard let data = line.data(using: .utf8) else { throw ProtocolError.badCommand("not utf-8") }
@@ -107,6 +109,10 @@ enum Command {
             struct I: Decodable { let path: String; let output: String }
             let i = try decoder.decode(I.self, from: data)
             return .importVideo(path: i.path, output: i.output)
+        case "mux":
+            struct M: Decodable { let video: String; let audio: String?; let output: String }
+            let m = try decoder.decode(M.self, from: data)
+            return .mux(video: m.video, audio: m.audio, output: m.output)
         case "mark":
             struct M: Decodable { let kind: String? }
             return .mark(kind: try decoder.decode(M.self, from: data).kind ?? "marker")
@@ -203,6 +209,7 @@ enum OutEvent: Encodable {
     case cancelled
     case probed(durationMs: Double, width: Int, height: Int, hasAudio: Bool)
     case imported(output: String, durationMs: Double, width: Int, height: Int, converted: Bool)
+    case muxed(output: String, durationMs: Double)
     case warning(message: String)
     case error(code: String, message: String)
 
@@ -250,6 +257,9 @@ enum OutEvent: Encodable {
             try c.encode("imported", forKey: .event)
             try c.encode(output, forKey: .output); try c.encode(durationMs, forKey: .durationMs)
             try c.encode(width, forKey: .width); try c.encode(height, forKey: .height); try c.encode(converted, forKey: .converted)
+        case let .muxed(output, durationMs):
+            try c.encode("muxed", forKey: .event)
+            try c.encode(output, forKey: .output); try c.encode(durationMs, forKey: .durationMs)
         case .warning(let message):
             try c.encode("warning", forKey: .event); try c.encode(message, forKey: .message)
         case let .error(code, message):

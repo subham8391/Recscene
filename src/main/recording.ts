@@ -52,6 +52,11 @@ export class RecordingService extends EventEmitter {
     return this.current !== null
   }
 
+  /** The helper process, shared with export for muxing. */
+  get helper(): CaptureClient {
+    return this.client
+  }
+
   snapshot(): SessionSnapshot | null {
     return this.current ? { ...this.current.session, toast: this.toast } : null
   }

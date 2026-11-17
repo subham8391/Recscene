@@ -1108,3 +1108,61 @@ input[type='color'] {
   border-radius: 6px;
   background: transparent;
 }
+
+/* Export dialog (specs 233–248) */
+.export {
+  width: min(92vw, 560px);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line2);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  overflow: auto;
+}
+
+.export__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.export__head h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.export__targets {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.export__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.export__bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.export__bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.2s;
+}
+
+.btn--accent:disabled {
+  opacity: 0.5;
+}
