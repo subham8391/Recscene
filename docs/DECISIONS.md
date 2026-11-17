@@ -36,6 +36,8 @@
 
 **2026-11-17 (camera layouts built).** The camera is composited by the same code path as the stage: a box computed per frame from the effective layout (timeline layout, else the default, else hidden), animated between layouts by a spring and faded when hidden; the split layout is a Recscene addition from the Camera board (screen and camera side by side, ½·½ or ⅔·⅓, flip). Layouts live at `project.layouts` (the competitor's `scenes[].layouts`; Recscene has one scene). The camera's own time is the screen time minus `cameraDelayMs`. Cutout, looks, sharpen, face tracking and hide-during-silence are deferred: cutout and looks need the GPU renderer and a matting model, silence needs the audio panel's speech ranges.
 
+**2026-11-17 (masks built).** Mask regions are stored as fractions of the full recording frame, so they survive crops and resolution changes; the renderers map them through the crop. The stage blurs with `backdrop-filter` and dims with an even-odd clip path, the export draws the same maths on the canvas (blur with padded source so edges do not fade). Masks live at `project.masks` and cannot overlap in time (one renders at a time). Spec 197's shift detection is deferred; the board's auto masks (4.x) too.
+
 ## Open
 - **Q1** Licensing model: one-time with a year of updates versus subscription. Decide before M3.
 - **Q2** Transcription and captions: on-device (whisper.cpp) versus a cloud service. Lean on-device for privacy; decide at M2.

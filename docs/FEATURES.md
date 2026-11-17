@@ -19,7 +19,7 @@ Spec numbers refer to `docs/research/screen-studio-feature-specs.md`. A feature 
 | --- | --- | --- |
 | Camera: layouts, position, size, cutout, looks | 148–164, 285–287 | Done: 148–164 (hide, mirror, shape, roundness, size, size during zoom, 3 × 3 position, default layout both/split/fullscreen/hide, timeline layouts with spring transitions, per-layout size and position, arrow and 1/2/3 keys, apply size to all, disable, copy/paste, split, remove) plus the camera delay from 287. Not built: 285 cutout (CoreML model, Apple silicon), 286 hide during silence (needs speech ranges from the audio panel), 287 looks, LUTs and sharpen (GPU renderer), face tracking |
 | Microphone and system audio, mic modes, hide during silence | 213–223, 288–290 | |
-| Masks: blur, pixelate, solid | 189–198 | |
+| Masks: blur, pixelate, solid | 189–198 | Done: 189–196, 198 (sensitive-data blur with strength and feather, highlight with opacity and apply-to-all, draw on the preview with handles or on the track, arrow-key nudging and pixel fields, change type, enable/disable one or all, copy and paste, focus the timeline, remove one or all; preview and export). 197 masked-content shift detection is not built (experimental in the competitor). Pixelate and solid fills are not in the specs and were not added |
 | Keystroke overlays and hidden shortcuts | 199–204 | |
 | Captions from transcription | 205–212 | Q2 decides the engine |
 | GIF and WebM export, presets, settings | 224–232, 263–272 | |

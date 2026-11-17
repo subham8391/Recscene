@@ -31,8 +31,10 @@ import type { ZoomRange } from './editor/zooms'
 import { defaultCursorConfig, type CursorConfig } from './editor/cursor'
 import { defaultBackgroundConfig, type BackgroundConfig } from './editor/background'
 import { defaultCameraConfig, type CameraConfig, type CameraLayout } from './editor/cameraLayout'
+import type { Mask } from './editor/masks'
 export type { Clip } from './editor/clips'
 export type { CameraLayout } from './editor/cameraLayout'
+export type { Mask } from './editor/masks'
 
 export interface Recording {
   id: string
@@ -87,6 +89,8 @@ export interface Project {
   clips: Clip[]
   /** Spec 156: timeline camera layouts. */
   layouts: CameraLayout[]
+  /** Specs 189–198: masks over the recording. */
+  masks: Mask[]
   /** ISO timestamps (spec 73–74). */
   updatedAt?: string
   lastSavedAt?: string
@@ -104,6 +108,7 @@ export function normaliseProject(raw: unknown): Project {
     recording: { ...recording, clicks: recording.clicks ?? [], keys: recording.keys ?? [] },
     zooms: Array.isArray(r.zooms) ? r.zooms : [],
     layouts: Array.isArray(r.layouts) ? r.layouts : [],
+    masks: Array.isArray(r.masks) ? r.masks : [],
     clips: Array.isArray(r.clips) && r.clips.length > 0 ? r.clips : [defaultClip(recording.durationMs)],
     ...(r.updatedAt ? { updatedAt: r.updatedAt } : {}),
     ...(r.lastSavedAt ? { lastSavedAt: r.lastSavedAt } : {})
