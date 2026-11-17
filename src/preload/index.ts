@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type { RecordingResult } from '@core/captureProtocol'
 import type { PickerPrefs, PickerState, RecordRequest } from '@core/recordingPicker'
 import type { SessionState } from '@core/recordingSession'
+import type { SpeakerNotesPrefs } from '@core/speakerNotes'
 
 export interface SessionSnapshot extends SessionState {
   toast: string | null
@@ -26,6 +27,13 @@ const api = {
     record: (request: RecordRequest): Promise<{ projectDir: string }> => ipcRenderer.invoke('picker:record', request) as Promise<{ projectDir: string }>,
     cancel: (): Promise<void> => ipcRenderer.invoke('picker:cancel') as Promise<void>,
     onCover: (listener: () => void): (() => void) => on('picker:cover', listener)
+  },
+  notes: {
+    prefs: (): Promise<SpeakerNotesPrefs> => ipcRenderer.invoke('notes:prefs') as Promise<SpeakerNotesPrefs>,
+    save: (values: Partial<SpeakerNotesPrefs>): Promise<SpeakerNotesPrefs> => ipcRenderer.invoke('notes:save', values) as Promise<SpeakerNotesPrefs>,
+    close: (): Promise<void> => ipcRenderer.invoke('notes:close') as Promise<void>,
+    onUpdate: (listener: (prefs: SpeakerNotesPrefs) => void): (() => void) => on('notes:update', listener),
+    onTogglePrompter: (listener: () => void): (() => void) => on('notes:togglePrompter', listener)
   },
   widget: {
     state: (): Promise<SessionSnapshot | null> => ipcRenderer.invoke('widget:state') as Promise<SessionSnapshot | null>,

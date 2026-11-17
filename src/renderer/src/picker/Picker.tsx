@@ -302,7 +302,7 @@ export function Picker(): React.JSX.Element {
               {COUNTDOWN_OPTIONS.map((ms) => <option key={String(ms)} value={ms === null ? 'none' : String(ms)}>Countdown · {countdownLabel(ms)}</option>)}
             </select>
             <button type="button" className={`pill${prefs.recordingAreaCover ? ' pill--on' : ''}`} aria-pressed={prefs.recordingAreaCover} onClick={() => savePrefs({ recordingAreaCover: !prefs.recordingAreaCover })} title="Dim the part of the screen that is not recorded">Highlight recorded area</button>
-            <button type="button" className="pill" disabled title="Spec 27, M2">Speaker notes</button>
+            <button type="button" className={`pill${prefs.showSpeakerNotes ? ' pill--on' : ''}`} aria-pressed={prefs.showSpeakerNotes} onClick={() => savePrefs({ showSpeakerNotes: !prefs.showSpeakerNotes })} title="A floating notes window that is never recorded. ⌘⌥. starts the teleprompter">Speaker notes ⌥⌘.</button>
             <button type="button" className="pill" disabled title="Specs 42–47, M2">Quick export widget</button>
             <button type="button" className="pill" disabled title="Spec 20, M2">Engine · auto</button>
           </div>

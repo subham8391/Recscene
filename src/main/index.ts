@@ -1,6 +1,7 @@
 import { join } from 'node:path'
 import { app, BrowserWindow, globalShortcut, ipcMain, screen, shell } from 'electron'
 import type { RecordingResult, StartOptions } from '@core/captureProtocol'
+import { SpeakerNotes } from './notes'
 import { Picker } from './picker'
 import { Preferences } from './preferences'
 import { projectsRoot, RecordingService } from './recording'
@@ -11,11 +12,14 @@ import { loadRoute, preloadPath } from './windows'
 const RECORD_SHORTCUT = 'Shift+CommandOrControl+R'
 /** Spec 26: flags a moment while recording. */
 const FLAG_SHORTCUT = 'CommandOrControl+Alt+Control+F'
+/** Spec 28: starts or stops the teleprompter in the speaker notes window. */
+const PROMPTER_SHORTCUT = 'CommandOrControl+Alt+.'
 
 let mainWindow: BrowserWindow | null = null
 let recording: RecordingService | null = null
 let picker: Picker | null = null
 let widget: Widget | null = null
+let notes: SpeakerNotes | null = null
 let stopping: Promise<void> | null = null
 
 function createMainWindow(): BrowserWindow {
@@ -79,20 +83,25 @@ void app.whenReady().then(() => {
   const prefs = new Preferences(join(app.getPath('userData'), 'preferences.json'))
   recording = new RecordingService()
   widget = new Widget(recording, stopRecording)
-  picker = new Picker(recording, prefs, projectsRoot)
+  notes = new SpeakerNotes(prefs)
+  picker = new Picker(recording, prefs, projectsRoot, notes)
   recording.on('cancelled', () => {
     widget?.hide()
     picker?.close()
+    notes?.hide(false)
   })
+  recording.on('stopped', () => notes?.hide(false))
   recording.on('started', (options: StartOptions) => {
     const t = options.target
     const displayId = t.kind === 'display' ? t.id : t.kind === 'area' ? t.displayId : screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).id
     widget?.show(displayId)
+    if (notes?.current().showSpeakerNotes) notes.show(displayId)
   })
   globalShortcut.register(RECORD_SHORTCUT, onRecordShortcut)
   globalShortcut.register(FLAG_SHORTCUT, () => {
     if (recording?.isRecording) void recording.addFlag().catch(() => undefined)
   })
+  globalShortcut.register(PROMPTER_SHORTCUT, () => notes?.togglePrompter())
   mainWindow = createMainWindow()
   // Development aid: RECSCENE_OPEN_PICKER=1 opens the picker as soon as the app is ready.
   if (!app.isPackaged && process.env['RECSCENE_OPEN_PICKER']) setTimeout(() => picker?.open(), 800)

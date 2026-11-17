@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import { app, BrowserWindow, type Rectangle } from 'electron'
 
-export type Route = 'editor' | 'picker' | 'widget'
+export type Route = 'editor' | 'picker' | 'widget' | 'notes'
 
 /** Loads the renderer at a hash route, in development from the Vite server and otherwise from disk. */
 export function loadRoute(window: BrowserWindow, route: Route): void {
@@ -14,14 +14,14 @@ export function loadRoute(window: BrowserWindow, route: Route): void {
 export const preloadPath = (): string => join(__dirname, '../preload/index.js')
 
 /** A frameless, transparent, always-on-top window that floats over the desktop. */
-export function createOverlayWindow(bounds: Rectangle, route: Route, options: { clickThrough?: boolean } = {}): BrowserWindow {
+export function createOverlayWindow(bounds: Rectangle, route: Route, options: { clickThrough?: boolean; movable?: boolean } = {}): BrowserWindow {
   const window = new BrowserWindow({
     ...bounds,
     frame: false,
     transparent: true,
     hasShadow: false,
     resizable: false,
-    movable: false,
+    movable: options.movable ?? false,
     minimizable: false,
     maximizable: false,
     fullscreenable: false,
