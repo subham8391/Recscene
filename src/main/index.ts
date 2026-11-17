@@ -1,10 +1,22 @@
 import { join } from 'node:path'
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
-import { RecordingService, registerRecordingIpc } from './recording'
+import { app, BrowserWindow, globalShortcut, ipcMain, screen, shell } from 'electron'
+import type { RecordingResult, StartOptions } from '@core/captureProtocol'
+import { Picker } from './picker'
+import { Preferences } from './preferences'
+import { projectsRoot, RecordingService } from './recording'
+import { Widget } from './widget'
+import { loadRoute, preloadPath } from './windows'
 
-const isDev = !app.isPackaged
+/** Spec 33: opens the picker when idle, finishes the recording while one runs. */
+const RECORD_SHORTCUT = 'Shift+CommandOrControl+R'
 
-function createWindow(): BrowserWindow {
+let mainWindow: BrowserWindow | null = null
+let recording: RecordingService | null = null
+let picker: Picker | null = null
+let widget: Widget | null = null
+let stopping: Promise<void> | null = null
+
+function createMainWindow(): BrowserWindow {
   const window = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -14,44 +26,76 @@ function createWindow(): BrowserWindow {
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 14, y: 14 },
     backgroundColor: '#0E0F11',
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      sandbox: true,
-      contextIsolation: true,
-      nodeIntegration: false
-    }
+    webPreferences: { preload: preloadPath(), sandbox: true, contextIsolation: true, nodeIntegration: false }
   })
-
   window.on('ready-to-show', () => window.show())
-
+  window.on('closed', () => {
+    if (mainWindow === window) mainWindow = null
+  })
   window.webContents.setWindowOpenHandler(({ url }) => {
     void shell.openExternal(url)
     return { action: 'deny' }
   })
-
-  const devUrl = process.env['ELECTRON_RENDERER_URL']
-  if (isDev && devUrl) {
-    void window.loadURL(devUrl)
-  } else {
-    void window.loadFile(join(__dirname, '../renderer/index.html'))
-  }
+  loadRoute(window, 'editor')
   return window
 }
 
-ipcMain.handle('app:version', () => app.getVersion())
+function showMainWindow(): BrowserWindow {
+  if (!mainWindow || mainWindow.isDestroyed()) mainWindow = createMainWindow()
+  if (mainWindow.isMinimized()) mainWindow.restore()
+  mainWindow.show()
+  mainWindow.focus()
+  return mainWindow
+}
 
-let recording: RecordingService | null = null
+async function stopRecording(): Promise<void> {
+  if (!recording?.isRecording) return
+  if (stopping) return stopping
+  stopping = (async () => {
+    try {
+      widget?.hide()
+      picker?.close()
+      const result: RecordingResult = await recording.stop()
+      showMainWindow().webContents.send('recording:finished', result)
+    } finally {
+      stopping = null
+    }
+  })()
+  return stopping
+}
+
+function onRecordShortcut(): void {
+  if (recording?.isRecording) void stopRecording()
+  else picker?.open()
+}
+
+ipcMain.handle('app:version', () => app.getVersion())
+ipcMain.handle('app:openPicker', () => picker?.open())
+ipcMain.handle('app:projectsRoot', () => projectsRoot())
 
 void app.whenReady().then(() => {
+  const prefs = new Preferences(join(app.getPath('userData'), 'preferences.json'))
   recording = new RecordingService()
-  registerRecordingIpc(recording)
-  createWindow()
+  widget = new Widget(stopRecording)
+  picker = new Picker(recording, prefs, projectsRoot)
+  recording.on('started', (options: StartOptions) => {
+    const t = options.target
+    const displayId = t.kind === 'display' ? t.id : t.kind === 'area' ? t.displayId : screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).id
+    widget?.show(displayId)
+  })
+  globalShortcut.register(RECORD_SHORTCUT, onRecordShortcut)
+  mainWindow = createMainWindow()
+  // Development aid: RECSCENE_OPEN_PICKER=1 opens the picker as soon as the app is ready.
+  if (!app.isPackaged && process.env['RECSCENE_OPEN_PICKER']) setTimeout(() => picker?.open(), 800)
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (BrowserWindow.getAllWindows().length === 0) showMainWindow()
   })
 })
 
-app.on('will-quit', () => recording?.dispose())
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll()
+  recording?.dispose()
+})
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()

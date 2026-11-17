@@ -51,6 +51,8 @@ struct StartOptions: Codable {
     var showCursor = false
     /// "h264" (default) or "hevc".
     var codec = "h264"
+    /// Processes whose windows are left out of a display or area capture (the app's own overlays).
+    var excludeProcessIds: [Int32] = []
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -61,6 +63,7 @@ struct StartOptions: Codable {
         fps = try c.decodeIfPresent(Int.self, forKey: .fps) ?? 60
         showCursor = try c.decodeIfPresent(Bool.self, forKey: .showCursor) ?? false
         codec = try c.decodeIfPresent(String.self, forKey: .codec) ?? "h264"
+        excludeProcessIds = try c.decodeIfPresent([Int32].self, forKey: .excludeProcessIds) ?? []
     }
 }
 
