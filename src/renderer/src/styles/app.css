@@ -20,8 +20,8 @@ body {
 .app {
   height: 100%;
   display: grid;
-  grid-template-columns: var(--rail-w) 1fr var(--inspector-w);
-  grid-template-rows: var(--titlebar-h) 1fr var(--timeline-h);
+  grid-template-columns: var(--rail-w) minmax(0, 1fr) var(--inspector-w);
+  grid-template-rows: var(--titlebar-h) minmax(0, 1fr) var(--timeline-h);
   grid-template-areas:
     'title title title'
     'rail stage inspector'
@@ -161,6 +161,8 @@ body {
 
 .inspector {
   grid-area: inspector;
+  min-height: 0;
+  overflow: auto;
   padding: 16px;
   border-left: 1px solid var(--line);
   background: var(--panel);

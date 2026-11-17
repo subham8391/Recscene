@@ -1,4 +1,4 @@
-import { createReadStream } from 'node:fs'
+import { createReadStream, existsSync } from 'node:fs'
 import { cp, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { Readable } from 'node:stream'
 import { basename, dirname, join, resolve } from 'node:path'
@@ -21,6 +21,14 @@ export function mediaUrl(projectDir: string, file: string): string {
   return `${MEDIA_SCHEME}://project/${encodeURIComponent(projectDir)}/${encodeURIComponent(file)}`
 }
 
+/** Bundled, read-only assets (click sounds): recscene-media://assets/<path under resources>. */
+export const ASSETS_URL = `${MEDIA_SCHEME}://assets`
+
+function assetsRoot(): string {
+  const candidates = [join(process.resourcesPath, 'sounds'), join(app.getAppPath(), 'resources', 'sounds')]
+  return candidates.find((p) => existsSync(p)) ?? candidates[1]!
+}
+
 /**
  * Projects on disk (specs 73–76): open, save, save as, recent list, show in
  * Finder, and the media protocol that serves files from inside a bundle only.
@@ -36,15 +44,23 @@ export class ProjectService {
     // Range requests are honoured so <video> can seek and decode on demand.
     protocol.handle(MEDIA_SCHEME, async (request) => {
       const url = new URL(request.url)
-      const [, dirEncoded, fileEncoded] = url.pathname.split('/')
-      if (!dirEncoded || !fileEncoded) return new Response('Not found', { status: 404 })
-      const dir = resolve(decodeURIComponent(dirEncoded))
-      const file = decodeURIComponent(fileEncoded)
-      if (!dir.endsWith('.recscene') || file.includes('/') || file.includes('..')) return new Response('Forbidden', { status: 403 })
-      const path = join(dir, file)
+      let path: string
+      if (url.host === 'assets') {
+        // sounds/clicks/<set>/<file>.wav only
+        const rel = decodeURIComponent(url.pathname).replace(/^\/+/, '')
+        if (!/^sounds\/clicks\/[a-z-]+\/(down|up|click)\.wav$/.test(rel)) return new Response('Forbidden', { status: 403 })
+        path = join(assetsRoot(), rel.slice('sounds/'.length))
+      } else {
+        const [, dirEncoded, fileEncoded] = url.pathname.split('/')
+        if (!dirEncoded || !fileEncoded) return new Response('Not found', { status: 404 })
+        const dir = resolve(decodeURIComponent(dirEncoded))
+        const file = decodeURIComponent(fileEncoded)
+        if (!dir.endsWith('.recscene') || file.includes('/') || file.includes('..')) return new Response('Forbidden', { status: 403 })
+        path = join(dir, file)
+      }
       const info = await stat(path).catch(() => null)
       if (!info?.isFile()) return new Response('Not found', { status: 404 })
-      const type = file.endsWith('.mov') ? 'video/quicktime' : file.endsWith('.m4a') ? 'audio/mp4' : 'application/octet-stream'
+      const type = path.endsWith('.mov') ? 'video/quicktime' : path.endsWith('.m4a') ? 'audio/mp4' : path.endsWith('.wav') ? 'audio/wav' : 'application/octet-stream'
       const range = /^bytes=(\d*)-(\d*)$/.exec(request.headers.get('range') ?? '')
       let start = 0
       let end = info.size - 1
@@ -117,6 +133,7 @@ export class ProjectService {
       markers,
       cursor,
       media: {
+        assets: ASSETS_URL,
         screen: mediaUrl(projectDir, project.recording.screen.file),
         ...(project.recording.microphone && (await has(project.recording.microphone.file)) ? { mic: mediaUrl(projectDir, project.recording.microphone.file) } : {})
       }
