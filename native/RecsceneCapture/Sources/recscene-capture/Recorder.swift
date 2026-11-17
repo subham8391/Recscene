@@ -19,6 +19,7 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate {
     private var paused = false
     private var pausedAt: CMTime?
     private var lastSample: CMSampleBuffer?
+    private var idleTimer: DispatchSourceTimer?
     private let frameInterval: CMTime
     private(set) var frames = 0
     var onFirstFrame: ((CMTime) -> Void)?
@@ -47,8 +48,8 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate {
         config.channelCount = 2
 
         writer = try AVAssetWriter(outputURL: outputURL, fileType: .mov)
-        // Write a movie fragment every 2 s so an interrupted recording stays playable (spec 40).
-        writer.movieFragmentInterval = CMTime(seconds: 2, preferredTimescale: 600)
+        // Write a movie fragment every second so an interrupted recording stays playable (spec 40).
+        writer.movieFragmentInterval = CMTime(seconds: 1, preferredTimescale: 600)
         let codec: AVVideoCodecType = options.codec == "hevc" ? .hevc : .h264
         let bitrate = max(10_000_000, width * height * 6)
         var compression: [String: Any] = [
@@ -89,6 +90,22 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate {
     func start() async throws {
         guard writer.startWriting() else { throw ProtocolError.writer(writer.error?.localizedDescription ?? "startWriting failed") }
         try await stream.startCapture()
+        // A static screen sends no frames; repeat the last one every second so the file keeps growing,
+        // fragments keep landing on disk (spec 40) and the duration stays right.
+        let timer = DispatchSource.makeTimerSource(queue: queue)
+        timer.schedule(deadline: .now() + 1, repeating: 1)
+        timer.setEventHandler { [weak self] in self?.repeatLastFrameIfIdle() }
+        timer.resume()
+        idleTimer = timer
+    }
+
+    private func repeatLastFrameIfIdle() {
+        guard !paused, writer.status == .writing, let last = lastSample, let lastRaw = lastPTS else { return }
+        let now = CMClockGetTime(CMClockGetHostTimeClock())
+        guard CMTimeGetSeconds(CMTimeSubtract(now, lastRaw)) >= 1 else { return }
+        guard let tail = shifted(last, to: CMTimeSubtract(now, offset), duration: frameInterval, force: true), videoInput.isReadyForMoreMediaData, videoInput.append(tail) else { return }
+        lastPTS = now
+        frames += 1
     }
 
     func pause() {
@@ -111,6 +128,7 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate {
 
     /// Stops capture and throws the file away.
     func cancel() async {
+        idleTimer?.cancel()
         try? await stream.stopCapture()
         queue.sync {
             if writer.status == .writing { writer.cancelWriting() }
@@ -119,6 +137,7 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate {
 
     /// Stops capture and finishes the file. Returns the duration in ms.
     func stop() async throws -> Double {
+        idleTimer?.cancel()
         try? await stream.stopCapture()
         return try await withCheckedThrowingContinuation { cont in
             queue.async {
