@@ -22,7 +22,7 @@ final class Session {
             guard status == "granted" else { throw ProtocolError.permission("microphone") }
             let micURL = outputDir.appendingPathComponent("mic.m4a")
             try? FileManager.default.removeItem(at: micURL)
-            microphone = try Microphone(url: micURL)
+            microphone = try Microphone(url: micURL, autoGain: options.micAutoGain, enhance: options.micEnhance)
         } else {
             microphone = nil
         }

@@ -45,6 +45,10 @@ export interface PickerPrefs {
   showSpeakerNotes: boolean
   /** Spec 29: also exposed in Settings › Recording. */
   hideDesktopContentWhileRecording: boolean
+  /** Spec 15: on by default; the picker shows "Disable auto gain control". */
+  enableAutoGainControl: boolean
+  /** Spec 16: enhancement applied while the microphone is captured. */
+  enableVoiceRecordingEnhancements: boolean
 }
 
 export const defaultPickerPrefs: PickerPrefs = {
@@ -56,7 +60,9 @@ export const defaultPickerPrefs: PickerPrefs = {
   recordingAreaCover: true,
   lastArea: null,
   showSpeakerNotes: false,
-  hideDesktopContentWhileRecording: false
+  hideDesktopContentWhileRecording: false,
+  enableAutoGainControl: true,
+  enableVoiceRecordingEnhancements: false
 }
 
 const isSize = (v: unknown): v is Size =>
@@ -78,7 +84,9 @@ export function pickerPrefsFrom(raw: unknown): PickerPrefs {
     recordingAreaCover: typeof r.recordingAreaCover === 'boolean' ? r.recordingAreaCover : true,
     lastArea: isRect(r.lastArea) ? { x: r.lastArea.x, y: r.lastArea.y, width: r.lastArea.width, height: r.lastArea.height } : null,
     showSpeakerNotes: r.showSpeakerNotes === true,
-    hideDesktopContentWhileRecording: r.hideDesktopContentWhileRecording === true
+    hideDesktopContentWhileRecording: r.hideDesktopContentWhileRecording === true,
+    enableAutoGainControl: r.enableAutoGainControl !== false,
+    enableVoiceRecordingEnhancements: r.enableVoiceRecordingEnhancements === true
   }
 }
 
@@ -188,4 +196,6 @@ export interface RecordRequest {
   area?: Rect
   mic: boolean
   systemAudio: boolean
+  micAutoGain: boolean
+  micEnhance: boolean
 }

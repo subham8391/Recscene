@@ -17,7 +17,7 @@ One JSON object per line on stdin (commands) and stdout (events). Commands are a
 | `{"cmd":"ping"}` | `{"event":"pong","version":"0.1.0"}` |
 | `{"cmd":"permissions","request":false}` | `{"event":"permissions","screen":true,"inputMonitoring":false,"accessibility":false,"microphone":"granted"}` |
 | `{"cmd":"list"}` | `{"event":"targets","displays":[…],"windows":[…]}` |
-| `{"cmd":"start","target":…,"outputDir":"/path/Name.recscene","mic":false,"systemAudio":false,"fps":60,"showCursor":false,"codec":"h264","excludeProcessIds":[]}` | `{"event":"started","outputDir":"…","width":3600,"height":2338}` |
+| `{"cmd":"start","target":…,"outputDir":"/path/Name.recscene","mic":false,"systemAudio":false,"fps":60,"showCursor":false,"codec":"h264","excludeProcessIds":[],"micAutoGain":true,"micEnhance":false}` | `{"event":"started","outputDir":"…","width":3600,"height":2338}` |
 | `{"cmd":"pause"}` | `{"event":"paused","timeMs":4210.5}` — frames and audio are dropped until resume; the file stays contiguous |
 | `{"cmd":"resume"}` | `{"event":"resumed","timeMs":4210.5}` |
 | `{"cmd":"mark","kind":"marker"}` | `{"event":"marked","kind":"marker","timeMs":9120.0}` — `kind` is `marker` or `flag`; the time excludes pauses |
@@ -38,7 +38,7 @@ Errors: `{"event":"error","code":"…","message":"…"}` with codes `bad-command
 
 - `screen.mov`: H.264 (or HEVC) at the target's pixel size, up to the requested fps, written as a fragmented movie every 2 s so an interrupted recording stays playable. Frames only arrive when the screen changes, so the last frame is repeated at stop time and the file always lasts as long as the recording. Pauses are cut out; timestamps after a resume are shifted back by the paused time. The optional system-audio track is AAC 48 kHz stereo.
 - `events.json`: `{ version, region, clicks[], keys[], cursor[] }`. Times are milliseconds from the first video frame. Positions are normalised 0..1 within `region` (the recorded display, window or area in global points). `clicks` have `button` left/right/middle; `keys` have a display `label` such as `⌘C`; `cursor` is sampled at up to 60 Hz while the mouse moves.
-- `mic.m4a`: AAC mono when `mic` is true. `micOffsetMs` in the `stopped` event is how long after the first frame the microphone started (negative if before).
+- `mic.m4a`: AAC when `mic` is true, recorded through AVAudioEngine; `micAutoGain` keeps automatic gain control on and `micEnhance` turns on voice processing (noise suppression); when the audio device refuses voice processing the helper records plainly and sends a `warning`. Buffers are dropped while paused. `micOffsetMs` in the `stopped` event is how long after the first frame the microphone started (negative if before).
 
 ## Permissions
 
