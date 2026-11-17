@@ -1,5 +1,6 @@
 import { join } from 'node:path'
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { RecordingService, registerRecordingIpc } from './recording'
 
 const isDev = !app.isPackaged
 
@@ -39,12 +40,18 @@ function createWindow(): BrowserWindow {
 
 ipcMain.handle('app:version', () => app.getVersion())
 
+let recording: RecordingService | null = null
+
 void app.whenReady().then(() => {
+  recording = new RecordingService()
+  registerRecordingIpc(recording)
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
+
+app.on('will-quit', () => recording?.dispose())
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()

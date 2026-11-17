@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { formatTimecode } from '@core/time'
+import { Recorder } from './Recorder'
 
 /**
  * The editor shell from the design canvas: tool rail, stage, inspector and
@@ -30,9 +31,7 @@ export function App(): React.JSX.Element {
       <main className="stage">
         <div className="stage__frame">
           <p className="stage__motto">Record the screen. Make it a scene.</p>
-          <button className="stage__record" type="button">
-            New recording
-          </button>
+          <Recorder />
         </div>
       </main>
       <aside className="inspector" aria-label="Inspector">
