@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { normaliseProject } from './project'
 import { newProject, recordingFolderName } from './projectFile'
 
 describe('recordingFolderName', () => {
@@ -20,6 +21,8 @@ describe('newProject', () => {
     expect(project.version).toBe(1)
     expect(project.meta.recordingFlags).toEqual([])
     expect(project.zooms).toEqual([])
+    expect(project.clips).toHaveLength(1)
+    expect(project.clips[0]).toMatchObject({ sourceStartMs: 0, sourceEndMs: 5000, speed: 1 })
     expect(project.recording.clicks).toHaveLength(1)
     expect(project.recording.microphone).toBeUndefined()
   })
@@ -37,5 +40,15 @@ describe('newProject', () => {
     })
     expect(project.recording.microphone).toEqual({ file: 'mic.m4a' })
     expect(project.meta.recordingFlags).toEqual([1500])
+  })
+})
+
+describe('normaliseProject', () => {
+  it('fills an empty clip list with one full clip and keeps existing clips', () => {
+    const p = normaliseProject({ name: 'x', recording: { id: 'r', createdAt: '', durationMs: 4000, screen: { width: 1, height: 1, file: 's' }, clicks: [], keys: [] }, clips: [] })
+    expect(p.clips).toHaveLength(1)
+    expect(p.clips[0]).toMatchObject({ sourceStartMs: 0, sourceEndMs: 4000 })
+    const kept = normaliseProject({ ...p, clips: [{ ...p.clips[0]!, id: 'keep' }] })
+    expect(kept.clips[0]?.id).toBe('keep')
   })
 })

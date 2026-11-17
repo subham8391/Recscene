@@ -1,6 +1,29 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { actionForKey } from '@core/editor/actions'
-import { ASPECT_OPTIONS, aspectLabel } from '@core/editor/aspect'
+import { ASPECT_OPTIONS, aspectLabel, type Box } from '@core/editor/aspect'
+import {
+  applyTypingSuggestion,
+  canResetAll,
+  clipAtOutput,
+  clipAtSource,
+  clipSettings,
+  isAudioMuted,
+  joinClips,
+  mergeWith,
+  outputDurationMs,
+  outputToSource,
+  removeClip,
+  removeTrim,
+  resetAllClips,
+  rippleRemoveBefore,
+  splitClip,
+  typingGroups,
+  updateClip,
+  type Clip,
+  type ClipSettings,
+  type TypingGroup
+} from '@core/editor/clips'
+import { applyCropAspect, cropFromFractions, cropToFractions } from '@core/editor/crop'
 import { canRedo, canUndo, createHistory, record, redo, undo } from '@core/editor/history'
 import { showsSidebar, showsTimeline, togglePreview, toggleSidebar, toggleTimeline, type LayoutState } from '@core/editor/layout'
 import {
@@ -23,7 +46,9 @@ import { initialView, keepVisible, zoomView, type TimelineView } from '@core/edi
 import type { Project } from '@core/project'
 import { formatTimecode } from '@core/time'
 import type { OpenedProject } from '@core/projectFile'
+import { ClipPanel } from './ClipPanel'
 import { CommandMenu } from './CommandMenu'
+import { CropTool } from './CropTool'
 import { Stage, type StageHandle } from './Stage'
 import { Timeline, type TrackId, type TrackVisibility } from './Timeline'
 import { useEditorPrefs } from './useEditorPrefs'
@@ -50,7 +75,6 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   const [prefs, setPrefs] = useEditorPrefs()
   const [history, setHistory] = useState(() => createHistory(opened.project))
   const project = history.present
-  const [durationMs, setDurationMs] = useState(opened.project.recording.durationMs)
   const [pb, setPb] = useState<PlaybackState>(() => initialPlayback(prefs.playbackLoop))
   const [preview, setPreview] = useState<number | null>(null)
   const [view, setView] = useState<TimelineView>(() => initialView(opened.project.recording.durationMs))
@@ -61,9 +85,23 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   const [speedOpen, setSpeedOpen] = useState(false)
   const [aspectOpen, setAspectOpen] = useState(false)
   const [saved, setSaved] = useState<{ at: string | null; dirty: boolean; toast: string | null }>({ at: opened.project.lastSavedAt ?? null, dirty: false, toast: null })
+  const [sourceDurationMs, setSourceDurationMs] = useState(opened.project.recording.durationMs)
+  const [selectedClipId, setSelectedClipId] = useState<string | null>(null)
+  const [draftClips, setDraftClips] = useState<Clip[] | null>(null)
+  const [clipboard, setClipboard] = useState<ClipSettings | null>(null)
+  const [cropping, setCropping] = useState(false)
+  const [recBox, setRecBox] = useState<Box>({ x: 0, y: 0, width: 0, height: 0 })
   const stage = useRef<StageHandle>(null)
   const lastTick = useRef<number | null>(null)
   const timeRef = useRef(0)
+
+  const clips = draftClips ?? project.clips
+  const durationMs = outputDurationMs(clips)
+  const sourceMs = outputToSource(clips, preview ?? pb.timeMs)
+  const currentClip = clipAtOutput(clips, pb.timeMs)?.clip ?? null
+  const selectedClip = clips.find((c) => c.id === selectedClipId) ?? null
+  const selectedIndex = selectedClip ? clips.indexOf(selectedClip) : -1
+  const typing = useMemo(() => typingGroups(project.recording.keys).filter((g) => !project.config.resolvedTypingSuggestions.includes(g.startMs)), [project.recording.keys, project.config.resolvedTypingSuggestions])
 
   useEffect(() => {
     timeRef.current = pb.timeMs
@@ -108,6 +146,18 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
     return () => window.clearInterval(id)
   }, [prefs.autoSaveProject, saved.dirty, save])
 
+  const setClips = useCallback((next: Clip[]) => edit({ ...project, clips: next }), [edit, project])
+  const notify = (toast: string): void => {
+    setSaved((s) => ({ ...s, toast }))
+    window.setTimeout(() => setSaved((s) => (s.toast === toast ? { ...s, toast: null } : s)), 2000)
+  }
+  const applyTyping = (group: TypingGroup, speed: number): void => {
+    const r = applyTypingSuggestion(clips, group, speed)
+    edit({ ...project, clips: r.clips, config: { ...project.config, resolvedTypingSuggestions: [...project.config.resolvedTypingSuggestions, group.startMs] } })
+    if (!r.applied) notify('The part you want to cut is too short')
+  }
+  const ignoreTyping = (group: TypingGroup): void => edit({ ...project, config: { ...project.config, resolvedTypingSuggestions: [...project.config.resolvedTypingSuggestions, group.startMs] } })
+
   const toggleTrack = (id: TrackId): void => {
     if (id === 'zooms') return
     setVisible((v) => ({ ...v, [id]: !v[id] }))
@@ -139,7 +189,39 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
         case 'toggleWaveform': return setPrefs({ hideAudioWaveform: !prefs.hideAudioWaveform })
         case 'toggleSmoothWaveform': return setPrefs({ enableSmoothWaveform: !prefs.enableSmoothWaveform })
         case 'toggleTimelineScrollbar': return setPrefs({ alwaysShowTimelineScrollbar: !prefs.alwaysShowTimelineScrollbar })
-        case 'closeSidebarItem': return setOverlay(null)
+        case 'closeSidebarItem': return void (setOverlay(null), setSelectedClipId(null), setCropping(false))
+        case 'splitSliceAtCurrentTime': {
+          const r = splitClip(clips, outputToSource(clips, pb.timeMs))
+          if (r.error) return notify(r.error)
+          return setClips(r.clips)
+        }
+        case 'removeSlice': {
+          const target = selectedClip ?? currentClip
+          if (!target || clips.length <= 1) return
+          setSelectedClipId(null)
+          return setClips(removeClip(clips, target.id))
+        }
+        case 'rippleRemoveSlice': {
+          const next = rippleRemoveBefore(clips, outputToSource(clips, pb.timeMs))
+          if (next.length === clips.length) return notify('No cut before the playhead')
+          return setClips(next)
+        }
+        case 'mergeWithPrevious': return selectedClip ? setClips(mergeWith(clips, selectedClip.id, 'previous')) : undefined
+        case 'mergeWithNext': return selectedClip ? setClips(mergeWith(clips, selectedClip.id, 'next')) : undefined
+        case 'applySpeedToAll': return selectedClip ? setClips(clips.map((c) => ({ ...c, speed: selectedClip.speed }))) : undefined
+        case 'resetAllClips':
+          if (!canResetAll(clips, sourceDurationMs)) return
+          if (!window.confirm('Are you sure you want to reset trims and cuts for all slices')) return
+          setSelectedClipId(null)
+          return setClips(resetAllClips(sourceDurationMs))
+        case 'crop': return void (setPb((p) => ({ ...p, playing: false })), setCropping(true))
+        case 'paste': {
+          if (!clipboard) return
+          const target = clipAtSource(clips, outputToSource(clips, pb.timeMs))
+          if (!target) return
+          setClips(updateClip(clips, target.id, clipboard))
+          return notify('Slice settings pasted')
+        }
         case 'track:zooms': return
         case 'track:layouts': return toggleTrack('layouts')
         case 'track:shortcuts': return toggleTrack('shortcuts')
@@ -150,6 +232,10 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
         case 'openLastProject': return
         case 'showInFinder': return void window.recscene.project.showInFinder()
         case 'copyFrame':
+          if (selectedClip) {
+            setClipboard(clipSettings(selectedClip))
+            return notify('Slice settings copied')
+          }
           return void stage.current?.frameAsPng(2160).then((png) => window.recscene.project.copyFrame(png)).then(() => setSaved((s) => ({ ...s, toast: 'Current frame image copied to clipboard' }))).catch(() => setSaved((s) => ({ ...s, toast: 'Failed to copy current frame to clipboard' })))
         case 'exportFrame':
           return void stage.current?.frameAsPng(2160).then((png) => window.recscene.project.exportFrame(png, pb.timeMs))
@@ -159,7 +245,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           if (id.startsWith('sidebar:')) setPanel(id.slice('sidebar:'.length))
       }
     },
-    [durationMs, pb.timeMs, prefs, project, save, setPrefs]
+    [durationMs, pb.timeMs, prefs, project, save, setPrefs, clips, selectedClip, currentClip, clipboard, sourceDurationMs, setClips]
   )
 
   useEffect(() => window.recscene.onEditorAction(run), [run])
@@ -202,7 +288,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
               </div>
             )}
           </div>
-          <button type="button" className="btn btn--ghost" disabled title="Crop arrives with specs 100–101">Crop <kbd>C</kbd></button>
+          <button type="button" className={`btn btn--ghost${cropping ? ' btn--on' : ''}`} aria-pressed={cropping} title="Crop the recording (specs 100–101)" onClick={() => run('crop')}>Crop</button>
           <button type="button" className="btn btn--ghost" disabled title="Masks arrive with specs 189–198">Mask</button>
         </div>
         <button type="button" className="btn btn--ghost" disabled title="Shareable links arrive with specs 236–245">Share link</button>
@@ -223,7 +309,36 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
             {notice} <button type="button" className="btn btn--ghost" onClick={onDismissNotice}>Dismiss</button>
           </p>
         )}
-        <Stage ref={stage} project={project} screenUrl={opened.media.screen} micUrl={opened.media.mic} timeMs={shownTime} playing={pb.playing && preview === null} speed={pb.speed} previewMaxHeight={prefs.playbackPreviewMaxHeight} onDuration={(ms) => { if (ms > 0 && Math.abs(ms - durationMs) > 50) { setDurationMs(ms); setView(initialView(ms)) } }} />
+        <Stage
+          ref={stage}
+          project={project}
+          screenUrl={opened.media.screen}
+          micUrl={opened.media.mic}
+          sourceMs={sourceMs}
+          playing={pb.playing && preview === null && !cropping}
+          rate={pb.speed * (currentClip?.speed ?? 1)}
+          micVolume={currentClip && !isAudioMuted(currentClip) ? currentClip.volume : 0}
+          previewMaxHeight={prefs.playbackPreviewMaxHeight}
+          onDuration={(ms) => {
+            if (ms > 0 && Math.abs(ms - sourceDurationMs) > 50) {
+              setSourceDurationMs(ms)
+              setView(initialView(ms))
+              const only = project.clips[0]
+              if (project.clips.length === 1 && only && only.sourceStartMs === 0 && Math.abs(only.sourceEndMs - sourceDurationMs) < 50) setHistory(createHistory({ ...project, clips: [{ ...only, sourceEndMs: ms }] }))
+            }
+          }}
+          onBox={setRecBox}
+        >
+          {cropping && (
+            <CropTool
+              recording={project.recording.screen}
+              initial={project.config.recordingCrop}
+              box={{ x: recBox.x - 16, y: recBox.y - 16, width: recBox.width, height: recBox.height }}
+              onConfirm={(fractions) => { edit({ ...project, config: { ...project.config, recordingCrop: fractions } }); setCropping(false) }}
+              onCancel={() => setCropping(false)}
+            />
+          )}
+        </Stage>
         <div className="transport">
           <span className="transport__time">{formatTimecode(shownTime)}</span>
           <span className="muted">/ {formatTimecode(durationMs)}</span>
@@ -252,19 +367,45 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
 
       {sidebar && (
         <aside className="inspector" aria-label="Inspector">
+          {selectedClip ? (
+            <>
+              <div className="inspector__head"><span className="tl__dot" style={{ background: 'var(--clip)' }} /><h2>Clip</h2><span className="muted">{selectedIndex + 1} of {clips.length}</span><span className="tl__spacer" /><button type="button" className="btn btn--ghost btn--sm" onClick={() => setSelectedClipId(null)}>Close <kbd>⎋</kbd></button></div>
+              <ClipPanel
+                clips={clips}
+                clip={selectedClip}
+                index={selectedIndex}
+                sourceDurationMs={sourceDurationMs}
+                hasMic={!!opened.media.mic}
+                typing={typing}
+                clipboard={clipboard}
+                onClips={setClips}
+                onAction={run}
+                onApplyTyping={applyTyping}
+                onIgnoreTyping={ignoreTyping}
+                onCrop={() => run('crop')}
+                onCropAspect={(ratio) => edit({ ...project, config: { ...project.config, recordingCrop: cropToFractions(applyCropAspect(cropFromFractions(project.config.recordingCrop, project.recording.screen), ratio, project.recording.screen), project.recording.screen) } })}
+              />
+            </>
+          ) : (
+            <>
           <h2>{PANELS.find((p) => p.id === panel)?.label}</h2>
           <p className="muted">This panel's controls arrive with its own specs. The shell, playback, timeline, undo and saving are in place.</p>
           <dl className="recorder__result">
             <dt>Recording</dt><dd>{project.recording.screen.width}×{project.recording.screen.height} · {formatTimecode(durationMs)}</dd>
             <dt>Captured</dt><dd>{project.recording.clicks.length} clicks · {project.recording.keys.length} keystrokes · {project.meta.recordingFlags.length} flags · {opened.markers.length} markers</dd>
             <dt>History</dt><dd>{history.past.length} undo · {history.future.length} redo</dd>
+            <dt>Clips</dt><dd>{clips.length} · click a clip on the timeline to edit it</dd>
           </dl>
+            </>
+          )}
         </aside>
       )}
 
       {timeline && (
         <Timeline
           project={project}
+          clips={clips}
+          sourceDurationMs={sourceDurationMs}
           markers={opened.markers}
           durationMs={durationMs}
           timeMs={pb.timeMs}
@@ -274,6 +415,12 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           toggleTrack={toggleTrack}
           onSeek={(ms) => setPb((p) => seek(p, ms, durationMs))}
           onPreview={setPreview}
+          selectedClipId={selectedClipId}
+          onSelectClip={setSelectedClipId}
+          onTrimPreview={setDraftClips}
+          onTrimCommit={(next) => { setDraftClips(null); setClips(next) }}
+          onRemoveTrim={(id, edge) => setClips(removeTrim(clips, id, edge, sourceDurationMs))}
+          onJoin={(rightId) => setClips(joinClips(clips, rightId))}
           micUrl={opened.media.mic}
           showWaveform={!prefs.hideAudioWaveform}
           smoothWaveform={prefs.enableSmoothWaveform}

@@ -2,7 +2,7 @@
  * The editor's action registry (specs 49, 52–58, 63–65, 72–78): one list
  * that drives keyboard handling, the ⌘K command menu and the shortcuts guide.
  */
-export type ActionGroup = 'Playback' | 'View' | 'Editor' | 'Project' | 'Sidebar' | 'Export' | 'Clipboard' | 'Help'
+export type ActionGroup = 'Playback' | 'Slice' | 'View' | 'Editor' | 'Project' | 'Sidebar' | 'Export' | 'Clipboard' | 'Help'
 
 export interface ActionDef {
   id: string
@@ -27,6 +27,15 @@ export const ACTIONS: readonly ActionDef[] = [
   { id: 'timelineZoomIn', label: 'Zoom in', group: 'Playback', shortcut: 'Cmd+=' },
   { id: 'timelineZoomOut', label: 'Zoom out', group: 'Playback', shortcut: 'Cmd+-' },
   { id: 'toggleAudioScrubber', label: 'Enable audio scrubber (experimental)', group: 'Playback' },
+  { id: 'splitSliceAtCurrentTime', label: 'Split slice at current time', group: 'Slice', shortcut: 'C' },
+  { id: 'removeSlice', label: 'Remove slice', group: 'Slice', shortcut: 'Backspace' },
+  { id: 'rippleRemoveSlice', label: 'Remove slice before previous cut', group: 'Slice', shortcut: 'X' },
+  { id: 'mergeWithPrevious', label: 'Merge with previous slice', group: 'Slice' },
+  { id: 'mergeWithNext', label: 'Merge with next slice', group: 'Slice' },
+  { id: 'applySpeedToAll', label: 'Apply speed to all slices', group: 'Slice' },
+  { id: 'resetAllClips', label: 'Reset trims and cuts for all slices', group: 'Slice' },
+  { id: 'crop', label: 'Crop recording…', group: 'Editor' },
+  { id: 'paste', label: 'Paste slice settings', group: 'Clipboard', shortcut: 'Cmd+V' },
   { id: 'undo', label: 'Undo', group: 'Editor', shortcut: 'Cmd+Z' },
   { id: 'redo', label: 'Redo', group: 'Editor', shortcut: 'Cmd+Shift+Z' },
   { id: 'toggleSidebar', label: 'Show editor sidebar', group: 'View' },
@@ -53,7 +62,7 @@ export const ACTIONS: readonly ActionDef[] = [
   { id: 'openProject', label: 'Open project…', group: 'Project', shortcut: 'Cmd+O' },
   { id: 'openLastProject', label: 'Open last project', group: 'Project', shortcut: 'Cmd+Alt+Z' },
   { id: 'showInFinder', label: 'Show project in Finder', group: 'Project', shortcut: 'Cmd+Shift+O' },
-  { id: 'copyFrame', label: 'Copy current frame as image', group: 'Clipboard', shortcut: 'Cmd+C' },
+  { id: 'copyFrame', label: 'Copy current frame as image / slice settings', group: 'Clipboard', shortcut: 'Cmd+C' },
   { id: 'exportFrame', label: 'Export current frame as image…', group: 'Export' },
   { id: 'commandMenu', label: 'Show command menu…', group: 'Help', shortcut: 'Cmd+K' },
   { id: 'shortcutsGuide', label: 'Show shortcuts guide', group: 'Help', shortcut: 'Cmd+/' }

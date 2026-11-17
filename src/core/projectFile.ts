@@ -1,5 +1,6 @@
 import type { RecordedEvents } from './captureProtocol'
 import type { RecordingMarker } from './recordingSession'
+import { defaultClip } from './editor/clips'
 import { defaultProjectConfig, type Project } from './project'
 
 /** The folder name for a new recording, e.g. "Recording 2026-11-17 at 15.09.recscene". */
@@ -37,7 +38,7 @@ export function newProject(input: NewProjectInput): Project {
       keys: input.events.keys
     },
     zooms: [],
-    clips: []
+    clips: [defaultClip(input.durationMs)]
   }
 }
 
