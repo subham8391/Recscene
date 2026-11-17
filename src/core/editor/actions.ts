@@ -2,7 +2,7 @@
  * The editor's action registry (specs 49, 52–58, 63–65, 72–78): one list
  * that drives keyboard handling, the ⌘K command menu and the shortcuts guide.
  */
-export type ActionGroup = 'Playback' | 'Slice' | 'Zoom' | 'Camera' | 'Mask' | 'View' | 'Editor' | 'Project' | 'Sidebar' | 'Export' | 'Clipboard' | 'Help'
+export type ActionGroup = 'Playback' | 'Slice' | 'Zoom' | 'Camera' | 'Mask' | 'Shortcuts' | 'View' | 'Editor' | 'Project' | 'Sidebar' | 'Export' | 'Clipboard' | 'Help'
 
 export interface ActionDef {
   id: string
@@ -71,6 +71,9 @@ export const ACTIONS: readonly ActionDef[] = [
   { id: 'focusTimelineOnMask', label: 'Focus the timeline on the mask', group: 'Mask' },
   { id: 'focusTimelineOnMaskStart', label: 'Focus the timeline on the mask start', group: 'Mask' },
   { id: 'removeAllMasks', label: 'Remove all masks', group: 'Mask' },
+  { id: 'toggleShowShortcuts', label: 'Show keyboard shortcuts', group: 'Shortcuts' },
+  { id: 'hideAllShortcuts', label: 'Hide all shortcuts', group: 'Shortcuts' },
+  { id: 'showAllShortcuts', label: 'Show all shortcuts', group: 'Shortcuts' },
   { id: 'cut', label: 'Cut zoom', group: 'Clipboard', shortcut: 'Cmd+X' },
   { id: 'paste', label: 'Paste slice settings', group: 'Clipboard', shortcut: 'Cmd+V' },
   { id: 'undo', label: 'Undo', group: 'Editor', shortcut: 'Cmd+Z' },

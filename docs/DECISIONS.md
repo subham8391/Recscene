@@ -38,6 +38,8 @@
 
 **2026-11-17 (masks built).** Mask regions are stored as fractions of the full recording frame, so they survive crops and resolution changes; the renderers map them through the crop. The stage blurs with `backdrop-filter` and dims with an even-odd clip path, the export draws the same maths on the canvas (blur with padded source so edges do not fade). Masks live at `project.masks` and cannot overlap in time (one renders at a time). Spec 197's shift detection is deferred; the board's auto masks (4.x) too.
 
+**2026-11-17 (shortcuts built).** Keystroke labels are drawn from the recorded key events (`recording.keys`, labels like ⇧⌘P from the helper) at the bottom centre of the screen box, outside the zoom, for 1.4 s with a 0.3 s fade; the latest press replaces the previous one. Hidden occurrences follow the competitor's `hiddenShortcuts` map keyed by the press time. The board's "disable by kind" is a Recscene addition (`disabledShortcutKinds`). Spec 199's enable question uses the window confirm until the editor has its own dialog component.
+
 ## Open
 - **Q1** Licensing model: one-time with a year of updates versus subscription. Decide before M3.
 - **Q2** Transcription and captions: on-device (whisper.cpp) versus a cloud service. Lean on-device for privacy; decide at M2.

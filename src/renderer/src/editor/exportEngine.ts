@@ -18,6 +18,7 @@ import { cameraMotionAtRest, cameraMotionStep, cameraTimeMs, effectiveLayout, mo
 import { activeMask } from '@core/editor/masks'
 import type { Project } from '@core/project'
 import { drawMask } from './maskDraw'
+import { keyWidth, labelAt, labelMetrics, shortcutEvents } from '@core/editor/shortcuts'
 
 export interface ExportInput {
   project: Project
@@ -190,6 +191,7 @@ export async function runExport(
     if (!ok) camVideo = null
   }
   let camMotion: CameraMotion | null = null
+  const shortcuts = shortcutEvents(project.recording.keys, cfg)
 
   const canvas = new OffscreenCanvas(size.width, size.height)
   const ctx = canvas.getContext('2d', { alpha: false })
@@ -322,6 +324,41 @@ export async function runExport(
       ctx.restore()
     }
     ctx.restore()
+    // Pressed-shortcut label (199–201) at the bottom centre of the screen box, outside the zoom.
+    const shown = labelAt(shortcuts, sourceMs, cfg)
+    if (shown) {
+      const m = labelMetrics(screen.height, cfg.shortcutsSizeRatio)
+      const widths = shown.event.keys.map((k) => keyWidth(k, m.key))
+      const total = widths.reduce((a, b) => a + b, 0) + m.gap * (widths.length - 1) + m.pad * 2
+      const x0 = screen.x + (screen.width - total) / 2
+      const y0 = screen.y + screen.height - m.bottom - m.key - m.pad * 2
+      ctx.save()
+      ctx.globalAlpha = shown.opacity
+      ctx.fillStyle = 'rgba(0,0,0,0.72)'
+      ctx.beginPath()
+      ctx.roundRect(x0, y0, total, m.key + m.pad * 2, m.radius + m.pad)
+      ctx.fill()
+      ctx.strokeStyle = 'rgba(255,255,255,0.18)'
+      ctx.lineWidth = 1
+      ctx.stroke()
+      let x = x0 + m.pad
+      ctx.font = `600 ${m.font.toFixed(1)}px ${'Inter, -apple-system, system-ui, sans-serif'}`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      shown.event.keys.forEach((k, i) => {
+        const w = widths[i] ?? m.key
+        ctx.fillStyle = 'rgba(255,255,255,0.14)'
+        ctx.beginPath()
+        ctx.roundRect(x, y0 + m.pad, w, m.key, m.radius)
+        ctx.fill()
+        ctx.fillStyle = 'rgba(0,0,0,0.4)'
+        ctx.fillRect(x + m.radius / 2, y0 + m.pad + m.key - 2, w - m.radius, 2)
+        ctx.fillStyle = '#fff'
+        ctx.fillText(k, x + w / 2, y0 + m.pad + m.key / 2)
+        x += w + m.gap
+      })
+      ctx.restore()
+    }
     // Webcam box (148–164), stepped with the same spring the stage uses.
     if (camVideo && camRec && placed) {
       camMotion = camMotion ? cameraMotionStep(camMotion, placed.camera, dt) : cameraMotionAtRest(placed.camera, size)

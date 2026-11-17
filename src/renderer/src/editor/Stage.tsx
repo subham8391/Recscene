@@ -8,6 +8,8 @@ import { activeMask, type MaskRegion } from '@core/editor/masks'
 import type { Project } from '@core/project'
 import { CursorLayer } from './CursorLayer'
 import { MaskLayer } from './MaskLayer'
+import { ShortcutLayer } from './ShortcutLayer'
+import { shortcutEvents } from '@core/editor/shortcuts'
 import { drawMask } from './maskDraw'
 
 export interface StageHandle {
@@ -332,6 +334,7 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
               />
             </div>
           </div>
+          <ShortcutLayer events={shortcutEvents(project.recording.keys, project.config)} config={project.config} sourceMs={sourceMs} frame={{ width: inner.width, height: inner.height }} />
         </div>
         {cameraUrl && camRec && (
           <div ref={camLayer} className="stage__cam" data-layout={eff.type} style={{ visibility: 'hidden' }}>
