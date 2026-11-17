@@ -30,7 +30,9 @@ import { defaultClip, type Clip } from './editor/clips'
 import type { ZoomRange } from './editor/zooms'
 import { defaultCursorConfig, type CursorConfig } from './editor/cursor'
 import { defaultBackgroundConfig, type BackgroundConfig } from './editor/background'
+import { defaultCameraConfig, type CameraConfig, type CameraLayout } from './editor/cameraLayout'
 export type { Clip } from './editor/clips'
+export type { CameraLayout } from './editor/cameraLayout'
 
 export interface Recording {
   id: string
@@ -48,7 +50,7 @@ export interface ProjectMeta {
   recordingFlags: Ms[]
 }
 
-export interface ProjectConfig extends CursorConfig, BackgroundConfig {
+export interface ProjectConfig extends CursorConfig, BackgroundConfig, CameraConfig {
   /** Spec 48: "x:y" or null for Auto. */
   defaultOutputAspectRatio: string | null
   /** Spec 81: the usable part of the source, [start, end] in ms. */
@@ -66,6 +68,7 @@ export interface ProjectConfig extends CursorConfig, BackgroundConfig {
 export const defaultProjectConfig: ProjectConfig = {
   ...defaultCursorConfig,
   ...defaultBackgroundConfig,
+  ...defaultCameraConfig,
   defaultOutputAspectRatio: null,
   recordingRange: null,
   recordingCrop: null,
@@ -82,6 +85,8 @@ export interface Project {
   recording: Recording
   zooms: ZoomRange[]
   clips: Clip[]
+  /** Spec 156: timeline camera layouts. */
+  layouts: CameraLayout[]
   /** ISO timestamps (spec 73–74). */
   updatedAt?: string
   lastSavedAt?: string
@@ -98,6 +103,7 @@ export function normaliseProject(raw: unknown): Project {
     config: { ...defaultProjectConfig, ...(typeof r.config === 'object' && r.config ? r.config : {}) },
     recording: { ...recording, clicks: recording.clicks ?? [], keys: recording.keys ?? [] },
     zooms: Array.isArray(r.zooms) ? r.zooms : [],
+    layouts: Array.isArray(r.layouts) ? r.layouts : [],
     clips: Array.isArray(r.clips) && r.clips.length > 0 ? r.clips : [defaultClip(recording.durationMs)],
     ...(r.updatedAt ? { updatedAt: r.updatedAt } : {}),
     ...(r.lastSavedAt ? { lastSavedAt: r.lastSavedAt } : {})

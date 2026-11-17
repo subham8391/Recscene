@@ -34,6 +34,8 @@
 
 **2026-11-17 (camera recording built).** The webcam is recorded by the helper into `camera.mov` (H.264, 30 fps, tallest format at or under the 720/1080 preference) on the screen recording's clock: frames before the screen's first frame are dropped and pauses are cut out, so the two files line up without an offset. Spec 9's "record muted camera" needs no option: the camera's own audio is never recorded, the microphone is the only voice source. The preview bubble is a separate always-on-top window fed by the renderer's own camera stream, excluded from the capture like every app window. Camera access is asked by the app first (Electron's prompt), then by the helper; both are attributed to the app by macOS.
 
+**2026-11-17 (camera layouts built).** The camera is composited by the same code path as the stage: a box computed per frame from the effective layout (timeline layout, else the default, else hidden), animated between layouts by a spring and faded when hidden; the split layout is a Recscene addition from the Camera board (screen and camera side by side, ½·½ or ⅔·⅓, flip). Layouts live at `project.layouts` (the competitor's `scenes[].layouts`; Recscene has one scene). The camera's own time is the screen time minus `cameraDelayMs`. Cutout, looks, sharpen, face tracking and hide-during-silence are deferred: cutout and looks need the GPU renderer and a matting model, silence needs the audio panel's speech ranges.
+
 ## Open
 - **Q1** Licensing model: one-time with a year of updates versus subscription. Decide before M3.
 - **Q2** Transcription and captions: on-device (whisper.cpp) versus a cloud service. Lean on-device for privacy; decide at M2.

@@ -25,6 +25,7 @@ import {
 } from '@core/editor/clips'
 import { applyCropAspect, cropFromFractions, cropToFractions } from '@core/editor/crop'
 import { addZoomAt, automaticZooms, duplicateZoom, removeZoom, setAllDisabled, splitZoom, stepZoomLevel, updateZoom, zoomSettings, type ZoomRange, type ZoomSettings } from '@core/editor/zooms'
+import { addLayoutAt, applyCameraSizeToAll, layoutAt, layoutSettings, pasteLayoutSettings, removeLayout, splitLayout, stepPosition, updateLayout, type CameraLayout, type LayoutSettings, type LayoutType, type MoveDirection } from '@core/editor/cameraLayout'
 import { appPrefsFrom } from '@core/appPrefs'
 import { canRedo, canUndo, createHistory, record, redo, undo } from '@core/editor/history'
 import { showsSidebar, showsTimeline, togglePreview, toggleSidebar, toggleTimeline, type LayoutState } from '@core/editor/layout'
@@ -49,6 +50,7 @@ import type { Project } from '@core/project'
 import { formatTimecode } from '@core/time'
 import type { OpenedProject } from '@core/projectFile'
 import { BackgroundPanel } from './BackgroundPanel'
+import { CameraPanel, LayoutPanel } from './CameraPanel'
 import { ClipPanel } from './ClipPanel'
 import { CommandMenu } from './CommandMenu'
 import { CursorPanel } from './CursorPanel'
@@ -84,7 +86,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   const [pb, setPb] = useState<PlaybackState>(() => initialPlayback(prefs.playbackLoop))
   const [preview, setPreview] = useState<number | null>(null)
   const [view, setView] = useState<TimelineView>(() => initialView(opened.project.recording.durationMs))
-  const [visible, setVisible] = useState<TrackVisibility>({ zooms: true, layouts: false, masks: false, shortcuts: opened.project.recording.keys.length > 0 })
+  const [visible, setVisible] = useState<TrackVisibility>({ zooms: true, layouts: !!opened.media.camera, masks: false, shortcuts: opened.project.recording.keys.length > 0 })
   const [layout, setLayout] = useState<LayoutState>('edit')
   const [panel, setPanel] = useState('background')
   const [overlay, setOverlay] = useState<'command' | 'guide' | null>(null)
@@ -100,6 +102,9 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   const [draftZooms, setDraftZooms] = useState<ZoomRange[] | null>(null)
   const [zoomClipboard, setZoomClipboard] = useState<ZoomSettings | null>(null)
   const [defaultZoomLevel, setDefaultZoomLevel] = useState(2)
+  const [selectedLayoutId, setSelectedLayoutId] = useState<string | null>(null)
+  const [draftLayouts, setDraftLayouts] = useState<CameraLayout[] | null>(null)
+  const [layoutClipboard, setLayoutClipboard] = useState<LayoutSettings | null>(null)
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
   const [recBox, setRecBox] = useState<Box>({ x: 0, y: 0, width: 0, height: 0 })
@@ -111,7 +116,11 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   const zooms = draftZooms ?? project.zooms
   const selectedZoom = zooms.find((z) => z.id === selectedZoomId) ?? null
   const selectedZoomIndex = selectedZoom ? zooms.indexOf(selectedZoom) : -1
-  const shownProject = draftZooms ? { ...project, zooms: draftZooms } : project
+  const layouts = draftLayouts ?? project.layouts
+  const selectedLayout = layouts.find((l) => l.id === selectedLayoutId) ?? null
+  const selectedLayoutIndex = selectedLayout ? layouts.indexOf(selectedLayout) : -1
+  const hasCamera = !!opened.media.camera && !!project.recording.camera
+  const shownProject = draftZooms || draftLayouts ? { ...project, zooms: draftZooms ?? project.zooms, layouts: draftLayouts ?? project.layouts } : project
   const durationMs = outputDurationMs(clips)
   const sourceMs = outputToSource(clips, preview ?? pb.timeMs)
   const currentClip = clipAtOutput(clips, pb.timeMs)?.clip ?? null
@@ -203,6 +212,25 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   const ignoreTyping = (group: TypingGroup): void => edit({ ...project, config: { ...project.config, resolvedTypingSuggestions: [...project.config.resolvedTypingSuggestions, group.startMs] } })
 
   const setZooms = (next: ZoomRange[]): void => edit({ ...project, zooms: next })
+  const setLayouts = (next: CameraLayout[]): void => edit({ ...project, layouts: next })
+  const addLayout = (sourceMsAt: number, type: LayoutType = 'only-camera'): void => {
+    if (!hasCamera) return notify('No camera recorded')
+    if (project.config.hideCamera) {
+      if (!window.confirm('Webcam is disabled in your project, do you want to enable it?')) return
+      edit({ ...project, config: { ...project.config, hideCamera: false } })
+    }
+    const r = addLayoutAt(layouts, sourceMsAt, sourceDurationMs, type, project.config.defaultLayout.cameraPositionPoint)
+    if (r.error) return notify(r.error)
+    setLayouts(r.layouts)
+    setSelectedClipId(null)
+    setSelectedZoomId(null)
+    if (r.layout) setSelectedLayoutId(r.layout.id)
+  }
+  const moveLayoutCamera = (dir: MoveDirection): void => {
+    if (!selectedLayout || selectedLayout.type !== 'both') return
+    const next = stepPosition(selectedLayout.cameraPositionPoint, dir)
+    if (next) setLayouts(updateLayout(layouts, selectedLayout.id, { cameraPositionPoint: next }))
+  }
   const setDefaultLevel = (level: number): void => {
     setDefaultZoomLevel(level)
     void window.recscene.prefs.set({ defaultZoomLevel: level })
@@ -246,7 +274,31 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
         case 'toggleWaveform': return setPrefs({ hideAudioWaveform: !prefs.hideAudioWaveform })
         case 'toggleSmoothWaveform': return setPrefs({ enableSmoothWaveform: !prefs.enableSmoothWaveform })
         case 'toggleTimelineScrollbar': return setPrefs({ alwaysShowTimelineScrollbar: !prefs.alwaysShowTimelineScrollbar })
-        case 'closeSidebarItem': return void (setOverlay(null), setSelectedClipId(null), setSelectedZoomId(null), setCropping(false))
+        case 'closeSidebarItem': return void (setOverlay(null), setSelectedClipId(null), setSelectedZoomId(null), setSelectedLayoutId(null), setCropping(false))
+        case 'toggleHideCamera': return hasCamera ? edit({ ...project, config: { ...project.config, hideCamera: !project.config.hideCamera } }) : notify('No camera recorded')
+        case 'addLayout': return addLayout(outputToSource(clips, pb.timeMs), 'only-camera')
+        case 'addBothLayout': return addLayout(outputToSource(clips, pb.timeMs), 'both')
+        case 'addSplitLayout': return addLayout(outputToSource(clips, pb.timeMs), 'split')
+        case 'addScreenLayout': return addLayout(outputToSource(clips, pb.timeMs), 'only-screen')
+        case 'toggleLayoutDisabled': return selectedLayout ? setLayouts(updateLayout(layouts, selectedLayout.id, { isDisabled: !selectedLayout.isDisabled })) : undefined
+        case 'copyLayout':
+          if (!selectedLayout) return
+          setLayoutClipboard(layoutSettings(selectedLayout))
+          return notify('Layout copied')
+        case 'applyCameraLayoutSizeToAll': {
+          if (!selectedLayout || selectedLayout.cameraSize === null) return
+          const r = applyCameraSizeToAll(project.config, layouts, selectedLayout.cameraSize)
+          edit({ ...project, config: { ...project.config, ...r.config }, layouts: r.layouts })
+          return notify('Camera size applied to all layouts')
+        }
+        case 'removeAllLayouts': return void (setSelectedLayoutId(null), setLayouts([]))
+        case 'moveLayoutCameraUp': return moveLayoutCamera('up')
+        case 'moveLayoutCameraDown': return moveLayoutCamera('down')
+        case 'moveLayoutCameraLeft': return moveLayoutCamera('left')
+        case 'moveLayoutCameraRight': return moveLayoutCamera('right')
+        case 'setLayoutModeDefault': return selectedLayout ? setLayouts(updateLayout(layouts, selectedLayout.id, { type: 'both' })) : undefined
+        case 'setLayoutModeFullscreen': return selectedLayout ? setLayouts(updateLayout(layouts, selectedLayout.id, { type: 'only-camera' })) : undefined
+        case 'setLayoutModeHide': return selectedLayout ? setLayouts(updateLayout(layouts, selectedLayout.id, { type: 'only-screen' })) : undefined
         case 'addZoom': return addZoom(outputToSource(clips, pb.timeMs))
         case 'addManualZoom': return addZoom(outputToSource(clips, pb.timeMs), 'manual')
         case 'duplicateZoom': return selectedZoom ? setZooms(duplicateZoom(zooms, selectedZoom.id, sourceDurationMs)) : undefined
@@ -266,6 +318,11 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           setZooms(removeZoom(zooms, selectedZoom.id))
           return notify('Zoom range copied')
         case 'splitSliceAtCurrentTime': {
+          if (selectedLayout) {
+            const r = splitLayout(layouts, outputToSource(clips, pb.timeMs))
+            if (r.error) return notify(r.error)
+            return setLayouts(r.layouts)
+          }
           if (selectedZoom) {
             const r = splitZoom(zooms, outputToSource(clips, pb.timeMs))
             if (r.error) return notify(r.error)
@@ -276,6 +333,10 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           return setClips(r.clips)
         }
         case 'removeSlice': {
+          if (selectedLayout) {
+            setSelectedLayoutId(null)
+            return setLayouts(removeLayout(layouts, selectedLayout.id))
+          }
           if (selectedZoom) {
             setSelectedZoomId(null)
             return setZooms(removeZoom(zooms, selectedZoom.id))
@@ -300,6 +361,10 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           return setClips(resetAllClips(sourceDurationMs))
         case 'crop': return void (setPb((p) => ({ ...p, playing: false })), setCropping(true))
         case 'paste': {
+          if (selectedLayout && layoutClipboard) {
+            setLayouts(pasteLayoutSettings(layouts, selectedLayout.id, layoutClipboard))
+            return notify('Layout settings pasted')
+          }
           if (zoomClipboard && (selectedZoom || !clipboard)) {
             if (selectedZoom) {
               setZooms(updateZoom(zooms, selectedZoom.id, zoomClipboard))
@@ -346,7 +411,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [durationMs, pb.timeMs, prefs, project, save, closeProject, setPrefs, clips, selectedClip, currentClip, clipboard, sourceDurationMs, setClips, zooms, selectedZoom, zoomClipboard, defaultZoomLevel, setZooms]
+    [durationMs, pb.timeMs, prefs, project, save, closeProject, setPrefs, clips, selectedClip, currentClip, clipboard, sourceDurationMs, setClips, zooms, selectedZoom, zoomClipboard, defaultZoomLevel, setZooms, layouts, selectedLayout, layoutClipboard, hasCamera, setLayouts, addLayout, moveLayoutCamera]
   )
 
   useEffect(() => window.recscene.onEditorAction(run), [run])
@@ -356,6 +421,15 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
       if (overlay) return
       const target = e.target as HTMLElement | null
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+      if (selectedLayout && !e.metaKey && !e.altKey && !e.ctrlKey && !e.shiftKey) {
+        const arrows: Record<string, string> = { ArrowUp: 'moveLayoutCameraUp', ArrowDown: 'moveLayoutCameraDown', ArrowLeft: 'moveLayoutCameraLeft', ArrowRight: 'moveLayoutCameraRight', '1': 'setLayoutModeDefault', '2': 'setLayoutModeFullscreen', '3': 'setLayoutModeHide' }
+        const id = arrows[e.key]
+        if (id) {
+          e.preventDefault()
+          run(id)
+          return
+        }
+      }
       if (selectedZoom && !e.metaKey && !e.altKey && !e.ctrlKey && /^[0-9]$/.test(e.key)) {
         const presets = [defaultZoomLevel, 1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6]
         const level = presets[Number(e.key)]
@@ -433,6 +507,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           assetsUrl={opened.media.assets}
           screenUrl={opened.media.screen}
           micUrl={opened.media.mic}
+          cameraUrl={opened.media.camera}
           sourceMs={sourceMs}
           playing={pb.playing && preview === null && !cropping}
           rate={pb.speed * (currentClip?.speed ?? 1)}
@@ -487,7 +562,20 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
 
       {sidebar && (
         <aside className="inspector" aria-label="Inspector">
-          {selectedZoom ? (
+          {selectedLayout ? (
+            <>
+              <div className="inspector__head"><span className="tl__dot" style={{ background: 'var(--layout)' }} /><h2>Camera layout</h2><span className="muted">{selectedLayoutIndex + 1} of {layouts.length}</span><span className="tl__spacer" /><button type="button" className="btn btn--ghost btn--sm" onClick={() => setSelectedLayoutId(null)}>Close <kbd>⎋</kbd></button></div>
+              <LayoutPanel
+                config={project.config}
+                layouts={layouts}
+                layout={selectedLayout}
+                index={selectedLayoutIndex}
+                notPlaying={layoutAt(layouts, sourceMs)?.id !== selectedLayout.id}
+                onLayouts={setLayouts}
+                onAction={run}
+              />
+            </>
+          ) : selectedZoom ? (
             <>
               <div className="inspector__head"><span className="tl__dot" style={{ background: 'var(--zoom)' }} /><h2>Zoom</h2><span className="muted">{selectedZoomIndex + 1} of {zooms.length}</span><span className="tl__spacer" /><button type="button" className="btn btn--ghost btn--sm" onClick={() => setSelectedZoomId(null)}>Close <kbd>⎋</kbd></button></div>
               <ZoomPanel
@@ -535,6 +623,15 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
               onPickImage={() => void window.recscene.project.pickBackgroundImage().then((r) => { if (r) { setBackgroundImageUrl(r.url); edit({ ...project, config: { ...project.config, backgroundType: 'image', backgroundImage: r.file } }) } })}
               onDropImage={importBackground}
               onPasteImage={importBackground}
+            />
+          ) : panel === 'camera' ? (
+            <CameraPanel
+              config={project.config}
+              hasCamera={hasCamera}
+              layouts={layouts}
+              customPlaying={!!layoutAt(layouts, sourceMs) && !layoutAt(layouts, sourceMs)?.isDisabled}
+              onConfig={(patch) => edit({ ...project, config: { ...project.config, ...patch } })}
+              onAction={run}
             />
           ) : panel === 'cursor' ? (
             <CursorPanel
@@ -586,10 +683,16 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           onRemoveTrim={(id, edge) => setClips(removeTrim(clips, id, edge, sourceDurationMs))}
           onJoin={(rightId) => setClips(joinClips(clips, rightId))}
           selectedZoomId={selectedZoomId}
-          onSelectZoom={(id) => { setSelectedZoomId(id); if (id) setSelectedClipId(null) }}
+          onSelectZoom={(id) => { setSelectedZoomId(id); if (id) { setSelectedClipId(null); setSelectedLayoutId(null) } }}
           onAddZoomAt={(ms) => addZoom(ms)}
           onZoomPreview={setDraftZooms}
           onZoomCommit={() => { const next = draftZooms; setDraftZooms(null); if (next) setZooms(next) }}
+          hasCamera={hasCamera}
+          selectedLayoutId={selectedLayoutId}
+          onSelectLayout={(id) => { setSelectedLayoutId(id); if (id) { setSelectedZoomId(null); setSelectedClipId(null) } }}
+          onAddLayoutAt={(ms) => addLayout(ms)}
+          onLayoutPreview={setDraftLayouts}
+          onLayoutCommit={() => { const next = draftLayouts; setDraftLayouts(null); if (next) setLayouts(next) }}
           micUrl={opened.media.mic}
           showWaveform={!prefs.hideAudioWaveform}
           smoothWaveform={prefs.enableSmoothWaveform}
@@ -602,7 +705,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
       {overlay && <CommandMenu mode={overlay} onRun={(id) => { setOverlay(null); run(id) }} onClose={() => setOverlay(null)} />}
       {exporting && (
         <ExportDialog
-          input={{ project, clips, sourceDurationMs, screenUrl: opened.media.screen, micUrl: opened.media.mic, backgroundImageUrl: backgroundImage ? backgroundImageUrl : null, assetsUrl: opened.media.assets, cursor: opened.cursor, projectName: project.name }}
+          input={{ project, clips, sourceDurationMs, screenUrl: opened.media.screen, micUrl: opened.media.mic, cameraUrl: opened.media.camera, backgroundImageUrl: backgroundImage ? backgroundImageUrl : null, assetsUrl: opened.media.assets, cursor: opened.cursor, projectName: project.name }}
           durationMs={durationMs}
           onClose={() => setExporting(false)}
           onNotice={notify}

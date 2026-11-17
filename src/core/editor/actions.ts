@@ -2,7 +2,7 @@
  * The editor's action registry (specs 49, 52–58, 63–65, 72–78): one list
  * that drives keyboard handling, the ⌘K command menu and the shortcuts guide.
  */
-export type ActionGroup = 'Playback' | 'Slice' | 'Zoom' | 'View' | 'Editor' | 'Project' | 'Sidebar' | 'Export' | 'Clipboard' | 'Help'
+export type ActionGroup = 'Playback' | 'Slice' | 'Zoom' | 'Camera' | 'View' | 'Editor' | 'Project' | 'Sidebar' | 'Export' | 'Clipboard' | 'Help'
 
 export interface ActionDef {
   id: string
@@ -44,6 +44,22 @@ export const ACTIONS: readonly ActionDef[] = [
   { id: 'applyZoomLevelToAll', label: 'Apply zoom level to all zooms', group: 'Zoom' },
   { id: 'restoreDefaultZooms', label: 'Restore default zoom ranges', group: 'Zoom' },
   { id: 'removeAllZooms', label: 'Remove all zooms', group: 'Zoom' },
+  { id: 'toggleHideCamera', label: 'Hide camera', group: 'Camera', shortcut: 'H' },
+  { id: 'addLayout', label: 'Add layout (fullscreen camera)', group: 'Camera' },
+  { id: 'addBothLayout', label: 'Add both layout', group: 'Camera' },
+  { id: 'addSplitLayout', label: 'Add split screen layout', group: 'Camera' },
+  { id: 'addScreenLayout', label: 'Add screen layout (hide camera)', group: 'Camera' },
+  { id: 'toggleLayoutDisabled', label: 'Enable / disable layout', group: 'Camera' },
+  { id: 'copyLayout', label: 'Copy layout', group: 'Camera' },
+  { id: 'applyCameraLayoutSizeToAll', label: 'Apply camera size to all other layouts', group: 'Camera' },
+  { id: 'removeAllLayouts', label: 'Remove all layouts', group: 'Camera' },
+  { id: 'moveLayoutCameraUp', label: 'Move layout camera up', group: 'Camera' },
+  { id: 'moveLayoutCameraDown', label: 'Move layout camera down', group: 'Camera' },
+  { id: 'moveLayoutCameraLeft', label: 'Move layout camera left', group: 'Camera' },
+  { id: 'moveLayoutCameraRight', label: 'Move layout camera right', group: 'Camera' },
+  { id: 'setLayoutModeDefault', label: 'Set camera layout mode to default (both)', group: 'Camera' },
+  { id: 'setLayoutModeFullscreen', label: 'Set camera layout mode to fullscreen', group: 'Camera' },
+  { id: 'setLayoutModeHide', label: 'Set camera layout mode to hide', group: 'Camera' },
   { id: 'cut', label: 'Cut zoom', group: 'Clipboard', shortcut: 'Cmd+X' },
   { id: 'paste', label: 'Paste slice settings', group: 'Clipboard', shortcut: 'Cmd+V' },
   { id: 'undo', label: 'Undo', group: 'Editor', shortcut: 'Cmd+Z' },

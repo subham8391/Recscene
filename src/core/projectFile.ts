@@ -44,7 +44,8 @@ export function newProject(input: NewProjectInput): Project {
       keys: input.events.keys
     },
     zooms: input.autoZoomLevel === null ? [] : automaticZooms(input.events.clicks, input.durationMs, input.autoZoomLevel ?? 2),
-    clips: [defaultClip(input.durationMs)]
+    clips: [defaultClip(input.durationMs)],
+    layouts: []
   }
 }
 
