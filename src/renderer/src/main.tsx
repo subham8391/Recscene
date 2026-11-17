@@ -7,6 +7,7 @@ import { Widget } from './picker/Widget'
 import './styles/tokens.css'
 import './styles/app.css'
 import './styles/picker.css'
+import './styles/editor.css'
 
 const root = document.getElementById('root')
 if (!root) throw new Error('Missing #root element')

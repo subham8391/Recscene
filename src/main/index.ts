@@ -5,6 +5,7 @@ import { RecordingEnvironment } from './environment'
 import { installMenu } from './menu'
 import { SpeakerNotes } from './notes'
 import { Picker } from './picker'
+import { ProjectService, registerMediaScheme } from './project'
 import { Preferences } from './preferences'
 import { projectsRoot, RecordingService } from './recording'
 import { offerRecovery } from './recovery'
@@ -24,6 +25,10 @@ let picker: Picker | null = null
 let widget: Widget | null = null
 let notes: SpeakerNotes | null = null
 let environment: RecordingEnvironment | null = null
+let projects: ProjectService | null = null
+let prefsStore: Preferences | null = null
+
+registerMediaScheme()
 let stopping: Promise<void> | null = null
 
 function createMainWindow(): BrowserWindow {
@@ -86,10 +91,28 @@ function onRecordShortcut(): void {
   else picker?.open()
 }
 
+/** A finished, recovered or imported recording opens in the editor (spec 41 with `create-project`). */
 function showResult(result: RecordingResult, notice?: string | null): void {
   const window = showMainWindow()
   window.webContents.send('recording:finished', result)
   if (notice) window.webContents.send('app:notice', notice)
+  void projects?.open(result.projectDir).then(() => refreshMenu()).catch(() => undefined)
+}
+
+function refreshMenu(): void {
+  void projects?.recent().then((recent) => {
+    installMenu({
+      newRecording: () => picker?.open(),
+      importVideo,
+      recoverUnfinished: () => recoverUnfinished(true),
+      mainWindow: () => mainWindow,
+      openProject: () => projects?.pickAndOpen().then(() => refreshMenu()) ?? Promise.resolve(),
+      openLastProject: () => projects?.openLast() ?? Promise.resolve(),
+      openRecent: (dir) => projects?.open(dir).then(() => refreshMenu()) ?? Promise.resolve(),
+      recent,
+      editorAction: (id) => mainWindow?.webContents.send('editor:action', id)
+    })
+  })
 }
 
 async function recoverUnfinished(manual: boolean): Promise<void> {
@@ -110,11 +133,14 @@ async function importVideo(path: string): Promise<void> {
 }
 
 ipcMain.handle('app:version', () => app.getVersion())
+ipcMain.handle('prefs:get', () => prefsStore?.all() ?? {})
+ipcMain.handle('prefs:set', (_e, values: Record<string, unknown>) => prefsStore?.set(values))
 ipcMain.handle('app:openPicker', () => picker?.open())
 ipcMain.handle('app:projectsRoot', () => projectsRoot())
 
 void app.whenReady().then(() => {
   const prefs = new Preferences(join(app.getPath('userData'), 'preferences.json'))
+  prefsStore = prefs
   recording = new RecordingService()
   widget = new Widget(recording, stopRecording)
   notes = new SpeakerNotes(prefs)
@@ -143,7 +169,8 @@ void app.whenReady().then(() => {
   })
   globalShortcut.register(RECORD_SHORTCUT, onRecordShortcut)
   for (const s of optionalShortcuts()) globalShortcut.register(s.accelerator, s.handler)
-  installMenu({ newRecording: () => picker?.open(), importVideo, recoverUnfinished: () => recoverUnfinished(true), mainWindow: () => mainWindow })
+  projects = new ProjectService(prefs, () => mainWindow)
+  refreshMenu()
   mainWindow = createMainWindow()
   mainWindow.once('show', () => void recoverUnfinished(false))
   // Development aid: RECSCENE_OPEN_PICKER=1 opens the picker as soon as the app is ready.

@@ -1,8 +1,10 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { RecordingResult } from '@core/captureProtocol'
+import type { Project } from '@core/project'
 import type { PickerPrefs, PickerState, RecordRequest } from '@core/recordingPicker'
 import type { SessionState } from '@core/recordingSession'
 import type { SpeakerNotesPrefs } from '@core/speakerNotes'
+import type { OpenedProject } from '@core/projectFile'
 
 export interface SessionSnapshot extends SessionState {
   toast: string | null
@@ -22,6 +24,24 @@ const api = {
   projectsRoot: (): Promise<string> => ipcRenderer.invoke('app:projectsRoot') as Promise<string>,
   onRecordingFinished: (listener: (result: RecordingResult) => void): (() => void) => on('recording:finished', listener),
   onNotice: (listener: (message: string) => void): (() => void) => on('app:notice', listener),
+  /** App-wide preferences the editor reads and writes (specs 57, 60–62, 67, 73). */
+  prefs: {
+    get: (): Promise<Record<string, unknown>> => ipcRenderer.invoke('prefs:get') as Promise<Record<string, unknown>>,
+    set: (values: Record<string, unknown>): Promise<void> => ipcRenderer.invoke('prefs:set', values) as Promise<void>
+  },
+  project: {
+    current: (): Promise<OpenedProject | null> => ipcRenderer.invoke('project:current') as Promise<OpenedProject | null>,
+    open: (projectDir: string): Promise<OpenedProject> => ipcRenderer.invoke('project:open', projectDir) as Promise<OpenedProject>,
+    pick: (): Promise<OpenedProject | null> => ipcRenderer.invoke('project:pick') as Promise<OpenedProject | null>,
+    save: (project: Project): Promise<{ lastSavedAt: string }> => ipcRenderer.invoke('project:save', project) as Promise<{ lastSavedAt: string }>,
+    saveAs: (project: Project): Promise<OpenedProject | null> => ipcRenderer.invoke('project:saveAs', project) as Promise<OpenedProject | null>,
+    recent: (): Promise<{ projectDir: string; name: string }[]> => ipcRenderer.invoke('project:recent') as Promise<{ projectDir: string; name: string }[]>,
+    showInFinder: (): Promise<void> => ipcRenderer.invoke('project:showInFinder') as Promise<void>,
+    copyFrame: (png: ArrayBuffer): Promise<void> => ipcRenderer.invoke('project:copyFrame', png) as Promise<void>,
+    exportFrame: (png: ArrayBuffer, timeMs: number): Promise<string | null> => ipcRenderer.invoke('project:exportFrame', png, timeMs) as Promise<string | null>,
+    onOpened: (listener: (opened: OpenedProject) => void): (() => void) => on('project:opened', listener)
+  },
+  onEditorAction: (listener: (id: string) => void): (() => void) => on('editor:action', listener),
   picker: {
     state: (): Promise<PickerState> => ipcRenderer.invoke('picker:state') as Promise<PickerState>,
     savePrefs: (values: Partial<PickerPrefs>): Promise<PickerPrefs> => ipcRenderer.invoke('picker:savePrefs', values) as Promise<PickerPrefs>,

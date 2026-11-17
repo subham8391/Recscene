@@ -6,7 +6,7 @@ Spec numbers refer to `docs/research/screen-studio-feature-specs.md`. A feature 
 | Area | Specs | Notes |
 | --- | --- | --- |
 | Recording picker: screen, window, area; countdown; menu bar control | 1–47 | Done: 1–5, 7, 13, 15–17, 21–41 (41 as a preference). Deferred: 6 and 8–12 (device, camera: M2), 14 (editor audio panel), 18–19 (per-app and device audio: M2), 20 (single engine, not applicable), 42–47 (need export) |
-| Editor shell: stage, rail, inspector, timeline, playhead, scrubber | 48–79 | Layout matches the laptop boards |
+| Editor shell: stage, rail, inspector, timeline, playhead, scrubber | 48–79 | Done: 48 (aspect picker; Crop and Mask buttons wait for 100–101 and 189–198), 49 (sections and ⌘1–8; panel contents arrive with their specs), 50–65, 67 (preview size), 72–78. Deferred: 66 (remapping, Settings), 68–70 (renderer settings, with the GPU renderer), 71 (reel mode, with 9:16 export), 79 (seasonal) |
 | Automatic zooms from clicks; manual zoom regions; zoom speed and depth | 102–124 | `src/core/autoZoom.ts` |
 | Cursor: smoothing, size, click highlight, hide when idle | 125–147 | |
 | Background, padding, rounded corners, shadow, screen inset | 165–188 | |

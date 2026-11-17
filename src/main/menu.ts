@@ -6,10 +6,17 @@ export interface MenuActions {
   importVideo: (path: string) => Promise<void>
   recoverUnfinished: () => Promise<void>
   mainWindow: () => BrowserWindow | null
+  openProject: () => Promise<unknown>
+  openLastProject: () => Promise<void>
+  openRecent: (projectDir: string) => Promise<unknown>
+  recent: { projectDir: string; name: string }[]
+  /** Sends an editor action id to the renderer (save, undo, toggles…). */
+  editorAction: (id: string) => void
 }
 
-/** The application menu (specs 7, 33, 40 live here; the rest is the standard macOS set). */
+/** The application menu (specs 7, 33, 40, 63, 72, 74–78 live here; the rest is the standard macOS set). */
 export function installMenu(actions: MenuActions): void {
+  const send = (id: string) => () => actions.editorAction(id)
   const pickVideo = async (): Promise<void> => {
     const result = await dialog.showOpenDialog({
       title: 'Select video file',
@@ -27,17 +34,61 @@ export function installMenu(actions: MenuActions): void {
         { label: 'New Recording', accelerator: 'Shift+CommandOrControl+R', click: actions.newRecording },
         { label: 'Create Project from Video…', click: () => void pickVideo() },
         { type: 'separator' },
-        { label: 'Recover Unfinished Recordings', click: () => void actions.recoverUnfinished() },
+        { label: 'Open Project…', accelerator: 'CommandOrControl+O', click: () => void actions.openProject() },
+        { label: 'Open Last Project', accelerator: 'CommandOrControl+Alt+Z', enabled: actions.recent.length > 0, click: () => void actions.openLastProject() },
+        {
+          label: 'Open Recent',
+          submenu: actions.recent.length ? actions.recent.map((r) => ({ label: r.name, click: () => void actions.openRecent(r.projectDir) })) : [{ label: 'No recent projects', enabled: false }]
+        },
         { type: 'separator' },
+        { label: 'Save', accelerator: 'CommandOrControl+S', click: send('save') },
+        { label: 'Save As…', accelerator: 'Shift+CommandOrControl+S', click: send('saveAs') },
+        { label: 'Show Project in Finder', accelerator: 'Shift+CommandOrControl+O', click: send('showInFinder') },
+        { type: 'separator' },
+        { label: 'Recover Unfinished Recordings', click: () => void actions.recoverUnfinished() },
         { label: 'Show Projects Folder', click: () => void shell.openPath(`${app.getPath('home')}/Recscene Projects`) },
         { type: 'separator' },
         { role: 'close' }
       ]
     },
-    { role: 'editMenu' },
-    { role: 'viewMenu' },
+    {
+      label: 'Edit',
+      submenu: [
+        { label: 'Undo', accelerator: 'CommandOrControl+Z', click: send('undo') },
+        { label: 'Redo', accelerator: 'Shift+CommandOrControl+Z', click: send('redo') },
+        { type: 'separator' },
+        { role: 'cut' },
+        { label: 'Copy', accelerator: 'CommandOrControl+C', click: send('copyFrame') },
+        { role: 'paste' },
+        { role: 'selectAll' }
+      ]
+    },
+    {
+      label: 'View',
+      submenu: [
+        { label: 'Show Editor Sidebar', click: send('toggleSidebar') },
+        { label: 'Show Editor Timeline', click: send('toggleTimeline') },
+        { label: 'Enter Preview Mode', accelerator: 'Shift+CommandOrControl+Enter', click: send('togglePreviewMode') },
+        { type: 'separator' },
+        { label: 'Show Audio Waveform', click: send('toggleWaveform') },
+        { label: 'Smooth Waveform', click: send('toggleSmoothWaveform') },
+        { label: 'Always Show Timeline Scrollbar', click: send('toggleTimelineScrollbar') },
+        { label: 'Loop Playback', click: send('toggleLoop') },
+        { type: 'separator' },
+        { label: 'Zoom In Timeline', accelerator: 'CommandOrControl+=', click: send('timelineZoomIn') },
+        { label: 'Zoom Out Timeline', accelerator: 'CommandOrControl+-', click: send('timelineZoomOut') },
+        { type: 'separator' },
+        { label: 'Show Command Menu…', accelerator: 'CommandOrControl+K', click: send('commandMenu') },
+        { type: 'separator' },
+        { role: 'toggleDevTools' }
+      ]
+    },
+    {
+      label: 'Export',
+      submenu: [{ label: 'Export Current Frame as Image…', click: send('exportFrame') }]
+    },
     { role: 'windowMenu' },
-    { role: 'help', submenu: [{ label: 'Recscene Website', click: () => void shell.openExternal('https://recscene.app') }] }
+    { role: 'help', submenu: [{ label: 'Shortcuts Guide', accelerator: 'CommandOrControl+/', click: send('shortcutsGuide') }, { label: 'Recscene Website', click: () => void shell.openExternal('https://recscene.app') }] }
   ])
   Menu.setApplicationMenu(menu)
 }
