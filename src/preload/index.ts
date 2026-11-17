@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { RecordingResult } from '@core/captureProtocol'
 import type { Project } from '@core/project'
 import type { PickerPrefs, PickerState, RecordRequest } from '@core/recordingPicker'
@@ -39,7 +39,12 @@ const api = {
     showInFinder: (): Promise<void> => ipcRenderer.invoke('project:showInFinder') as Promise<void>,
     copyFrame: (png: ArrayBuffer): Promise<void> => ipcRenderer.invoke('project:copyFrame', png) as Promise<void>,
     exportFrame: (png: ArrayBuffer, timeMs: number): Promise<string | null> => ipcRenderer.invoke('project:exportFrame', png, timeMs) as Promise<string | null>,
-    onOpened: (listener: (opened: OpenedProject) => void): (() => void) => on('project:opened', listener)
+    onOpened: (listener: (opened: OpenedProject) => void): (() => void) => on('project:opened', listener),
+    pickBackgroundImage: (): Promise<{ file: string; url: string } | null> => ipcRenderer.invoke('project:pickBackgroundImage') as Promise<{ file: string; url: string } | null>,
+    /** A dropped File (its path is resolved here) or pasted PNG bytes. */
+    importBackgroundImage: (source: File | ArrayBuffer): Promise<{ file: string; url: string }> =>
+      ipcRenderer.invoke('project:importBackgroundImage', source instanceof ArrayBuffer ? source : webUtils.getPathForFile(source)) as Promise<{ file: string; url: string }>,
+    mediaUrl: (file: string): Promise<string | null> => ipcRenderer.invoke('project:mediaUrl', file) as Promise<string | null>
   },
   onEditorAction: (listener: (id: string) => void): (() => void) => on('editor:action', listener),
   picker: {

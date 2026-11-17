@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react'
-import { fitBox, outputRatio, recordingBox, type Box } from '@core/editor/aspect'
+import { fitBox, outputRatio, type Box } from '@core/editor/aspect'
+import { gradientCss, screenLayout, shadowCss, withAlpha } from '@core/editor/background'
 import { cameraAtRest, cameraStep, cameraViewport, cursorAt, targetViewport, viewportTransform, type CameraState, type CursorSample } from '@core/editor/camera'
 import { zoomAt } from '@core/editor/zooms'
 import type { Project } from '@core/project'
@@ -28,6 +29,9 @@ interface Props {
   sourceDurationMs: number
   clipState: { hidden: boolean; smooth: boolean }
   clickSoundUrl: (kind: 'down' | 'up') => string | null
+  /** Media url of the project's own background image, when the type is image. */
+  backgroundImageUrl: string | null
+  assetsUrl: string
   onDuration?: (ms: number) => void
   /** Reports where the recording sits on screen, for overlays such as the crop tool. */
   onBox?: (box: Box) => void
@@ -38,7 +42,7 @@ interface Props {
  * The preview canvas (spec 48): the output box in the project's aspect ratio
  * with the (cropped) recording contained inside. Effects arrive with their specs.
  */
-export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, screenUrl, micUrl, sourceMs, playing, rate, micVolume, previewMaxHeight, cursor, sourceDurationMs, clipState, clickSoundUrl, onDuration, onBox, children }, ref) {
+export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, screenUrl, micUrl, sourceMs, playing, rate, micVolume, previewMaxHeight, cursor, sourceDurationMs, clipState, clickSoundUrl, backgroundImageUrl, assetsUrl, onDuration, onBox, children }, ref) {
   const live = useRef({ sourceMs, playing, rate, clipState, innerWidth: 0 })
   useEffect(() => {
     live.current = { ...live.current, sourceMs, playing, rate, clipState }
@@ -114,7 +118,20 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
   const maxHeight = Math.min(size.height, previewMaxHeight)
   const output: Box = fitBox(size.width, maxHeight, ratio)
   output.y += (size.height - maxHeight) / 2
-  const inner = recordingBox(output, cropped)
+  // Shadow, inset and corner values are given at output scale (specs 174–183); the nominal output is 1920 px wide.
+  const outScale = output.width / 1920
+  const laid = screenLayout(output, cropped, project.config.backgroundPaddingRatio, project.config.insetPadding, outScale)
+  const inner: Box = { x: output.x + laid.screen.x, y: output.y + laid.screen.y, width: laid.screen.width, height: laid.screen.height }
+  const outer: Box = { x: output.x + laid.outer.x, y: output.y + laid.outer.y, width: laid.outer.width, height: laid.outer.height }
+  const bg = project.config
+  const backgroundStyle: React.CSSProperties =
+    bg.backgroundType === 'color' ? { background: bg.backgroundColor }
+    : bg.backgroundType === 'gradient' ? { backgroundImage: gradientCss(bg.backgroundGradient) }
+    : bg.backgroundType === 'image' && backgroundImageUrl ? { backgroundImage: `url("${backgroundImageUrl}")`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : bg.backgroundType === 'image' ? { background: '#111' }
+    : { backgroundImage: `url("${assetsUrl}/backgrounds/${bg.backgroundSystemName}.svg")`, backgroundSize: 'cover', backgroundPosition: 'center' }
+  const blurPx = (bg.backgroundType === 'image' || bg.backgroundType === 'system') && bg.backgroundBlur > 0 ? (bg.backgroundBlur / 100) * output.width * 0.08 : 0
+  const radius = bg.windowBorderRadius * outScale
   // The video is scaled so the crop region fills the inner box.
   const videoWidth = crop ? inner.width / crop.width : inner.width
   const videoHeight = crop ? inner.height / crop.height : inner.height
@@ -138,7 +155,48 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
       if (!ctx) throw new Error('No canvas')
       ctx.fillStyle = '#000'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
-      const box = recordingBox({ x: 0, y: 0, width: canvas.width, height: canvas.height }, cropped)
+      // Background (spec 165–173) at export scale.
+      const exportScale = canvas.width / 1920
+      const lay = screenLayout({ width: canvas.width, height: canvas.height }, cropped, project.config.backgroundPaddingRatio, project.config.insetPadding, exportScale)
+      const box = lay.screen
+      if (bg.backgroundType === 'color') {
+        ctx.fillStyle = bg.backgroundColor
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+      } else if (bg.backgroundType === 'gradient') {
+        const g = bg.backgroundGradient
+        const grad = ctx.createLinearGradient(g.start.x * canvas.width, g.start.y * canvas.height, g.end.x * canvas.width, g.end.y * canvas.height)
+        for (const stop of g.stops) grad.addColorStop(Math.max(0, Math.min(1, stop.at)), stop.color)
+        ctx.fillStyle = grad
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+      } else {
+        const url = bg.backgroundType === 'image' ? backgroundImageUrl : `${assetsUrl}/backgrounds/${bg.backgroundSystemName}.svg`
+        if (url) {
+          const img = await new Promise<HTMLImageElement | null>((resolve) => {
+            const i = new Image()
+            i.onload = () => resolve(i)
+            i.onerror = () => resolve(null)
+            i.src = url
+          })
+          if (img) {
+            const s = Math.max(canvas.width / img.width, canvas.height / img.height)
+            ctx.save()
+            if (bg.backgroundBlur > 0) ctx.filter = `blur(${((bg.backgroundBlur / 100) * canvas.width * 0.08).toFixed(1)}px)`
+            ctx.drawImage(img, (canvas.width - img.width * s) / 2, (canvas.height - img.height * s) / 2, img.width * s, img.height * s)
+            ctx.restore()
+          }
+        }
+      }
+      const rad = bg.windowBorderRadius * exportScale
+      if (lay.outer.width > box.width || lay.outer.height > box.height) {
+        ctx.fillStyle = withAlpha(bg.insetColor, bg.insetAlpha)
+        ctx.beginPath()
+        ctx.roundRect(lay.outer.x, lay.outer.y, lay.outer.width, lay.outer.height, rad + Math.max(0, lay.screen.x - lay.outer.x))
+        ctx.fill()
+      }
+      ctx.save()
+      ctx.beginPath()
+      ctx.roundRect(box.x, box.y, box.width, box.height, rad)
+      ctx.clip()
       const sx = crop ? crop.x * v.videoWidth : 0
       const sy = crop ? crop.y * v.videoHeight : 0
       const sw = crop ? crop.width * v.videoWidth : v.videoWidth
@@ -146,12 +204,10 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
       const cam = cameraViewport(camera.current)
       // Zoom the exported frame the way the stage shows it: scale around the viewport centre.
       ctx.save()
-      ctx.beginPath()
-      ctx.rect(box.x, box.y, box.width, box.height)
-      ctx.clip()
       ctx.translate(box.x + box.width / 2 - cam.center.x * box.width * cam.scale, box.y + box.height / 2 - cam.center.y * box.height * cam.scale)
       ctx.scale(cam.scale, cam.scale)
       ctx.drawImage(v, sx, sy, sw, sh, 0, 0, box.width, box.height)
+      ctx.restore()
       ctx.restore()
       const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
       if (!blob) throw new Error('Could not encode the frame')
@@ -162,7 +218,12 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
   return (
     <div ref={host} className="stage__canvas">
       <div className="stage__output" style={{ left: output.x, top: output.y, width: output.width, height: output.height }}>
-        <div className="stage__inner" style={{ left: inner.x - output.x, top: inner.y - output.y, width: inner.width, height: inner.height }}>
+        <div className="stage__bg" style={{ ...backgroundStyle, filter: blurPx > 0 ? `blur(${blurPx.toFixed(1)}px)` : undefined }} />
+        {(outer.width > inner.width || outer.height > inner.height) && (
+          <div className="stage__inset" style={{ left: outer.x - output.x, top: outer.y - output.y, width: outer.width, height: outer.height, background: withAlpha(bg.insetColor, bg.insetAlpha), borderRadius: radius + (inner.x - outer.x) }} />
+        )}
+        <div className="stage__shadow" style={{ left: inner.x - output.x, top: inner.y - output.y, width: inner.width, height: inner.height, borderRadius: radius, boxShadow: shadowCss(bg, outScale) }} />
+        <div className="stage__inner" style={{ left: inner.x - output.x, top: inner.y - output.y, width: inner.width, height: inner.height, borderRadius: radius }}>
           <div ref={cameraLayer} className="stage__camera">
             <video ref={video} className="stage__video" src={screenUrl} playsInline preload="auto" style={{ left: videoLeft - (inner.x - output.x), top: videoTop - (inner.y - output.y), width: videoWidth, height: videoHeight }} onLoadedMetadata={(e) => onDuration?.(Math.round(e.currentTarget.duration * 1000))} />
             <div className="stage__cursorhost" style={{ left: videoLeft - (inner.x - output.x), top: videoTop - (inner.y - output.y), width: videoWidth, height: videoHeight }}>

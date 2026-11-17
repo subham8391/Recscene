@@ -48,6 +48,7 @@ import { initialView, keepVisible, zoomView, type TimelineView } from '@core/edi
 import type { Project } from '@core/project'
 import { formatTimecode } from '@core/time'
 import type { OpenedProject } from '@core/projectFile'
+import { BackgroundPanel } from './BackgroundPanel'
 import { ClipPanel } from './ClipPanel'
 import { CommandMenu } from './CommandMenu'
 import { CursorPanel } from './CursorPanel'
@@ -98,6 +99,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   const [draftZooms, setDraftZooms] = useState<ZoomRange[] | null>(null)
   const [zoomClipboard, setZoomClipboard] = useState<ZoomSettings | null>(null)
   const [defaultZoomLevel, setDefaultZoomLevel] = useState(2)
+  const [backgroundImageUrl, setBackgroundImageUrl] = useState<string | null>(null)
   const [recBox, setRecBox] = useState<Box>({ x: 0, y: 0, width: 0, height: 0 })
   const stage = useRef<StageHandle>(null)
   const lastTick = useRef<number | null>(null)
@@ -122,6 +124,22 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   useEffect(() => {
     void window.recscene.prefs.get().then((raw) => setDefaultZoomLevel(appPrefsFrom(raw).defaultZoomLevel ?? 2))
   }, [])
+
+  const backgroundImage = project.config.backgroundImage
+  useEffect(() => {
+    if (!backgroundImage) return
+    void window.recscene.project.mediaUrl(backgroundImage).then(setBackgroundImageUrl)
+  }, [backgroundImage])
+
+  const importBackground = (source: File | ArrayBuffer): void => {
+    void window.recscene.project
+      .importBackgroundImage(source)
+      .then((r) => {
+        setBackgroundImageUrl(r.url)
+        edit({ ...project, config: { ...project.config, backgroundType: 'image', backgroundImage: r.file } })
+      })
+      .catch((err: unknown) => notify(err instanceof Error ? err.message.replace(/^.*?: (?=[A-Z])/, '') : String(err)))
+  }
 
   // The playback clock (specs 52–57); the loop preference is global (spec 57) and the view follows the playhead (spec 59).
   const loop = prefs.playbackLoop
@@ -162,7 +180,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
     return () => window.clearInterval(id)
   }, [prefs.autoSaveProject, saved.dirty, save])
 
-  const setClips = useCallback((next: Clip[]) => edit({ ...project, clips: next }), [edit, project])
+  const setClips = (next: Clip[]): void => edit({ ...project, clips: next })
   const notify = (toast: string): void => {
     setSaved((s) => ({ ...s, toast }))
     window.setTimeout(() => setSaved((s) => (s.toast === toast ? { ...s, toast: null } : s)), 2000)
@@ -174,7 +192,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   }
   const ignoreTyping = (group: TypingGroup): void => edit({ ...project, config: { ...project.config, resolvedTypingSuggestions: [...project.config.resolvedTypingSuggestions, group.startMs] } })
 
-  const setZooms = useCallback((next: ZoomRange[]) => edit({ ...project, zooms: next }), [edit, project])
+  const setZooms = (next: ZoomRange[]): void => edit({ ...project, zooms: next })
   const setDefaultLevel = (level: number): void => {
     setDefaultZoomLevel(level)
     void window.recscene.prefs.set({ defaultZoomLevel: level })
@@ -398,6 +416,8 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           sourceDurationMs={sourceDurationMs}
           clipState={{ hidden: !!currentClip?.hideCursor, smooth: !currentClip?.disableSmoothMouseMovement }}
           clickSoundUrl={(kind) => (project.config.clickSoundEffect ? opened.media.assets + `/sounds/clicks/${project.config.clickSoundEffect}/${kind}.wav` : null)}
+          backgroundImageUrl={backgroundImage ? backgroundImageUrl : null}
+          assetsUrl={opened.media.assets}
           screenUrl={opened.media.screen}
           micUrl={opened.media.mic}
           sourceMs={sourceMs}
@@ -493,7 +513,17 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           ) : (
             <>
           <h2>{PANELS.find((p) => p.id === panel)?.label}</h2>
-          {panel === 'cursor' ? (
+          {panel === 'background' ? (
+            <BackgroundPanel
+              project={project}
+              assetsUrl={opened.media.assets}
+              backgroundImageUrl={backgroundImage ? backgroundImageUrl : null}
+              onConfig={(patch) => edit({ ...project, config: { ...project.config, ...patch } })}
+              onPickImage={() => void window.recscene.project.pickBackgroundImage().then((r) => { if (r) { setBackgroundImageUrl(r.url); edit({ ...project, config: { ...project.config, backgroundType: 'image', backgroundImage: r.file } }) } })}
+              onDropImage={importBackground}
+              onPasteImage={importBackground}
+            />
+          ) : panel === 'cursor' ? (
             <CursorPanel
               config={project.config}
               hasCursor={opened.cursor.length > 0}

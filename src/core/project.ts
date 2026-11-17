@@ -29,6 +29,7 @@ export type { ZoomRange } from './editor/zooms'
 import { defaultClip, type Clip } from './editor/clips'
 import type { ZoomRange } from './editor/zooms'
 import { defaultCursorConfig, type CursorConfig } from './editor/cursor'
+import { defaultBackgroundConfig, type BackgroundConfig } from './editor/background'
 export type { Clip } from './editor/clips'
 
 export interface Recording {
@@ -47,7 +48,7 @@ export interface ProjectMeta {
   recordingFlags: Ms[]
 }
 
-export interface ProjectConfig extends CursorConfig {
+export interface ProjectConfig extends CursorConfig, BackgroundConfig {
   /** Spec 48: "x:y" or null for Auto. */
   defaultOutputAspectRatio: string | null
   /** Spec 81: the usable part of the source, [start, end] in ms. */
@@ -64,6 +65,7 @@ export interface ProjectConfig extends CursorConfig {
 
 export const defaultProjectConfig: ProjectConfig = {
   ...defaultCursorConfig,
+  ...defaultBackgroundConfig,
   defaultOutputAspectRatio: null,
   recordingRange: null,
   recordingCrop: null,
