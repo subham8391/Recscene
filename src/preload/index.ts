@@ -21,6 +21,7 @@ const api = {
   openPicker: (): Promise<void> => ipcRenderer.invoke('app:openPicker') as Promise<void>,
   projectsRoot: (): Promise<string> => ipcRenderer.invoke('app:projectsRoot') as Promise<string>,
   onRecordingFinished: (listener: (result: RecordingResult) => void): (() => void) => on('recording:finished', listener),
+  onNotice: (listener: (message: string) => void): (() => void) => on('app:notice', listener),
   picker: {
     state: (): Promise<PickerState> => ipcRenderer.invoke('picker:state') as Promise<PickerState>,
     savePrefs: (values: Partial<PickerPrefs>): Promise<PickerPrefs> => ipcRenderer.invoke('picker:savePrefs', values) as Promise<PickerPrefs>,

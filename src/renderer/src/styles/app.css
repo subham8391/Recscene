@@ -205,3 +205,15 @@ body {
 .timeline__tracks {
   background: var(--panel2);
 }
+
+.notice {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--accentSoft);
+  color: var(--text);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
