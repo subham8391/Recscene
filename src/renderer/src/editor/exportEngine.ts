@@ -14,6 +14,7 @@ import { clipAtOutput, isAudioMuted, outputDurationMs, outputToSource, sourceToO
 import { activeClickEffects, cursorAtRest, cursorBlurPx, cursorRotation, cursorStep, cursorTarget, isPressed, removeShakes } from '@core/editor/cursor'
 import { outputSize, videoBitrate, type ExportProgress, type ExportSettings, type ExportTarget } from '@core/editor/exportSettings'
 import { zoomAt } from '@core/editor/zooms'
+import { cameraMotionAtRest, cameraMotionStep, cameraTimeMs, effectiveLayout, motionBox, placeCamera, type CameraMotion } from '@core/editor/cameraLayout'
 import type { Project } from '@core/project'
 
 export interface ExportInput {
@@ -22,6 +23,8 @@ export interface ExportInput {
   sourceDurationMs: number
   screenUrl: string
   micUrl?: string
+  /** Spec 8: the webcam track, composited per the camera layouts (148–164). */
+  cameraUrl?: string
   backgroundImageUrl: string | null
   assetsUrl: string
   cursor: CursorSample[]
@@ -170,13 +173,27 @@ export async function runExport(
     video.onerror = () => reject(new Error('Could not load the recording'))
   })
   const bgImage = cfg.backgroundType === 'image' && input.backgroundImageUrl ? await loadImage(input.backgroundImageUrl) : cfg.backgroundType === 'system' ? await loadImage(`${input.assetsUrl}/backgrounds/${cfg.backgroundSystemName}.svg`) : null
+  const camRec = project.recording.camera
+  let camVideo: HTMLVideoElement | null = null
+  if (input.cameraUrl && camRec) {
+    camVideo = document.createElement('video')
+    camVideo.crossOrigin = 'anonymous'
+    camVideo.src = input.cameraUrl
+    camVideo.muted = true
+    camVideo.preload = 'auto'
+    const ok = await new Promise<boolean>((resolve) => {
+      camVideo!.onloadeddata = () => resolve(true)
+      camVideo!.onerror = () => resolve(false)
+    })
+    if (!ok) camVideo = null
+  }
+  let camMotion: CameraMotion | null = null
 
   const canvas = new OffscreenCanvas(size.width, size.height)
   const ctx = canvas.getContext('2d', { alpha: false })
   if (!ctx) throw new Error('No canvas context')
   const exportScale = size.width / 1920
-  const laid = screenLayout(size, cropped, cfg.backgroundPaddingRatio, cfg.insetPadding, exportScale)
-  const screen = laid.screen
+  const laidWhole = screenLayout(size, cropped, cfg.backgroundPaddingRatio, cfg.insetPadding, exportScale)
   const radius = cfg.windowBorderRadius * exportScale
   const samples = removeShakes(input.cursor, cfg.removeCurshorShakeTreshold, rec)
   const spring = cfg.screenMovementSpring
@@ -189,6 +206,17 @@ export async function runExport(
   const drawFrame = (outputMs: number): void => {
     const sourceMs = outputToSource(input.clips, outputMs)
     const clip = clipAtOutput(input.clips, outputMs)?.clip
+    // Camera layout at this moment (148–164): a split layout leaves the screen only part of the frame.
+    const eff = effectiveLayout(cfg, project.layouts, sourceMs)
+    const activeZoom = zoomAt(project.zooms, sourceMs)
+    const placed = camVideo && camRec ? placeCamera({ frame: size, cameraFrame: camRec, type: eff.type, cameraSize: eff.cameraSize, position: eff.cameraPositionPoint, config: cfg, zoomed: !!activeZoom && !activeZoom.isDisabled, paddingRatio: cfg.backgroundPaddingRatio / 100 }) : null
+    let laid = laidWhole
+    if (placed && eff.type === 'split') {
+      const r = placed.screen
+      const l = screenLayout({ width: r.width, height: r.height }, cropped, cfg.backgroundPaddingRatio, cfg.insetPadding, exportScale)
+      laid = { screen: { ...l.screen, x: l.screen.x + r.x, y: l.screen.y + r.y }, outer: { ...l.outer, x: l.outer.x + r.x, y: l.outer.y + r.y } }
+    }
+    const screen = laid.screen
     // Background (165–173)
     if (cfg.backgroundType === 'color') {
       ctx.fillStyle = cfg.backgroundColor
@@ -289,6 +317,33 @@ export async function runExport(
       ctx.restore()
     }
     ctx.restore()
+    // Webcam box (148–164), stepped with the same spring the stage uses.
+    if (camVideo && camRec && placed) {
+      camMotion = camMotion ? cameraMotionStep(camMotion, placed.camera, dt) : cameraMotionAtRest(placed.camera, size)
+      const b = motionBox(camMotion)
+      if (b.width > 1 && b.height > 1 && camMotion.alpha.value > 0.01 && camVideo.videoWidth > 0) {
+        const cr = placed.crop
+        const sxc = cr.x * camVideo.videoWidth
+        const syc = cr.y * camVideo.videoHeight
+        const swc = cr.width * camVideo.videoWidth
+        const shc = cr.height * camVideo.videoHeight
+        const scale = Math.max(b.width / swc, b.height / shc)
+        const dw = swc * scale
+        const dh = shc * scale
+        ctx.save()
+        ctx.globalAlpha = Math.min(1, camMotion.alpha.value)
+        ctx.beginPath()
+        ctx.roundRect(b.x, b.y, b.width, b.height, cfg.cameraRoundness * Math.min(b.width, b.height))
+        ctx.clip()
+        if (cfg.mirrorCamera) {
+          ctx.translate(b.x + b.width, 0)
+          ctx.scale(-1, 1)
+          ctx.translate(-b.x, 0)
+        }
+        ctx.drawImage(camVideo, sxc, syc, swc, shc, b.x + (b.width - dw) / 2, b.y + (b.height - dh) / 2, dw, dh)
+        ctx.restore()
+      }
+    }
   }
 
   const abort = (): never => {
@@ -313,6 +368,7 @@ export async function runExport(
         if (signal.aborted) abort()
         const outputMs = (i * 1000) / settings.fps
         await seekTo(video, outputToSource(input.clips, outputMs) / 1000)
+        if (camVideo) await seekTo(camVideo, cameraTimeMs(outputToSource(input.clips, outputMs), cfg) / 1000)
         drawFrame(outputMs)
         const frame = new VideoFrame(canvas, { timestamp: Math.round(outputMs * 1000), duration: Math.round(dt * 1000) })
         encoder.encode(frame, { keyFrame: i % (settings.fps * 2) === 0 })
@@ -334,6 +390,7 @@ export async function runExport(
         if (signal.aborted) abort()
         const outputMs = (i * 1000) / settings.fps
         await seekTo(video, outputToSource(input.clips, outputMs) / 1000)
+        if (camVideo) await seekTo(camVideo, cameraTimeMs(outputToSource(input.clips, outputMs), cfg) / 1000)
         drawFrame(outputMs)
         const rgba = ctx.getImageData(0, 0, size.width, size.height).data
         const palette = quantize(rgba, settings.quality === 'high' ? 256 : settings.quality === 'medium' ? 128 : 64)

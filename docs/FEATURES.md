@@ -17,7 +17,7 @@ Spec numbers refer to `docs/research/screen-studio-feature-specs.md`. A feature 
 ## M2 — private beta
 | Area | Specs | Notes |
 | --- | --- | --- |
-| Camera: layouts, position, size, cutout, looks | 148–164, 285–287 | Cutout needs a CoreML model on Apple silicon |
+| Camera: layouts, position, size, cutout, looks | 148–164, 285–287 | Done: 148–164 (hide, mirror, shape, roundness, size, size during zoom, 3 × 3 position, default layout both/split/fullscreen/hide, timeline layouts with spring transitions, per-layout size and position, arrow and 1/2/3 keys, apply size to all, disable, copy/paste, split, remove) plus the camera delay from 287. Not built: 285 cutout (CoreML model, Apple silicon), 286 hide during silence (needs speech ranges from the audio panel), 287 looks, LUTs and sharpen (GPU renderer), face tracking |
 | Microphone and system audio, mic modes, hide during silence | 213–223, 288–290 | |
 | Masks: blur, pixelate, solid | 189–198 | |
 | Keystroke overlays and hidden shortcuts | 199–204 | |

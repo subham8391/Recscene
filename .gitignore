@@ -24,3 +24,6 @@
 # native helper build
 /native/bin
 /native/RecsceneCapture/.build
+
+# native helper binary (built by npm run build:native)
+/native/bin

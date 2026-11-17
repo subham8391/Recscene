@@ -3,6 +3,7 @@ import { fitBox, outputRatio, type Box } from '@core/editor/aspect'
 import { gradientCss, screenLayout, shadowCss, withAlpha } from '@core/editor/background'
 import { cameraAtRest, cameraStep, cameraViewport, cursorAt, targetViewport, viewportTransform, type CameraState, type CursorSample } from '@core/editor/camera'
 import { zoomAt } from '@core/editor/zooms'
+import { cameraMotionAtRest, cameraMotionStep, cameraTimeMs, effectiveLayout, motionBox, placeCamera, type CameraMotion } from '@core/editor/cameraLayout'
 import type { Project } from '@core/project'
 import { CursorLayer } from './CursorLayer'
 
@@ -15,6 +16,8 @@ interface Props {
   project: Project
   screenUrl: string
   micUrl?: string
+  /** Spec 8: the webcam track, drawn per the camera layouts (148–164). */
+  cameraUrl?: string
   /** Source time of the frame to show. */
   sourceMs: number
   playing: boolean
@@ -42,7 +45,7 @@ interface Props {
  * The preview canvas (spec 48): the output box in the project's aspect ratio
  * with the (cropped) recording contained inside. Effects arrive with their specs.
  */
-export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, screenUrl, micUrl, sourceMs, playing, rate, micVolume, previewMaxHeight, cursor, sourceDurationMs, clipState, clickSoundUrl, backgroundImageUrl, assetsUrl, onDuration, onBox, children }, ref) {
+export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, screenUrl, micUrl, cameraUrl, sourceMs, playing, rate, micVolume, previewMaxHeight, cursor, sourceDurationMs, clipState, clickSoundUrl, backgroundImageUrl, assetsUrl, onDuration, onBox, children }, ref) {
   const live = useRef({ sourceMs, playing, rate, clipState, innerWidth: 0 })
   useEffect(() => {
     live.current = { ...live.current, sourceMs, playing, rate, clipState }
@@ -51,11 +54,14 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
   const video = useRef<HTMLVideoElement>(null)
   const audio = useRef<HTMLAudioElement>(null)
   const cameraLayer = useRef<HTMLDivElement>(null)
+  const camVideo = useRef<HTMLVideoElement>(null)
+  const camLayer = useRef<HTMLDivElement>(null)
+  const camMotion = useRef<CameraMotion | null>(null)
   const camera = useRef<CameraState>(cameraAtRest({ center: { x: 0.5, y: 0.5 }, scale: 1 }))
-  const latest = useRef({ sourceMs, zooms: project.zooms, spring: project.config.screenMovementSpring, cursor })
+  const latest = useRef({ sourceMs, zooms: project.zooms, spring: project.config.screenMovementSpring, cursor, config: project.config, layouts: project.layouts, frame: { width: 0, height: 0 }, cameraFrame: project.recording.camera ?? null, hasCamera: !!cameraUrl })
   const [size, setSize] = useState({ width: 0, height: 0 })
   useEffect(() => {
-    latest.current = { sourceMs, zooms: project.zooms, spring: project.config.screenMovementSpring, cursor }
+    latest.current = { ...latest.current, sourceMs, zooms: project.zooms, spring: project.config.screenMovementSpring, cursor, config: project.config, layouts: project.layouts, cameraFrame: project.recording.camera ?? null, hasCamera: !!cameraUrl }
   })
 
   useLayoutEffect(() => {
@@ -71,23 +77,26 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
   useEffect(() => {
     const v = video.current
     const a = audio.current
+    const c = camVideo.current
     if (!v) return
     const target = sourceMs / 1000
+    const camTarget = cameraTimeMs(sourceMs, project.config) / 1000
     const forward = playing && rate > 0
-    for (const el of [v, a]) {
+    for (const el of [v, a, c]) {
       if (!el) continue
+      const t = el === c ? camTarget : target
       if (forward) {
         el.playbackRate = Math.min(16, Math.max(0.0625, rate))
-        if (Math.abs(el.currentTime - target) > 0.3) el.currentTime = target
+        if (Math.abs(el.currentTime - t) > 0.3) el.currentTime = t
         if (el.paused) void el.play().catch(() => undefined)
       } else {
         if (!el.paused) el.pause()
-        if (Math.abs(el.currentTime - target) > 0.001) el.currentTime = target
+        if (Math.abs(el.currentTime - t) > 0.001) el.currentTime = t
       }
     }
     if (a) a.volume = Math.max(0, Math.min(1, micVolume))
     v.muted = micVolume <= 0
-  }, [sourceMs, playing, rate, micVolume])
+  }, [sourceMs, playing, rate, micVolume, project.config])
 
   // The camera (specs 106, 112, 115, 123–124): every frame, spring towards the zoom target and apply the transform.
   useEffect(() => {
@@ -105,6 +114,24 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
         const v = cameraViewport(camera.current)
         el.style.transform = viewportTransform(v, el.clientWidth, el.clientHeight)
       }
+      // The webcam box (specs 148–164): spring between layouts, shrink during zooms, fade when hidden.
+      const lay = camLayer.current
+      const { config, layouts, frame: f, cameraFrame, hasCamera } = latest.current
+      if (lay && f.width > 0) {
+        const eff = effectiveLayout(config, layouts, ms)
+        const placed = hasCamera && cameraFrame ? placeCamera({ frame: f, cameraFrame, type: eff.type, cameraSize: eff.cameraSize, position: eff.cameraPositionPoint, config, zoomed: !!active && !active.isDisabled, paddingRatio: config.backgroundPaddingRatio / 100 }) : null
+        const box = placed?.camera ?? null
+        camMotion.current = camMotion.current ? cameraMotionStep(camMotion.current, box, dt) : cameraMotionAtRest(box, f)
+        const b = motionBox(camMotion.current)
+        const radius = placed ? config.cameraRoundness * Math.min(b.width, b.height) : 0
+        lay.style.left = `${b.x}px`
+        lay.style.top = `${b.y}px`
+        lay.style.width = `${b.width}px`
+        lay.style.height = `${b.height}px`
+        lay.style.opacity = String(Math.max(0, Math.min(1, camMotion.current.alpha.value)))
+        lay.style.borderRadius = `${radius}px`
+        lay.style.visibility = b.width < 1 ? 'hidden' : 'visible'
+      }
       raf = requestAnimationFrame(frame)
     }
     raf = requestAnimationFrame(frame)
@@ -118,9 +145,17 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
   const maxHeight = Math.min(size.height, previewMaxHeight)
   const output: Box = fitBox(size.width, maxHeight, ratio)
   output.y += (size.height - maxHeight) / 2
+  latest.current.frame = { width: output.width, height: output.height }
   // Shadow, inset and corner values are given at output scale (specs 174–183); the nominal output is 1920 px wide.
   const outScale = output.width / 1920
-  const laid = screenLayout(output, cropped, project.config.backgroundPaddingRatio, project.config.insetPadding, outScale)
+  // A split layout (Camera board) gives the screen only part of the frame; the camera box itself is animated per frame.
+  const camRec = project.recording.camera
+  const eff = effectiveLayout(project.config, project.layouts, sourceMs)
+  const region: Box = cameraUrl && camRec && eff.type === 'split'
+    ? placeCamera({ frame: output, cameraFrame: camRec, type: 'split', cameraSize: eff.cameraSize, position: eff.cameraPositionPoint, config: project.config, zoomed: false, paddingRatio: project.config.backgroundPaddingRatio / 100 }).screen
+    : { x: 0, y: 0, width: output.width, height: output.height }
+  const laid0 = screenLayout({ width: region.width, height: region.height }, cropped, project.config.backgroundPaddingRatio, project.config.insetPadding, outScale)
+  const laid = { screen: { ...laid0.screen, x: laid0.screen.x + region.x, y: laid0.screen.y + region.y }, outer: { ...laid0.outer, x: laid0.outer.x + region.x, y: laid0.outer.y + region.y } }
   const inner: Box = { x: output.x + laid.screen.x, y: output.y + laid.screen.y, width: laid.screen.width, height: laid.screen.height }
   const outer: Box = { x: output.x + laid.outer.x, y: output.y + laid.outer.y, width: laid.outer.width, height: laid.outer.height }
   const bg = project.config
@@ -210,6 +245,38 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
       ctx.drawImage(v, sx, sy, sw, sh, 0, 0, box.width, box.height)
       ctx.restore()
       ctx.restore()
+      // Webcam (148–164) at the box the stage shows right now, scaled to the export frame.
+      const cv = camVideo.current
+      const motion = camMotion.current
+      if (cv && cv.videoWidth > 0 && motion && motion.alpha.value > 0.01 && camRec) {
+        const k = canvas.width / output.width
+        const b = motionBox(motion)
+        const cb = { x: b.x * k, y: b.y * k, width: b.width * k, height: b.height * k }
+        if (cb.width > 1 && cb.height > 1) {
+          const placed = placeCamera({ frame: { width: canvas.width, height: canvas.height }, cameraFrame: camRec, type: eff.type, cameraSize: eff.cameraSize, position: eff.cameraPositionPoint, config: project.config, zoomed: false, paddingRatio: project.config.backgroundPaddingRatio / 100 })
+          const cr = placed.crop
+          const sxc = cr.x * cv.videoWidth
+          const syc = cr.y * cv.videoHeight
+          const swc = cr.width * cv.videoWidth
+          const shc = cr.height * cv.videoHeight
+          // object-fit: cover
+          const scale = Math.max(cb.width / swc, cb.height / shc)
+          const dw = swc * scale
+          const dh = shc * scale
+          ctx.save()
+          ctx.globalAlpha = Math.min(1, motion.alpha.value)
+          ctx.beginPath()
+          ctx.roundRect(cb.x, cb.y, cb.width, cb.height, project.config.cameraRoundness * Math.min(cb.width, cb.height))
+          ctx.clip()
+          if (project.config.mirrorCamera) {
+            ctx.translate(cb.x + cb.width, 0)
+            ctx.scale(-1, 1)
+            ctx.translate(-cb.x, 0)
+          }
+          ctx.drawImage(cv, sxc, syc, swc, shc, cb.x + (cb.width - dw) / 2, cb.y + (cb.height - dh) / 2, dw, dh)
+          ctx.restore()
+        }
+      }
       const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
       if (!blob) throw new Error('Could not encode the frame')
       return blob.arrayBuffer()
@@ -244,6 +311,11 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
             </div>
           </div>
         </div>
+        {cameraUrl && camRec && (
+          <div ref={camLayer} className="stage__cam" data-layout={eff.type} style={{ visibility: 'hidden' }}>
+            <video ref={camVideo} className={`stage__cam__video${project.config.mirrorCamera ? ' stage__cam__video--mirror' : ''}`} src={cameraUrl} crossOrigin="anonymous" muted playsInline preload="auto" />
+          </div>
+        )}
         {micUrl && <audio ref={audio} src={micUrl} preload="auto" />}
       </div>
       {children}

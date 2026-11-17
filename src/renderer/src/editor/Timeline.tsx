@@ -4,6 +4,7 @@ import { speedLabel } from '@core/editor/playback'
 import { panView, rulerTicks, sliderToZoom, timeAtX, visibleLabel, xAtTime, zoomToSlider, zoomView, type TimelineView } from '@core/editor/timelineView'
 import { waveformBars } from '@core/editor/waveform'
 import { isAutoType, moveZoom, type ZoomRange } from '@core/editor/zooms'
+import { LAYOUT_NAMES, moveLayout, type CameraLayout } from '@core/editor/cameraLayout'
 import { outputToSource } from '@core/editor/clips'
 import type { Project } from '@core/project'
 import { formatClock } from '@core/recordingPicker'
@@ -43,6 +44,13 @@ interface Props {
   onAddZoomAt: (sourceMs: number) => void
   onZoomPreview: (zooms: ZoomRange[]) => void
   onZoomCommit: (zooms: ZoomRange[]) => void
+  /** Camera layouts track (spec 156), shown when the project has a camera. */
+  hasCamera: boolean
+  selectedLayoutId: string | null
+  onSelectLayout: (id: string | null) => void
+  onAddLayoutAt: (sourceMs: number) => void
+  onLayoutPreview: (layouts: CameraLayout[]) => void
+  onLayoutCommit: (layouts: CameraLayout[]) => void
   micUrl?: string
   showWaveform: boolean
   smoothWaveform: boolean
@@ -60,8 +68,9 @@ const TRACKS: { id: TrackId; name: string; color: string; key: string; forced?: 
 
 /** The timeline (specs 50–51, 58–62, 80–87): toolbar, ruler, clips with trim handles, tracks, waveform, playhead. */
 export function Timeline(props: Props): React.JSX.Element {
-  const { project, clips, sourceDurationMs, markers, durationMs, timeMs, view, setView, visible, toggleTrack, onSeek, onPreview, selectedClipId, onSelectClip, onTrimPreview, onTrimCommit, onRemoveTrim, onJoin, selectedZoomId, onSelectZoom, onAddZoomAt, onZoomPreview, onZoomCommit, micUrl, showWaveform, smoothWaveform, alwaysShowScrollbar, audioScrubber, onToggleAudioScrubber } = props
+  const { project, clips, sourceDurationMs, markers, durationMs, timeMs, view, setView, visible, toggleTrack, onSeek, onPreview, selectedClipId, onSelectClip, onTrimPreview, onTrimCommit, onRemoveTrim, onJoin, selectedZoomId, onSelectZoom, onAddZoomAt, onZoomPreview, onZoomCommit, hasCamera, selectedLayoutId, onSelectLayout, onAddLayoutAt, onLayoutPreview, onLayoutCommit, micUrl, showWaveform, smoothWaveform, alwaysShowScrollbar, audioScrubber, onToggleAudioScrubber } = props
   const zoomDrag = useRef<{ id: string; mode: 'move' | 'start' | 'end'; startX: number; origin: ZoomRange[]; moved: boolean } | null>(null)
+  const layoutDrag = useRef<{ id: string; mode: 'move' | 'start' | 'end'; startX: number; origin: CameraLayout[]; moved: boolean } | null>(null)
   const lane = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(1)
   const [tracksOpen, setTracksOpen] = useState(false)
@@ -123,7 +132,24 @@ export function Timeline(props: Props): React.JSX.Element {
     zoomDrag.current = { id, mode, startX: e.clientX, origin: project.zooms, moved: false }
     onSelectZoom(id)
   }
+  // Layout items (spec 156) drag exactly like zooms.
+  const onLayoutDown = (id: string, mode: 'move' | 'start' | 'end') => (e: React.MouseEvent) => {
+    e.stopPropagation()
+    layoutDrag.current = { id, mode, startX: e.clientX, origin: project.layouts, moved: false }
+    onSelectLayout(id)
+  }
   const onMouseMove = (e: React.MouseEvent): void => {
+    const ld = layoutDrag.current
+    if (ld) {
+      const l = ld.origin.find((x) => x.id === ld.id)
+      if (!l) return
+      const clip = clips.find((c) => l.sourceStartMs >= c.sourceStartMs && l.sourceStartMs <= c.sourceEndMs) ?? clips[0]
+      const deltaMs = ((e.clientX - ld.startX) / width) * view.visibleMs * (clip?.speed ?? 1)
+      ld.moved = true
+      const patch = ld.mode === 'move' ? { startMs: l.sourceStartMs + deltaMs, endMs: l.sourceEndMs + deltaMs } : ld.mode === 'start' ? { startMs: l.sourceStartMs + deltaMs } : { endMs: l.sourceEndMs + deltaMs }
+      onLayoutPreview(moveLayout(ld.origin, ld.id, patch, sourceDurationMs))
+      return
+    }
     const zd = zoomDrag.current
     if (zd) {
       const z = zd.origin.find((x) => x.id === zd.id)
@@ -148,6 +174,9 @@ export function Timeline(props: Props): React.JSX.Element {
     onTrimPreview(trimClip(d.origin, d.id, d.edge, target, sourceDurationMs))
   }
   const onMouseUp = (): void => {
+    const ld = layoutDrag.current
+    layoutDrag.current = null
+    if (ld?.moved) onLayoutCommit(project.layouts)
     const zd = zoomDrag.current
     zoomDrag.current = null
     if (zd?.moved) onZoomCommit(project.zooms)
@@ -232,7 +261,19 @@ export function Timeline(props: Props): React.JSX.Element {
             })}
           </div>
           {rows.map((t) => (
-            <div key={t.id} className="tl__row" data-track={t.id} title={t.id === 'zooms' ? 'Click or drag to add zoom on cursor' : undefined} onClick={(e) => { if (t.id === 'zooms' && e.target === e.currentTarget) { e.stopPropagation(); onAddZoomAt(outputToSource(clips, timeFromEvent(e))) } }}>
+            <div key={t.id} className="tl__row" data-track={t.id} title={t.id === 'zooms' ? 'Click or drag to add zoom on cursor' : t.id === 'layouts' ? (hasCamera ? 'Click to create a new camera layout' : 'No camera recorded') : undefined} onClick={(e) => { if (e.target !== e.currentTarget) return; if (t.id === 'zooms') { e.stopPropagation(); onAddZoomAt(outputToSource(clips, timeFromEvent(e))) } else if (t.id === 'layouts' && hasCamera) { e.stopPropagation(); onAddLayoutAt(outputToSource(clips, timeFromEvent(e))) } }}>
+              {t.id === 'layouts' && project.layouts.map((l) => {
+                const a = atOutput(l.sourceStartMs)
+                const b = atOutput(l.sourceEndMs)
+                if (a === null || b === null) return null
+                return (
+                  <div key={l.id} className={`tl__zi tl__zi--layout${l.isDisabled ? ' tl__zi--off' : ''}${l.id === selectedLayoutId ? ' tl__zi--on' : ''}`} style={{ left: x(a), width: Math.max(2, x(b) - x(a)) }} onMouseDown={onLayoutDown(l.id, 'move')} onClick={(e) => { e.stopPropagation(); if (!layoutDrag.current) onSelectLayout(l.id) }} title={`${LAYOUT_NAMES[l.type]} · ${formatClock(l.sourceEndMs - l.sourceStartMs)}`}>
+                    <span className="tl__zi__label">{LAYOUT_NAMES[l.type]}</span>
+                    <span className="tl__handle tl__handle--start" onMouseDown={onLayoutDown(l.id, 'start')} />
+                    <span className="tl__handle tl__handle--end" onMouseDown={onLayoutDown(l.id, 'end')} />
+                  </div>
+                )
+              })}
               {t.id === 'zooms' && project.zooms.map((z) => {
                 const a = atOutput(z.startMs)
                 const b = atOutput(z.endMs)
