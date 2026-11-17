@@ -150,6 +150,14 @@ export class CaptureClient extends EventEmitter {
     return this.send({ cmd: 'cancel' }, 'cancelled').then(() => undefined)
   }
 
+  probe(path: string): Promise<Extract<HelperEvent, { event: 'probed' }>> {
+    return this.send({ cmd: 'probe', path }, 'probed')
+  }
+
+  importVideo(path: string, output: string): Promise<Extract<HelperEvent, { event: 'imported' }>> {
+    return this.send({ cmd: 'import', path, output }, 'imported')
+  }
+
   dispose(): void {
     this.process?.kill()
     this.process = null
