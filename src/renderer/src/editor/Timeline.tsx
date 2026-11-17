@@ -3,6 +3,8 @@ import { clipOutputMs, outputOffsets, sourceToOutput, trimClip, trimmedMs, type 
 import { speedLabel } from '@core/editor/playback'
 import { panView, rulerTicks, sliderToZoom, timeAtX, visibleLabel, xAtTime, zoomToSlider, zoomView, type TimelineView } from '@core/editor/timelineView'
 import { waveformBars } from '@core/editor/waveform'
+import { isAutoType, moveZoom, type ZoomRange } from '@core/editor/zooms'
+import { outputToSource } from '@core/editor/clips'
 import type { Project } from '@core/project'
 import { formatClock } from '@core/recordingPicker'
 import type { RecordingMarker } from '@core/recordingSession'
@@ -36,6 +38,11 @@ interface Props {
   onTrimCommit: (clips: Clip[]) => void
   onRemoveTrim: (id: string, edge: 'start' | 'end') => void
   onJoin: (rightId: string) => void
+  selectedZoomId: string | null
+  onSelectZoom: (id: string | null) => void
+  onAddZoomAt: (sourceMs: number) => void
+  onZoomPreview: (zooms: ZoomRange[]) => void
+  onZoomCommit: (zooms: ZoomRange[]) => void
   micUrl?: string
   showWaveform: boolean
   smoothWaveform: boolean
@@ -53,7 +60,8 @@ const TRACKS: { id: TrackId; name: string; color: string; key: string; forced?: 
 
 /** The timeline (specs 50–51, 58–62, 80–87): toolbar, ruler, clips with trim handles, tracks, waveform, playhead. */
 export function Timeline(props: Props): React.JSX.Element {
-  const { project, clips, sourceDurationMs, markers, durationMs, timeMs, view, setView, visible, toggleTrack, onSeek, onPreview, selectedClipId, onSelectClip, onTrimPreview, onTrimCommit, onRemoveTrim, onJoin, micUrl, showWaveform, smoothWaveform, alwaysShowScrollbar, audioScrubber, onToggleAudioScrubber } = props
+  const { project, clips, sourceDurationMs, markers, durationMs, timeMs, view, setView, visible, toggleTrack, onSeek, onPreview, selectedClipId, onSelectClip, onTrimPreview, onTrimCommit, onRemoveTrim, onJoin, selectedZoomId, onSelectZoom, onAddZoomAt, onZoomPreview, onZoomCommit, micUrl, showWaveform, smoothWaveform, alwaysShowScrollbar, audioScrubber, onToggleAudioScrubber } = props
+  const zoomDrag = useRef<{ id: string; mode: 'move' | 'start' | 'end'; startX: number; origin: ZoomRange[]; moved: boolean } | null>(null)
   const lane = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(1)
   const [tracksOpen, setTracksOpen] = useState(false)
@@ -109,7 +117,24 @@ export function Timeline(props: Props): React.JSX.Element {
     drag.current = { id, edge, startX: e.clientX, origin: clips, speed: clip.speed, targetMs: null }
     onSelectClip(id)
   }
+  // Zoom items (spec 104): drag the body to move, the edges to resize; output px → source ms through the clip under it.
+  const onZoomDown = (id: string, mode: 'move' | 'start' | 'end') => (e: React.MouseEvent) => {
+    e.stopPropagation()
+    zoomDrag.current = { id, mode, startX: e.clientX, origin: project.zooms, moved: false }
+    onSelectZoom(id)
+  }
   const onMouseMove = (e: React.MouseEvent): void => {
+    const zd = zoomDrag.current
+    if (zd) {
+      const z = zd.origin.find((x) => x.id === zd.id)
+      if (!z) return
+      const clip = clips.find((c) => z.startMs >= c.sourceStartMs && z.startMs <= c.sourceEndMs) ?? clips[0]
+      const deltaMs = ((e.clientX - zd.startX) / width) * view.visibleMs * (clip?.speed ?? 1)
+      zd.moved = true
+      const patch = zd.mode === 'move' ? { startMs: z.startMs + deltaMs, endMs: z.endMs + deltaMs } : zd.mode === 'start' ? { startMs: z.startMs + deltaMs } : { endMs: z.endMs + deltaMs }
+      onZoomPreview(moveZoom(zd.origin, zd.id, patch, sourceDurationMs))
+      return
+    }
     const d = drag.current
     if (!d) {
       onPreview(timeFromEvent(e))
@@ -123,6 +148,9 @@ export function Timeline(props: Props): React.JSX.Element {
     onTrimPreview(trimClip(d.origin, d.id, d.edge, target, sourceDurationMs))
   }
   const onMouseUp = (): void => {
+    const zd = zoomDrag.current
+    zoomDrag.current = null
+    if (zd?.moved) onZoomCommit(project.zooms)
     const d = drag.current
     drag.current = null
     if (d && d.targetMs !== null) onTrimCommit(trimClip(d.origin, d.id, d.edge, d.targetMs, sourceDurationMs))
@@ -204,8 +232,19 @@ export function Timeline(props: Props): React.JSX.Element {
             })}
           </div>
           {rows.map((t) => (
-            <div key={t.id} className="tl__row" data-track={t.id}>
-              {t.id === 'zooms' && project.zooms.map((z) => { const a = atOutput(z.startMs); const b = atOutput(z.endMs); return a === null || b === null ? null : <span key={z.id} className="tl__item" style={{ left: pct(a), width: `${((x(b) - x(a)) / width) * 100}%`, background: 'var(--zoom)' }} /> })}
+            <div key={t.id} className="tl__row" data-track={t.id} title={t.id === 'zooms' ? 'Click or drag to add zoom on cursor' : undefined} onClick={(e) => { if (t.id === 'zooms' && e.target === e.currentTarget) { e.stopPropagation(); onAddZoomAt(outputToSource(clips, timeFromEvent(e))) } }}>
+              {t.id === 'zooms' && project.zooms.map((z) => {
+                const a = atOutput(z.startMs)
+                const b = atOutput(z.endMs)
+                if (a === null || b === null) return null
+                return (
+                  <div key={z.id} className={`tl__zi${z.isDisabled ? ' tl__zi--off' : ''}${z.id === selectedZoomId ? ' tl__zi--on' : ''}`} style={{ left: x(a), width: Math.max(2, x(b) - x(a)) }} onMouseDown={onZoomDown(z.id, 'move')} onClick={(e) => { e.stopPropagation(); if (!zoomDrag.current) onSelectZoom(z.id) }} title={`${isAutoType(z.type) ? 'Auto' : 'Manual'} · ${z.zoom.toFixed(2)}× · ${formatClock(z.endMs - z.startMs)}`}>
+                    <span className="tl__zi__label">{isAutoType(z.type) ? 'Auto' : 'Manual'} · {Math.round(z.zoom * 100)}%</span>
+                    <span className="tl__handle tl__handle--start" onMouseDown={onZoomDown(z.id, 'start')} />
+                    <span className="tl__handle tl__handle--end" onMouseDown={onZoomDown(z.id, 'end')} />
+                  </div>
+                )
+              })}
               {t.id === 'shortcuts' && project.recording.keys.map((k, i) => { const o = atOutput(k.timeMs); return o === null ? null : <span key={i} className="tl__chip" style={{ left: pct(o) }}>{k.label}</span> })}
             </div>
           ))}

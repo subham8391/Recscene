@@ -38,7 +38,7 @@ describe('shortcuts', () => {
   })
 
   it('filters and groups for the command menu', () => {
-    expect(filterActions('zoom').map((a) => a.id)).toEqual(['timelineZoomIn', 'timelineZoomOut', 'track:zooms'])
+    expect(filterActions('zoom').map((a) => a.id)).toContain('addZoom')
     expect(filterActions('⌘k')[0]?.id).toBe('commandMenu')
     expect(groupActions(ACTIONS)[0]?.group).toBe('Playback')
     expect(actionForKey(key('c'))?.id).toBe('splitSliceAtCurrentTime')

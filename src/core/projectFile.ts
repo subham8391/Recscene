@@ -1,6 +1,7 @@
 import type { RecordedEvents } from './captureProtocol'
 import type { RecordingMarker } from './recordingSession'
 import { defaultClip } from './editor/clips'
+import { automaticZooms } from './editor/zooms'
 import { defaultProjectConfig, type Project } from './project'
 
 /** The folder name for a new recording, e.g. "Recording 2026-11-17 at 15.09.recscene". */
@@ -19,6 +20,8 @@ export interface NewProjectInput {
   mic?: { file: string }
   events: RecordedEvents
   flags?: number[]
+  /** Spec 102–103: zoom level for the generated zooms; null skips generation. */
+  autoZoomLevel?: number | null
 }
 
 /** Builds the project document written as project.json after a recording stops. */
@@ -37,7 +40,7 @@ export function newProject(input: NewProjectInput): Project {
       clicks: input.events.clicks,
       keys: input.events.keys
     },
-    zooms: [],
+    zooms: input.autoZoomLevel === null ? [] : automaticZooms(input.events.clicks, input.durationMs, input.autoZoomLevel ?? 2),
     clips: [defaultClip(input.durationMs)]
   }
 }
@@ -47,5 +50,7 @@ export interface OpenedProject {
   projectDir: string
   project: Project
   markers: RecordingMarker[]
+  /** Cursor positions from events.json (fractions of the frame), for zooms that follow the mouse. */
+  cursor: { timeMs: number; x: number; y: number }[]
   media: { screen: string; mic?: string; systemAudio?: string }
 }

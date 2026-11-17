@@ -2,7 +2,7 @@
  * The editor's action registry (specs 49, 52–58, 63–65, 72–78): one list
  * that drives keyboard handling, the ⌘K command menu and the shortcuts guide.
  */
-export type ActionGroup = 'Playback' | 'Slice' | 'View' | 'Editor' | 'Project' | 'Sidebar' | 'Export' | 'Clipboard' | 'Help'
+export type ActionGroup = 'Playback' | 'Slice' | 'Zoom' | 'View' | 'Editor' | 'Project' | 'Sidebar' | 'Export' | 'Clipboard' | 'Help'
 
 export interface ActionDef {
   id: string
@@ -24,8 +24,8 @@ export const ACTIONS: readonly ActionDef[] = [
   { id: 'goToFirstFrame', label: 'Go to first frame', group: 'Playback', shortcut: 'Cmd+ArrowLeft' },
   { id: 'goToLastFrame', label: 'Go to last frame', group: 'Playback', shortcut: 'Cmd+ArrowRight' },
   { id: 'toggleLoop', label: 'Loop playback', group: 'Playback' },
-  { id: 'timelineZoomIn', label: 'Zoom in', group: 'Playback', shortcut: 'Cmd+=' },
-  { id: 'timelineZoomOut', label: 'Zoom out', group: 'Playback', shortcut: 'Cmd+-' },
+  { id: 'timelineZoomIn', label: 'Zoom in (timeline, or the selected zoom’s level)', group: 'Playback', shortcut: 'Cmd+=' },
+  { id: 'timelineZoomOut', label: 'Zoom out (timeline, or the selected zoom’s level)', group: 'Playback', shortcut: 'Cmd+-' },
   { id: 'toggleAudioScrubber', label: 'Enable audio scrubber (experimental)', group: 'Playback' },
   { id: 'splitSliceAtCurrentTime', label: 'Split slice at current time', group: 'Slice', shortcut: 'C' },
   { id: 'removeSlice', label: 'Remove slice', group: 'Slice', shortcut: 'Backspace' },
@@ -35,6 +35,16 @@ export const ACTIONS: readonly ActionDef[] = [
   { id: 'applySpeedToAll', label: 'Apply speed to all slices', group: 'Slice' },
   { id: 'resetAllClips', label: 'Reset trims and cuts for all slices', group: 'Slice' },
   { id: 'crop', label: 'Crop recording…', group: 'Editor' },
+  { id: 'addZoom', label: 'Add zoom', group: 'Zoom' },
+  { id: 'addManualZoom', label: 'Add manual zoom', group: 'Zoom' },
+  { id: 'duplicateZoom', label: 'Duplicate zoom', group: 'Zoom' },
+  { id: 'toggleZoomDisabled', label: 'Enable / disable zoom', group: 'Zoom' },
+  { id: 'disableAllZooms', label: 'Disable all zooms', group: 'Zoom' },
+  { id: 'enableAllZooms', label: 'Enable all zooms', group: 'Zoom' },
+  { id: 'applyZoomLevelToAll', label: 'Apply zoom level to all zooms', group: 'Zoom' },
+  { id: 'restoreDefaultZooms', label: 'Restore default zoom ranges', group: 'Zoom' },
+  { id: 'removeAllZooms', label: 'Remove all zooms', group: 'Zoom' },
+  { id: 'cut', label: 'Cut zoom', group: 'Clipboard', shortcut: 'Cmd+X' },
   { id: 'paste', label: 'Paste slice settings', group: 'Clipboard', shortcut: 'Cmd+V' },
   { id: 'undo', label: 'Undo', group: 'Editor', shortcut: 'Cmd+Z' },
   { id: 'redo', label: 'Redo', group: 'Editor', shortcut: 'Cmd+Shift+Z' },

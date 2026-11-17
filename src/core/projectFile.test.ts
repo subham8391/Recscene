@@ -20,7 +20,8 @@ describe('newProject', () => {
     })
     expect(project.version).toBe(1)
     expect(project.meta.recordingFlags).toEqual([])
-    expect(project.zooms).toEqual([])
+    expect(project.zooms).toHaveLength(1)
+    expect(project.zooms[0]).toMatchObject({ startMs: 0, endMs: 2510, isSystem: true })
     expect(project.clips).toHaveLength(1)
     expect(project.clips[0]).toMatchObject({ sourceStartMs: 0, sourceEndMs: 5000, speed: 1 })
     expect(project.recording.clicks).toHaveLength(1)
@@ -36,8 +37,10 @@ describe('newProject', () => {
       screen: { width: 2, height: 2, file: 'screen.mov' },
       mic: { file: 'mic.m4a' },
       events: { clicks: [], keys: [], cursor: [] },
-      flags: [1500]
+      flags: [1500],
+      autoZoomLevel: null
     })
+    expect(project.zooms).toEqual([])
     expect(project.recording.microphone).toEqual({ file: 'mic.m4a' })
     expect(project.meta.recordingFlags).toEqual([1500])
   })

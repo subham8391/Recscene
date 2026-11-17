@@ -105,10 +105,17 @@ export class ProjectService {
       .then((t) => (JSON.parse(t) as { markers?: RecordingMarker[] }).markers ?? [])
       .catch(() => [] as RecordingMarker[])
     const has = async (f: string): Promise<boolean> => stat(join(projectDir, f)).then(() => true).catch(() => false)
+    const cursor = await readFile(join(projectDir, 'events.json'), 'utf8')
+      .then((text) => {
+        const parsed = JSON.parse(text) as { cursor?: { timeMs: number; x: number; y: number }[] }
+        return Array.isArray(parsed.cursor) ? parsed.cursor.filter((s) => Number.isFinite(s.timeMs) && Number.isFinite(s.x) && Number.isFinite(s.y)) : []
+      })
+      .catch(() => [] as { timeMs: number; x: number; y: number }[])
     const opened: OpenedProject = {
       projectDir,
       project,
       markers,
+      cursor,
       media: {
         screen: mediaUrl(projectDir, project.recording.screen.file),
         ...(project.recording.microphone && (await has(project.recording.microphone.file)) ? { mic: mediaUrl(projectDir, project.recording.microphone.file) } : {})

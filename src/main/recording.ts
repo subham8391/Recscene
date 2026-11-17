@@ -7,7 +7,9 @@ import { normaliseEvents, type EventsFile, type Permissions, type RecordingResul
 import { newProject, recordingFolderName } from '@core/projectFile'
 import { addFlag, addMarker, markersFile, pauseClock, resumeClock, startSession, type SessionState } from '@core/recordingSession'
 import { importedBundleName, isUnfinishedBundle } from '@core/recovery'
+import { appPrefsFrom } from '@core/appPrefs'
 import { CaptureClient, resolveHelperPath } from './capture'
+import type { Preferences } from './preferences'
 
 export type RendererStartOptions = Omit<StartOptions, 'outputDir'> & { name?: string }
 
@@ -31,7 +33,7 @@ export class RecordingService extends EventEmitter {
   private busy = false
   private toastTimer: ReturnType<typeof setTimeout> | null = null
 
-  constructor() {
+  constructor(private readonly prefs?: Preferences) {
     super()
     this.client = new CaptureClient({ helperPath: resolveHelperPath(app.getAppPath(), process.resourcesPath, app.isPackaged) })
     this.client.on('warning', (message: string) => this.broadcast('capture:warning', message))
@@ -233,12 +235,20 @@ export class RecordingService extends EventEmitter {
       screen: { width: input.width, height: input.height, file: 'screen.mov' },
       ...(input.mic ? { mic: { file: input.mic } } : {}),
       events: input.events,
-      flags: input.flags
+      flags: input.flags,
+      autoZoomLevel: this.autoZoomLevel()
     })
     const projectFile = join(projectDir, 'project.json')
     await writeFile(projectFile, JSON.stringify(project, null, 2))
     await writeFile(join(projectDir, 'recording-markers.json'), JSON.stringify(markersFile(input.markers), null, 2))
     return { projectDir, projectFile, durationMs: input.durationMs, frames: input.frames, width: input.width, height: input.height, clicks: input.events.clicks.length, keys: input.events.keys.length, cursorSamples: input.events.cursor.length }
+  }
+
+  /** Specs 102–103, 109: the level automatic zooms are created with, or null to create none. */
+  private autoZoomLevel(): number | null {
+    const p = appPrefsFrom(this.prefs?.all() ?? {})
+    if (!p.createAutomaticZooms) return null
+    return p.defaultZoomLevel ?? 2
   }
 
   dispose(): void {
