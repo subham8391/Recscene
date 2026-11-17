@@ -13,6 +13,8 @@ extraResources:
     to: bin
   - from: resources/sounds
     to: sounds
+  - from: resources/backgrounds
+    to: backgrounds
 mac:
   category: public.app-category.video
   target:

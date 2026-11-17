@@ -21,11 +21,11 @@ export function mediaUrl(projectDir: string, file: string): string {
   return `${MEDIA_SCHEME}://project/${encodeURIComponent(projectDir)}/${encodeURIComponent(file)}`
 }
 
-/** Bundled, read-only assets (click sounds): recscene-media://assets/<path under resources>. */
+/** Bundled, read-only assets (click sounds, wallpapers): recscene-media://assets/<path under resources>. */
 export const ASSETS_URL = `${MEDIA_SCHEME}://assets`
 
-function assetsRoot(): string {
-  const candidates = [join(process.resourcesPath, 'sounds'), join(app.getAppPath(), 'resources', 'sounds')]
+function assetsRoot(kind: 'sounds' | 'backgrounds'): string {
+  const candidates = [join(process.resourcesPath, kind), join(app.getAppPath(), 'resources', kind)]
   return candidates.find((p) => existsSync(p)) ?? candidates[1]!
 }
 
@@ -46,10 +46,11 @@ export class ProjectService {
       const url = new URL(request.url)
       let path: string
       if (url.host === 'assets') {
-        // sounds/clicks/<set>/<file>.wav only
+        // sounds/clicks/<set>/<file>.wav and backgrounds/<Collection>/<file>.svg only
         const rel = decodeURIComponent(url.pathname).replace(/^\/+/, '')
-        if (!/^sounds\/clicks\/[a-z-]+\/(down|up|click)\.wav$/.test(rel)) return new Response('Forbidden', { status: 403 })
-        path = join(assetsRoot(), rel.slice('sounds/'.length))
+        if (/^sounds\/clicks\/[a-z-]+\/(down|up|click)\.wav$/.test(rel)) path = join(assetsRoot('sounds'), rel.slice('sounds/'.length))
+        else if (/^backgrounds\/[A-Za-z]+\/[a-z0-9-]+\.svg$/.test(rel)) path = join(assetsRoot('backgrounds'), rel.slice('backgrounds/'.length))
+        else return new Response('Forbidden', { status: 403 })
       } else {
         const [, dirEncoded, fileEncoded] = url.pathname.split('/')
         if (!dirEncoded || !fileEncoded) return new Response('Not found', { status: 404 })
@@ -60,7 +61,8 @@ export class ProjectService {
       }
       const info = await stat(path).catch(() => null)
       if (!info?.isFile()) return new Response('Not found', { status: 404 })
-      const type = path.endsWith('.mov') ? 'video/quicktime' : path.endsWith('.m4a') ? 'audio/mp4' : path.endsWith('.wav') ? 'audio/wav' : 'application/octet-stream'
+      const ext = path.slice(path.lastIndexOf('.') + 1).toLowerCase()
+      const type = ({ mov: 'video/quicktime', m4a: 'audio/mp4', wav: 'audio/wav', svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg' } as Record<string, string>)[ext] ?? 'application/octet-stream'
       const range = /^bytes=(\d*)-(\d*)$/.exec(request.headers.get('range') ?? '')
       let start = 0
       let end = info.size - 1
@@ -92,6 +94,9 @@ export class ProjectService {
     ipcMain.handle('project:showInFinder', () => this.showInFinder())
     ipcMain.handle('project:copyFrame', (_e, png: ArrayBuffer) => this.copyFrame(png))
     ipcMain.handle('project:exportFrame', (_e, png: ArrayBuffer, timeMs: number) => this.exportFrame(png, timeMs))
+    ipcMain.handle('project:pickBackgroundImage', () => this.pickBackgroundImage())
+    ipcMain.handle('project:importBackgroundImage', (_e, source: string | ArrayBuffer) => this.importBackgroundImage(source))
+    ipcMain.handle('project:mediaUrl', (_e, file: string) => (this.current ? mediaUrl(this.current.projectDir, file) : null))
   }
 
   get currentDir(): string | null {
@@ -187,6 +192,30 @@ export class ProjectService {
     await writeFile(join(target, 'project.json'), JSON.stringify({ ...renamed, lastSavedAt: new Date().toISOString() }, null, 2))
     await writeFile(join(target, 'recording-markers.json'), JSON.stringify(markersFile(current.markers), null, 2))
     return this.open(target)
+  }
+
+  /** Spec 167: a png or jpg is copied into the bundle as background-<n>.<ext>; returns its file name and media url. */
+  async importBackgroundImage(source: string | ArrayBuffer): Promise<{ file: string; url: string }> {
+    const current = this.current
+    if (!current) throw new Error('No project is open')
+    const ext = typeof source === 'string' ? source.slice(source.lastIndexOf('.') + 1).toLowerCase() : 'png'
+    if (!['png', 'jpg', 'jpeg'].includes(ext)) throw new Error('Invalid mime type')
+    const file = `background-${Date.now().toString(36)}.${ext}`
+    const target = join(current.projectDir, file)
+    try {
+      if (typeof source === 'string') await cp(source, target)
+      else await writeFile(target, Buffer.from(source))
+    } catch {
+      throw new Error('Error copying file to project')
+    }
+    return { file, url: mediaUrl(current.projectDir, file) }
+  }
+
+  async pickBackgroundImage(): Promise<{ file: string; url: string } | null> {
+    const result = await dialog.showOpenDialog({ title: 'Choose a background image', properties: ['openFile'], filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg'] }] })
+    const path = result.filePaths[0]
+    if (result.canceled || !path) return null
+    return this.importBackgroundImage(path)
   }
 
   async showInFinder(): Promise<void> {

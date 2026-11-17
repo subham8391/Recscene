@@ -25,7 +25,7 @@ export interface SpringParams {
 
 /** Spec 123 presets. */
 export const SPRING_FOCUSED: SpringParams = { stiffness: 200, damping: 40, mass: 2.25 }
-export const SPRING_SMOOTH: SpringParams = { stiffness: 90, damping: 26, mass: 2.25 }
+export const SPRING_SMOOTH: SpringParams = { stiffness: 170, damping: 50, mass: 3 }
 
 /** Linear interpolation between the two samples around `timeMs`; the frame centre when there is no data. */
 export function cursorAt(samples: readonly CursorSample[], timeMs: number): Point {
