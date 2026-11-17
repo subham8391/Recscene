@@ -8,6 +8,8 @@
   <string>recscene-capture</string>
   <key>CFBundleShortVersionString</key>
   <string>0.1.0</string>
+  <key>NSCameraUsageDescription</key>
+  <string>Recscene records your camera when you add it to a recording.</string>
   <key>NSMicrophoneUsageDescription</key>
   <string>Recscene records your microphone when you add it to a recording.</string>
   <key>NSScreenCaptureUsageDescription</key>

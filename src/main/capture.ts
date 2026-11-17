@@ -6,6 +6,7 @@ import {
   parseHelperLine,
   serializeCommand,
   splitLines,
+  type CameraInfo,
   type HelperCommand,
   type HelperEvent,
   type Permissions,
@@ -118,8 +119,13 @@ export class CaptureClient extends EventEmitter {
   }
 
   async permissions(request = false): Promise<Permissions> {
-    const { screen, inputMonitoring, accessibility, microphone } = await this.send({ cmd: 'permissions', request }, 'permissions')
-    return { screen, inputMonitoring, accessibility, microphone }
+    const { screen, inputMonitoring, accessibility, microphone, camera } = await this.send({ cmd: 'permissions', request }, 'permissions')
+    return { screen, inputMonitoring, accessibility, microphone, camera: camera ?? 'notDetermined' }
+  }
+
+  /** Spec 8: the webcams the helper can record. */
+  listCameras(): Promise<CameraInfo[]> {
+    return this.send({ cmd: 'cameras' }, 'cameras').then((e) => e.cameras)
   }
 
   listTargets(): Promise<Extract<HelperEvent, { event: 'targets' }>> {

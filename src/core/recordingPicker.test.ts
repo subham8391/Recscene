@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   addSavedDimensions,
   applyAspect,
+  cameraLabel,
+  CAMERA_MISSING,
+  selectedCamera,
   applySavedDimensions,
   clampArea,
   countdownLabel,
@@ -112,5 +115,39 @@ describe('formatting', () => {
     expect(formatBytes(300 * 1024 ** 2)).toBe('300 MB')
     expect(formatClock(42_000)).toBe('00:42')
     expect(formatClock(3_725_000)).toBe('1:02:05')
+  })
+})
+
+describe('camera choice (spec 8)', () => {
+  const cams = [
+    { id: 'a', name: 'FaceTime HD Camera', maxHeight: 1920 },
+    { id: 'b', name: 'Logitech Brio', maxHeight: 2160 }
+  ]
+
+  it('is off unless the preference is on', () => {
+    expect(selectedCamera(defaultPickerPrefs, cams)).toEqual({ camera: null, missing: false })
+    expect(cameraLabel(defaultPickerPrefs, cams)).toBe("Don't record camera")
+  })
+
+  it('uses the remembered camera when it is connected', () => {
+    const prefs = { ...defaultPickerPrefs, recordCamera: true, cameraDeviceId: 'b' }
+    expect(selectedCamera(prefs, cams).camera?.name).toBe('Logitech Brio')
+    expect(cameraLabel(prefs, cams)).toBe('Logitech Brio · 1080p')
+    expect(cameraLabel({ ...prefs, maximumWebcamHeight: 720 }, cams)).toBe('Logitech Brio · 720p')
+  })
+
+  it('falls back to the first camera and says the remembered one is gone', () => {
+    const prefs = { ...defaultPickerPrefs, recordCamera: true, cameraDeviceId: 'gone' }
+    expect(selectedCamera(prefs, cams)).toEqual({ camera: cams[0], missing: true })
+    expect(CAMERA_MISSING).toContain('not be connected')
+    expect(selectedCamera({ ...prefs, cameraDeviceId: null }, cams)).toEqual({ camera: cams[0], missing: false })
+    expect(selectedCamera(prefs, [])).toEqual({ camera: null, missing: false })
+    expect(cameraLabel(prefs, [])).toBe('No camera is connected')
+  })
+
+  it('reads the camera preferences from disk', () => {
+    const p = pickerPrefsFrom({ recordCamera: true, cameraDeviceId: 'x', hideCameraPreview: true, webcamPreviewType: 'full-frame', maximumWebcamHeight: 720 })
+    expect(p).toMatchObject({ recordCamera: true, cameraDeviceId: 'x', hideCameraPreview: true, webcamPreviewType: 'full-frame', maximumWebcamHeight: 720 })
+    expect(pickerPrefsFrom({ maximumWebcamHeight: 4000, webcamPreviewType: 'oval', cameraDeviceId: '' })).toMatchObject({ maximumWebcamHeight: 1080, webcamPreviewType: 'square', cameraDeviceId: null })
   })
 })

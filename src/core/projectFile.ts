@@ -18,6 +18,8 @@ export interface NewProjectInput {
   durationMs: number
   screen: { width: number; height: number; file: string }
   mic?: { file: string }
+  /** Spec 8: the webcam track, when one was recorded. */
+  camera?: { width: number; height: number; file: string }
   events: RecordedEvents
   flags?: number[]
   /** Spec 102–103: zoom level for the generated zooms; null skips generation. */
@@ -37,6 +39,7 @@ export function newProject(input: NewProjectInput): Project {
       durationMs: input.durationMs,
       screen: input.screen,
       ...(input.mic ? { microphone: input.mic } : {}),
+      ...(input.camera ? { camera: input.camera } : {}),
       clicks: input.events.clicks,
       keys: input.events.keys
     },
@@ -52,5 +55,5 @@ export interface OpenedProject {
   markers: RecordingMarker[]
   /** Cursor positions from events.json (fractions of the frame), for zooms that follow the mouse. */
   cursor: { timeMs: number; x: number; y: number }[]
-  media: { screen: string; mic?: string; systemAudio?: string; assets: string }
+  media: { screen: string; mic?: string; systemAudio?: string; camera?: string; assets: string }
 }

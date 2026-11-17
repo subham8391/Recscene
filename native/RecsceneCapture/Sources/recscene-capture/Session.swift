@@ -7,6 +7,7 @@ final class Session {
     private let recorder: Recorder
     private let events: EventRecorder
     private let microphone: Microphone?
+    private let camera: Camera?
     private let clock = SessionClock()
 
     init(options: StartOptions) async throws {
@@ -26,8 +27,16 @@ final class Session {
         } else {
             microphone = nil
         }
-        recorder.onFirstFrame = { [clock] pts in
+        if let cameraId = options.camera {
+            let status = await Permissions.camera(request: true)
+            guard status == "granted" else { throw ProtocolError.permission("camera") }
+            camera = try Camera(deviceId: cameraId, maxHeight: options.cameraMaxHeight, outputURL: outputDir.appendingPathComponent("camera.mov"))
+        } else {
+            camera = nil
+        }
+        recorder.onFirstFrame = { [clock, camera] pts in
             clock.start(at: CMTimeGetSeconds(pts))
+            camera?.align(to: pts)
         }
         recorder.onStreamError = { error in
             Output.shared.send(.error(code: "stream", message: error.localizedDescription))
@@ -40,6 +49,7 @@ final class Session {
     func start() async throws {
         events.start()
         try microphone?.start()
+        camera?.start()
         try await recorder.start()
     }
 
@@ -47,6 +57,7 @@ final class Session {
         guard let t = clock.pause(at: ProcessInfo.processInfo.systemUptime) else { throw ProtocolError.alreadyPaused }
         recorder.pause()
         microphone?.pause()
+        camera?.pause()
         return .paused(timeMs: t * 1000)
     }
 
@@ -54,6 +65,7 @@ final class Session {
         guard let t = clock.resume(at: ProcessInfo.processInfo.systemUptime) else { throw ProtocolError.notPaused }
         recorder.resume()
         microphone?.resume()
+        camera?.resume()
         return .resumed(timeMs: t * 1000)
     }
 
@@ -64,9 +76,10 @@ final class Session {
     /// Stops and deletes everything this session wrote (specs 23–24).
     func cancel() async -> OutEvent {
         microphone?.discard()
+        camera?.cancel()
         await recorder.cancel()
         _ = events.stop()
-        for name in ["screen.mov", "mic.m4a", "events.json"] {
+        for name in ["screen.mov", "mic.m4a", "camera.mov", "events.json"] {
             try? FileManager.default.removeItem(at: outputDir.appendingPathComponent(name))
         }
         return .cancelled
@@ -75,6 +88,7 @@ final class Session {
     func stop() async throws -> OutEvent {
         if clock.isPaused { _ = try? resume() }
         microphone?.stop()
+        let cameraMs = await camera?.stop()
         let durationMs = try await recorder.stop()
         let eventsFile = events.stop()
         let eventsURL = outputDir.appendingPathComponent("events.json")
@@ -92,8 +106,11 @@ final class Session {
             files: StoppedFiles(
                 screen: outputDir.appendingPathComponent("screen.mov").path,
                 events: eventsURL.path,
-                mic: microphone == nil ? nil : outputDir.appendingPathComponent("mic.m4a").path),
+                mic: microphone == nil ? nil : outputDir.appendingPathComponent("mic.m4a").path,
+                camera: cameraMs == nil ? nil : outputDir.appendingPathComponent("camera.mov").path),
             micOffsetMs: micOffsetMs,
-            frames: recorder.frames)
+            frames: recorder.frames,
+            cameraWidth: cameraMs == nil ? nil : camera?.width,
+            cameraHeight: cameraMs == nil ? nil : camera?.height)
     }
 }

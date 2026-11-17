@@ -1,12 +1,12 @@
 import { statfs } from 'node:fs/promises'
-import { BrowserWindow, ipcMain, screen } from 'electron'
-import { displayUnderPoint, pickerPrefsFrom, type DisplayInfo, type PickerPrefs, type PickerState, type Rect, type RecordRequest } from '@core/recordingPicker'
+import { BrowserWindow, ipcMain, screen, systemPreferences } from 'electron'
+import { displayUnderPoint, pickerPrefsFrom, selectedCamera, type DisplayInfo, type PickerPrefs, type PickerState, type Rect, type RecordRequest } from '@core/recordingPicker'
 import type { SpeakerNotes } from './notes'
 import type { Preferences } from './preferences'
 import type { RecordingService } from './recording'
 import { createOverlayWindow } from './windows'
 
-const PREF_KEYS: (keyof PickerPrefs)[] = ['source', 'recordingCountdownDuration', 'recordingAreaCropPresets', 'recordMicrophone', 'systemAudio', 'recordingAreaCover', 'lastArea', 'showSpeakerNotes', 'hideDesktopContentWhileRecording', 'enableAutoGainControl', 'enableVoiceRecordingEnhancements']
+const PREF_KEYS: (keyof PickerPrefs)[] = ['source', 'recordingCountdownDuration', 'recordingAreaCropPresets', 'recordMicrophone', 'systemAudio', 'recordingAreaCover', 'lastArea', 'showSpeakerNotes', 'hideDesktopContentWhileRecording', 'enableAutoGainControl', 'enableVoiceRecordingEnhancements', 'recordCamera', 'cameraDeviceId', 'hideCameraPreview', 'webcamPreviewType', 'maximumWebcamHeight']
 
 /**
  * The recording picker (specs 1–5, 13, 17, 21, 31): a transparent window the
@@ -28,6 +28,16 @@ export class Picker {
     ipcMain.handle('picker:savePrefs', (_e, values: Partial<PickerPrefs>) => this.savePrefs(values))
     ipcMain.handle('picker:record', (_e, request: RecordRequest) => this.record(request))
     ipcMain.handle('picker:cancel', () => this.close())
+    ipcMain.handle('picker:askCamera', () => this.askCamera())
+  }
+
+  /** Spec 8: the system's camera prompt, attributed to the app (the helper inherits the answer). */
+  private async askCamera(): Promise<boolean> {
+    if (process.platform !== 'darwin') return true
+    if (systemPreferences.getMediaAccessStatus('camera') === 'granted') return true
+    if (await systemPreferences.askForMediaAccess('camera')) return true
+    // Electron answers "no" without a prompt in some setups; the helper's own request still shows one.
+    return this.recording.permissions(true).then((p) => p.camera === 'granted').catch(() => false)
   }
 
   get isOpen(): boolean {
@@ -81,10 +91,11 @@ export class Picker {
   private async state(): Promise<PickerState> {
     const primary = screen.getPrimaryDisplay()
     const displays: DisplayInfo[] = screen.getAllDisplays().map((d) => ({ id: d.id, bounds: d.bounds, scale: d.scaleFactor, isMain: d.id === primary.id }))
-    const [permissions, targets, free] = await Promise.all([
+    const [permissions, targets, free, cameras] = await Promise.all([
       this.recording.permissions(false),
       this.recording.listTargets().catch(() => ({ displays: [], windows: [] })),
-      statfs(this.projectsRoot()).then((s) => s.bavail * s.bsize).catch(() => 0)
+      statfs(this.projectsRoot()).then((s) => s.bavail * s.bsize).catch(() => 0),
+      this.recording.listCameras().catch(() => [])
     ])
     const current = displayUnderPoint(displays, screen.getCursorScreenPoint())
     return {
@@ -93,7 +104,8 @@ export class Picker {
       windows: targets.windows,
       permissions,
       prefs: this.pickerPrefs(),
-      freeSpaceBytes: free
+      freeSpaceBytes: free,
+      cameras
     }
   }
 
@@ -106,7 +118,13 @@ export class Picker {
           ? this.areaTarget(request.displayId, request.area)
           : { kind: 'display' as const, id: request.displayId }
     if (request.source === 'area' && request.area) this.prefs.set({ lastArea: request.area })
-    const result = await this.recording.start({ target, mic: request.mic, systemAudio: request.systemAudio, micAutoGain: request.micAutoGain, micEnhance: request.micEnhance, excludeProcessIds: [process.pid] })
+    let cameraName: string | null = null
+    if (request.camera) {
+      if (!(await this.askCamera())) throw new Error('Recscene does not have permission to use your webcam')
+      const cameras = await this.recording.listCameras().catch(() => [])
+      cameraName = selectedCamera({ ...prefs, recordCamera: true, cameraDeviceId: request.camera }, cameras).camera?.name ?? null
+    }
+    const result = await this.recording.start({ target, mic: request.mic, systemAudio: request.systemAudio, micAutoGain: request.micAutoGain, micEnhance: request.micEnhance, excludeProcessIds: [process.pid], ...(request.camera ? { camera: request.camera, cameraMaxHeight: request.cameraMaxHeight, cameraName } : {}) })
     if (request.source === 'area' && prefs.recordingAreaCover) this.becomeCover()
     else this.close()
     return result
