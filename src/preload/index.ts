@@ -1,25 +1,30 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { DisplayTarget, Permissions, RecordingResult, StartOptions, WindowTarget } from '@core/captureProtocol'
+import type { RecordingResult } from '@core/captureProtocol'
+import type { PickerPrefs, PickerState, RecordRequest } from '@core/recordingPicker'
 
-export type RendererStartOptions = Omit<StartOptions, 'outputDir'>
+const on = <T>(channel: string, listener: (payload: T) => void): (() => void) => {
+  const handler = (_event: unknown, payload: T): void => listener(payload)
+  ipcRenderer.on(channel, handler)
+  return () => ipcRenderer.removeListener(channel, handler)
+}
 
 /** The only surface the renderer can reach. Keep it small and typed. */
 const api = {
   platform: process.platform,
   version: (): Promise<string> => ipcRenderer.invoke('app:version') as Promise<string>,
-  capture: {
-    permissions: (request = false): Promise<Permissions> => ipcRenderer.invoke('capture:permissions', request) as Promise<Permissions>,
-    listTargets: (): Promise<{ displays: DisplayTarget[]; windows: WindowTarget[] }> =>
-      ipcRenderer.invoke('capture:list') as Promise<{ displays: DisplayTarget[]; windows: WindowTarget[] }>,
-    start: (options: RendererStartOptions): Promise<{ projectDir: string }> =>
-      ipcRenderer.invoke('capture:start', options) as Promise<{ projectDir: string }>,
-    stop: (): Promise<RecordingResult> => ipcRenderer.invoke('capture:stop') as Promise<RecordingResult>,
-    projectsRoot: (): Promise<string> => ipcRenderer.invoke('capture:projectsRoot') as Promise<string>,
-    onWarning: (listener: (message: string) => void): (() => void) => {
-      const handler = (_event: unknown, message: string): void => listener(message)
-      ipcRenderer.on('capture:warning', handler)
-      return () => ipcRenderer.removeListener('capture:warning', handler)
-    }
+  openPicker: (): Promise<void> => ipcRenderer.invoke('app:openPicker') as Promise<void>,
+  projectsRoot: (): Promise<string> => ipcRenderer.invoke('app:projectsRoot') as Promise<string>,
+  onRecordingFinished: (listener: (result: RecordingResult) => void): (() => void) => on('recording:finished', listener),
+  picker: {
+    state: (): Promise<PickerState> => ipcRenderer.invoke('picker:state') as Promise<PickerState>,
+    savePrefs: (values: Partial<PickerPrefs>): Promise<PickerPrefs> => ipcRenderer.invoke('picker:savePrefs', values) as Promise<PickerPrefs>,
+    record: (request: RecordRequest): Promise<{ projectDir: string }> => ipcRenderer.invoke('picker:record', request) as Promise<{ projectDir: string }>,
+    cancel: (): Promise<void> => ipcRenderer.invoke('picker:cancel') as Promise<void>,
+    onCover: (listener: () => void): (() => void) => on('picker:cover', listener)
+  },
+  widget: {
+    state: (): Promise<{ startedAt: number }> => ipcRenderer.invoke('widget:state') as Promise<{ startedAt: number }>,
+    stop: (): Promise<void> => ipcRenderer.invoke('widget:stop') as Promise<void>
   }
 }
 

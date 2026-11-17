@@ -106,62 +106,6 @@ body {
   font-weight: 600;
 }
 
-.recorder {
-  display: grid;
-  gap: 12px;
-  width: min(100%, 420px);
-  padding: 16px;
-  border-radius: 10px;
-  background: var(--panel2);
-  user-select: text;
-}
-
-.recorder__title {
-  margin: 0;
-  font-size: 13px;
-}
-
-.recorder__perms {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 14px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: 12px;
-  color: var(--text2);
-}
-
-.perm--ok {
-  color: var(--caption);
-}
-
-.field {
-  display: grid;
-  gap: 4px;
-  color: var(--text2);
-}
-
-.field select {
-  height: 30px;
-  border: 1px solid var(--line2);
-  border-radius: var(--radius);
-  background: var(--panel);
-  color: var(--text);
-  font: inherit;
-}
-
-.recorder__toggles {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  color: var(--text2);
-}
-
-.recorder__toggles .btn {
-  margin-left: auto;
-}
-
 .btn {
   height: 34px;
   padding: 0 16px;
@@ -201,7 +145,12 @@ body {
   grid-template-columns: auto 1fr;
   gap: 4px 12px;
   margin: 0;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--panel2);
   font-size: 12px;
+  user-select: text;
+  width: min(100%, 520px);
 }
 
 .recorder__result dt {
@@ -213,16 +162,14 @@ body {
   overflow-wrap: anywhere;
 }
 
-.recorder__warning {
-  margin: 0;
-  font-size: 12px;
-  color: var(--clip);
-}
 
-.recorder__error {
-  margin: 0;
-  font-size: 12px;
-  color: var(--danger);
+.btn kbd {
+  margin-left: 6px;
+  font: 11px Inter, system-ui, sans-serif;
+  opacity: 0.8;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  padding: 0 4px;
 }
 
 .inspector {

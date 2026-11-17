@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto'
+import { EventEmitter } from 'node:events'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import { normaliseEvents, type EventsFile, type Permissions, type RecordingResult, type StartOptions } from '@core/captureProtocol'
 import { newProject, recordingFolderName } from '@core/projectFile'
 import { CaptureClient, resolveHelperPath } from './capture'
@@ -13,11 +14,13 @@ export function projectsRoot(): string {
 }
 
 /** Owns the helper process and turns a stop into a project bundle. */
-export class RecordingService {
+/** Emits 'started' with the start options and 'stopped' with the result. */
+export class RecordingService extends EventEmitter {
   private client: CaptureClient
-  private current: { projectDir: string; createdAt: Date; width: number; height: number; mic: boolean; window: BrowserWindow | null } | null = null
+  private current: { projectDir: string; createdAt: Date; width: number; height: number; mic: boolean } | null = null
 
   constructor() {
+    super()
     this.client = new CaptureClient({ helperPath: resolveHelperPath(app.getAppPath(), process.resourcesPath, app.isPackaged) })
     this.client.on('warning', (message: string) => this.broadcast('capture:warning', message))
     this.client.on('error', (error: Error) => this.broadcast('capture:warning', error.message))
@@ -31,21 +34,19 @@ export class RecordingService {
     return this.client.listTargets()
   }
 
-  async start(options: RendererStartOptions, window: BrowserWindow | null): Promise<{ projectDir: string }> {
-    if (this.current) throw new Error('A recording is already running')
+  get isRecording(): boolean {
+    return this.current !== null
+  }
+
+  async start(options: RendererStartOptions): Promise<{ projectDir: string }> {
+    if (this.current) throw new Error('Cannot start recording while another is in progress')
     const createdAt = new Date()
     const projectDir = join(projectsRoot(), recordingFolderName(createdAt))
     await mkdir(projectDir, { recursive: true })
-    // The app's own window should not end up in a display recording.
-    if (options.target.kind === 'display') window?.minimize()
-    try {
-      const started = await this.client.start({ ...options, outputDir: projectDir })
-      this.current = { projectDir, createdAt, width: started.width, height: started.height, mic: options.mic ?? false, window }
-      return { projectDir }
-    } catch (error) {
-      window?.restore()
-      throw error
-    }
+    const started = await this.client.start({ ...options, outputDir: projectDir })
+    this.current = { projectDir, createdAt, width: started.width, height: started.height, mic: options.mic ?? false }
+    this.emit('started', options)
+    return { projectDir }
   }
 
   async stop(): Promise<RecordingResult> {
@@ -53,8 +54,6 @@ export class RecordingService {
     if (!current) throw new Error('Nothing is being recorded')
     this.current = null
     const stopped = await this.client.stop()
-    current.window?.restore()
-    current.window?.focus()
     const eventsFile = JSON.parse(await readFile(stopped.files.events, 'utf8')) as EventsFile
     const events = normaliseEvents(eventsFile, stopped.durationMs)
     const project = newProject({
@@ -68,7 +67,7 @@ export class RecordingService {
     })
     const projectFile = join(current.projectDir, 'project.json')
     await writeFile(projectFile, JSON.stringify(project, null, 2))
-    return {
+    const result: RecordingResult = {
       projectDir: current.projectDir,
       projectFile,
       durationMs: stopped.durationMs,
@@ -79,6 +78,8 @@ export class RecordingService {
       keys: events.keys.length,
       cursorSamples: events.cursor.length
     }
+    this.emit('stopped', result)
+    return result
   }
 
   dispose(): void {
@@ -88,14 +89,4 @@ export class RecordingService {
   private broadcast(channel: string, payload: unknown): void {
     for (const w of BrowserWindow.getAllWindows()) w.webContents.send(channel, payload)
   }
-}
-
-export function registerRecordingIpc(service: RecordingService): void {
-  ipcMain.handle('capture:permissions', (_e, request: boolean) => service.permissions(request))
-  ipcMain.handle('capture:list', () => service.listTargets())
-  ipcMain.handle('capture:start', (event, options: RendererStartOptions) =>
-    service.start(options, BrowserWindow.fromWebContents(event.sender))
-  )
-  ipcMain.handle('capture:stop', () => service.stop())
-  ipcMain.handle('capture:projectsRoot', () => projectsRoot())
 }

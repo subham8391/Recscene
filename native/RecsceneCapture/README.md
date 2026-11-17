@@ -17,8 +17,10 @@ One JSON object per line on stdin (commands) and stdout (events). Commands are a
 | `{"cmd":"ping"}` | `{"event":"pong","version":"0.1.0"}` |
 | `{"cmd":"permissions","request":false}` | `{"event":"permissions","screen":true,"inputMonitoring":false,"accessibility":false,"microphone":"granted"}` |
 | `{"cmd":"list"}` | `{"event":"targets","displays":[…],"windows":[…]}` |
-| `{"cmd":"start","target":…,"outputDir":"/path/Name.recscene","mic":false,"systemAudio":false,"fps":60,"showCursor":false,"codec":"h264"}` | `{"event":"started","outputDir":"…","width":3600,"height":2338}` |
+| `{"cmd":"start","target":…,"outputDir":"/path/Name.recscene","mic":false,"systemAudio":false,"fps":60,"showCursor":false,"codec":"h264","excludeProcessIds":[]}` | `{"event":"started","outputDir":"…","width":3600,"height":2338}` |
 | `{"cmd":"stop"}` | `{"event":"stopped","durationMs":4233.3,"frames":239,"files":{"screen":"…/screen.mov","events":"…/events.json","mic":"…/mic.m4a"},"micOffsetMs":12.5}` |
+
+`excludeProcessIds` lists process ids whose windows are left out of a display or area capture, so the app's own overlays never appear in the footage.
 
 Targets: `{"kind":"display","id":1}`, `{"kind":"window","id":1234}`, or `{"kind":"area","displayId":1,"x":100,"y":80,"width":800,"height":600}` (points, relative to that display's top-left corner).
 

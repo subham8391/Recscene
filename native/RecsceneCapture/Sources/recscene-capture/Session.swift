@@ -9,7 +9,7 @@ final class Session {
     private let microphone: Microphone?
 
     init(options: StartOptions) async throws {
-        let resolved = try await Targets.resolve(options.target)
+        let resolved = try await Targets.resolve(options.target, excludingProcessIds: options.excludeProcessIds)
         outputDir = URL(fileURLWithPath: options.outputDir, isDirectory: true)
         try FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
         let screenURL = outputDir.appendingPathComponent("screen.mov")

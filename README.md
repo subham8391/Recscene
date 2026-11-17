@@ -23,6 +23,11 @@ npm run dev
 | `npm run build` | Compiles main, preload and renderer into `out/` |
 | `npm run dist` | Builds the signed-ready `.dmg` for Apple silicon and Intel into `dist/` |
 
+## Development aids
+
+- `RECSCENE_OPEN_PICKER=1 npx electron .` opens the recording picker as soon as the app is ready.
+- `npx electron . --remote-debugging-port=9222` exposes every window to Chrome DevTools Protocol for scripted checks.
+
 ## Layout
 
 ```

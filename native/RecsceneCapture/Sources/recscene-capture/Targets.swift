@@ -47,12 +47,13 @@ enum Targets {
         var sourceRect: CGRect?
     }
 
-    static func resolve(_ target: CaptureTarget) async throws -> Resolved {
+    static func resolve(_ target: CaptureTarget, excludingProcessIds pids: [Int32] = []) async throws -> Resolved {
         let content = try await shareableContent()
+        let excluded = content.applications.filter { pids.contains($0.processID) }
         switch target {
         case .display(let id):
             guard let d = content.displays.first(where: { $0.displayID == id }) else { throw ProtocolError.targetNotFound }
-            return Resolved(filter: SCContentFilter(display: d, excludingApplications: [], exceptingWindows: []), region: d.frame, sourceRect: nil)
+            return Resolved(filter: SCContentFilter(display: d, excludingApplications: excluded, exceptingWindows: []), region: d.frame, sourceRect: nil)
         case .window(let id):
             guard let w = content.windows.first(where: { $0.windowID == id }) else { throw ProtocolError.targetNotFound }
             return Resolved(filter: SCContentFilter(desktopIndependentWindow: w), region: w.frame, sourceRect: nil)
@@ -60,7 +61,7 @@ enum Targets {
             guard let d = content.displays.first(where: { $0.displayID == displayId }) else { throw ProtocolError.targetNotFound }
             let local = CGRect(x: x, y: y, width: width, height: height)
             let global = local.offsetBy(dx: d.frame.origin.x, dy: d.frame.origin.y)
-            return Resolved(filter: SCContentFilter(display: d, excludingApplications: [], exceptingWindows: []), region: global, sourceRect: local)
+            return Resolved(filter: SCContentFilter(display: d, excludingApplications: excluded, exceptingWindows: []), region: global, sourceRect: local)
         }
     }
 }

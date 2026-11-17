@@ -39,6 +39,8 @@ export interface StartOptions {
   fps?: number
   showCursor?: boolean
   codec?: 'h264' | 'hevc'
+  /** Process ids whose windows are excluded from a display or area capture. */
+  excludeProcessIds?: number[]
 }
 
 export type HelperCommand =
