@@ -13,8 +13,17 @@ import type { Preferences } from './preferences'
 
 export type RendererStartOptions = Omit<StartOptions, 'outputDir'> & { name?: string }
 
+let projectsFolderPref: () => unknown = () => undefined
+
+/** Spec 255: the projects folder preference (`projectsFolderPath`) is read through this. */
+export function setProjectsFolderSource(read: () => unknown): void {
+  projectsFolderPref = read
+}
+
+/** Where new recordings, imports and "Save as…" default to; `~/Recscene Projects` unless spec 255 says otherwise. */
 export function projectsRoot(): string {
-  return join(app.getPath('home'), 'Recscene Projects')
+  const pref = projectsFolderPref()
+  return typeof pref === 'string' && pref.trim() ? pref : join(app.getPath('home'), 'Recscene Projects')
 }
 
 /** Owns the helper process and turns a stop into a project bundle. */

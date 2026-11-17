@@ -96,6 +96,7 @@ export class ProjectService {
     ipcMain.handle('project:exportFrame', (_e, png: ArrayBuffer, timeMs: number) => this.exportFrame(png, timeMs))
     ipcMain.handle('project:pickBackgroundImage', () => this.pickBackgroundImage())
     ipcMain.handle('project:importBackgroundImage', (_e, source: string | ArrayBuffer) => this.importBackgroundImage(source))
+    ipcMain.handle('project:close', () => this.close())
     ipcMain.handle('project:mediaUrl', (_e, file: string) => (this.current ? mediaUrl(this.current.projectDir, file) : null))
   }
 
@@ -153,6 +154,12 @@ export class ProjectService {
       window.focus()
     }
     return opened
+  }
+
+  /** Back to the projects home: the editor saved already (spec 73's autosave) or asked. */
+  close(): void {
+    this.current = null
+    this.mainWindow()?.webContents.send('project:closed')
   }
 
   async pickAndOpen(): Promise<OpenedProject | null> {

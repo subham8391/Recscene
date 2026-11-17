@@ -12,7 +12,7 @@ Spec numbers refer to `docs/research/screen-studio-feature-specs.md`. A feature 
 | Background, padding, rounded corners, shadow, screen inset | 165–188 | Done: 165–184, 188 (wallpapers are 180 generated SVGs in the nine collections, not the reference JPEGs). 185–187 device mockups: toggle stored, no frames bundled yet |
 | Clips: trim, cut, speed | 80–101 | Done: 80–84, 86–101 (93 for the microphone; 94–95 wait for per-track system and device audio; 85 as X at the playhead). 83's beam mode is not built: C cuts at the playhead |
 | Export MP4 (H.264, 1080p/4K, frame rate) to `~/Movies/Recscene` | 233–245 | Done: 233–237, 240–241, 245, with 247–248 (progress, estimate, cancel). Video is rendered on a canvas and encoded with WebCodecs H.264 into an MP4 stream; audio is mixed offline and joined as AAC by the helper. 238–239 are not needed (the encoder is the platform's); 242–244 shareable links wait for M3 |
-| Projects home: open, rename, delete, recover unfinished recording | 252–262 | `.recscene` bundles in `~/Recscene Projects` |
+| Projects home: open, rename, delete, recover unfinished recording | 7, 40, 75, 255 (Projects board) | Done: the home lists every `.recscene` bundle in the projects folder (Recent and All, search, thumbnails cached in the bundle, duration, quality, chips), rename, duplicate, move to Trash, Show in Finder, Create from video…, the unfinished-recording banner (Recover / Delete) and the projects folder (255) with the outside-main-storage warning. 252–254, 256–262 are Settings items and wait for the Settings window |
 
 ## M2 — private beta
 | Area | Specs | Notes |
