@@ -26,6 +26,10 @@
 - Breakpoints: laptop 1280×800 (rail 68, inspector 312, timeline 236), tablet 1024×768, mobile 390×844 (companion role only: record remotely, light edits).
 - Track colours: zooms purple, clips yellow, camera layouts pink, masks teal, shortcuts blue, captions green, voice-overs orange.
 
+## Amendments
+
+**2026-11-17 (recording section built).** Specs 1–5, 7, 13, 15–17 and 21–41 are implemented. Of the rest: 6 (iPhone/iPad over USB) and 8–12 (camera at record time) move to M2 with the camera work; 14 (mono conversion) belongs to the editor audio panel; 18–19 (system audio from selected apps, external device audio) need a second audio-only capture stream and move to M2; 20 (recording engine auto/modern/legacy) does not apply, Recscene has one engine; 42–47 (quick export widget) wait for export (233–245). Spec 41's `actionAfterRecording` is stored but only `create-project` behaves until then. Keystroke capture needs Input Monitoring; clicks and cursor are polled and need nothing.
+
 ## Open
 - **Q1** Licensing model: one-time with a year of updates versus subscription. Decide before M3.
 - **Q2** Transcription and captions: on-device (whisper.cpp) versus a cloud service. Lean on-device for privacy; decide at M2.

@@ -41,6 +41,10 @@ export interface StartOptions {
   codec?: 'h264' | 'hevc'
   /** Process ids whose windows are excluded from a display or area capture. */
   excludeProcessIds?: number[]
+  /** Spec 15: automatic gain control on the microphone. */
+  micAutoGain?: boolean
+  /** Spec 16: voice processing while recording the microphone. */
+  micEnhance?: boolean
 }
 
 export type HelperCommand =

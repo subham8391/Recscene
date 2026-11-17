@@ -6,7 +6,7 @@ import type { Preferences } from './preferences'
 import type { RecordingService } from './recording'
 import { createOverlayWindow } from './windows'
 
-const PREF_KEYS: (keyof PickerPrefs)[] = ['source', 'recordingCountdownDuration', 'recordingAreaCropPresets', 'recordMicrophone', 'systemAudio', 'recordingAreaCover', 'lastArea', 'showSpeakerNotes', 'hideDesktopContentWhileRecording']
+const PREF_KEYS: (keyof PickerPrefs)[] = ['source', 'recordingCountdownDuration', 'recordingAreaCropPresets', 'recordMicrophone', 'systemAudio', 'recordingAreaCover', 'lastArea', 'showSpeakerNotes', 'hideDesktopContentWhileRecording', 'enableAutoGainControl', 'enableVoiceRecordingEnhancements']
 
 /**
  * The recording picker (specs 1–5, 13, 17, 21, 31): a transparent window the
@@ -106,7 +106,7 @@ export class Picker {
           ? this.areaTarget(request.displayId, request.area)
           : { kind: 'display' as const, id: request.displayId }
     if (request.source === 'area' && request.area) this.prefs.set({ lastArea: request.area })
-    const result = await this.recording.start({ target, mic: request.mic, systemAudio: request.systemAudio, excludeProcessIds: [process.pid] })
+    const result = await this.recording.start({ target, mic: request.mic, systemAudio: request.systemAudio, micAutoGain: request.micAutoGain, micEnhance: request.micEnhance, excludeProcessIds: [process.pid] })
     if (request.source === 'area' && prefs.recordingAreaCover) this.becomeCover()
     else this.close()
     return result

@@ -43,6 +43,7 @@ export function Picker(): React.JSX.Element {
   const [area, setArea] = useState<Rect | null>(null)
   const [aspect, setAspect] = useState<number | null>(null)
   const [sizesOpen, setSizesOpen] = useState(false)
+  const [micOpen, setMicOpen] = useState(false)
   const [phase, setPhase] = useState<Phase>({ kind: 'pick' })
   const drag = useRef<{ start: { x: number; y: number }; corner?: Corner; origin?: Rect } | null>(null)
 
@@ -104,7 +105,9 @@ export function Picker(): React.JSX.Element {
         ...(source === 'window' && windowId !== null ? { windowId } : {}),
         ...(source === 'area' && area ? { area } : {}),
         mic: prefs.recordMicrophone,
-        systemAudio: prefs.systemAudio === 'all'
+        systemAudio: prefs.systemAudio === 'all',
+        micAutoGain: prefs.enableAutoGainControl,
+        micEnhance: prefs.enableVoiceRecordingEnhancements
       })
     } catch (e) {
       setPhase({ kind: 'error', message: e instanceof Error ? e.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '') : String(e) })
@@ -287,10 +290,20 @@ export function Picker(): React.JSX.Element {
               <span className="device__thumb device__thumb--cam" />
               <span className="device__text"><span className="device__label">Camera</span><span className="device__value">Off · M2</span></span>
             </button>
-            <button type="button" className={`device${prefs.recordMicrophone ? ' device--on' : ''}`} aria-pressed={prefs.recordMicrophone} onClick={() => savePrefs({ recordMicrophone: !prefs.recordMicrophone })}>
-              <span className="device__thumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg></span>
-              <span className="device__text"><span className="device__label">Microphone</span><span className="device__value">{prefs.recordMicrophone ? 'Default microphone' : "Don't record microphone"}</span></span>
-            </button>
+            <div className="menu-anchor">
+              <button type="button" className={`device${prefs.recordMicrophone ? ' device--on' : ''}`} aria-pressed={prefs.recordMicrophone} onClick={() => savePrefs({ recordMicrophone: !prefs.recordMicrophone })} onContextMenu={(e) => { e.preventDefault(); setMicOpen((o) => !o) }}>
+                <span className="device__thumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg></span>
+                <span className="device__text"><span className="device__label">Microphone</span><span className="device__value">{prefs.recordMicrophone ? 'Default microphone' : "Don't record microphone"}</span></span>
+                <button type="button" className="device__more" aria-label="Microphone options" aria-haspopup="menu" aria-expanded={micOpen} onClick={(e) => { e.stopPropagation(); setMicOpen((o) => !o) }}>▾</button>
+              </button>
+              {micOpen && (
+                <div role="menu" className="menu menu--mic">
+                  <label className="menu__check"><input type="checkbox" checked={!prefs.enableAutoGainControl} onChange={(e) => savePrefs({ enableAutoGainControl: !e.target.checked })} />Disable auto gain control</label>
+                  <label className="menu__check"><input type="checkbox" checked={prefs.enableVoiceRecordingEnhancements} onChange={(e) => savePrefs({ enableVoiceRecordingEnhancements: e.target.checked })} />Reduce noise while recording</label>
+                  <span className="muted menu__empty">Takes effect on the next recording.</span>
+                </div>
+              )}
+            </div>
             <button type="button" className={`device${prefs.systemAudio === 'all' ? ' device--on' : ''}`} aria-pressed={prefs.systemAudio === 'all'} onClick={() => savePrefs({ systemAudio: prefs.systemAudio === 'all' ? 'none' : 'all' })}>
               <span className="device__thumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10zM16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12" /></svg></span>
               <span className="device__text"><span className="device__label">System audio</span><span className="device__value">{prefs.systemAudio === 'all' ? 'All apps' : "Don't record"}</span></span>

@@ -53,6 +53,10 @@ struct StartOptions: Codable {
     var codec = "h264"
     /// Processes whose windows are left out of a display or area capture (the app's own overlays).
     var excludeProcessIds: [Int32] = []
+    /// Spec 15: automatic gain control on the microphone (default on).
+    var micAutoGain = true
+    /// Spec 16: voice processing (noise suppression) while recording the microphone.
+    var micEnhance = false
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -64,6 +68,8 @@ struct StartOptions: Codable {
         showCursor = try c.decodeIfPresent(Bool.self, forKey: .showCursor) ?? false
         codec = try c.decodeIfPresent(String.self, forKey: .codec) ?? "h264"
         excludeProcessIds = try c.decodeIfPresent([Int32].self, forKey: .excludeProcessIds) ?? []
+        micAutoGain = try c.decodeIfPresent(Bool.self, forKey: .micAutoGain) ?? true
+        micEnhance = try c.decodeIfPresent(Bool.self, forKey: .micEnhance) ?? false
     }
 }
 

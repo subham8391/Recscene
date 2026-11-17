@@ -5,7 +5,7 @@ Spec numbers refer to `docs/research/screen-studio-feature-specs.md`. A feature 
 ## M1 — daily driver
 | Area | Specs | Notes |
 | --- | --- | --- |
-| Recording picker: screen, window, area; countdown; menu bar control | 1–47 | Done: 1–5, 13, 17, 21–26, 31–33, 37–38. Next: 27–30, 34–36, 39–47 |
+| Recording picker: screen, window, area; countdown; menu bar control | 1–47 | Done: 1–5, 7, 13, 15–17, 21–41 (41 as a preference). Deferred: 6 and 8–12 (device, camera: M2), 14 (editor audio panel), 18–19 (per-app and device audio: M2), 20 (single engine, not applicable), 42–47 (need export) |
 | Editor shell: stage, rail, inspector, timeline, playhead, scrubber | 48–79 | Layout matches the laptop boards |
 | Automatic zooms from clicks; manual zoom regions; zoom speed and depth | 102–124 | `src/core/autoZoom.ts` |
 | Cursor: smoothing, size, click highlight, hide when idle | 125–147 | |
