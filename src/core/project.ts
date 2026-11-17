@@ -60,11 +60,39 @@ export interface ProjectMeta {
   recordingFlags: Ms[]
 }
 
+export interface ProjectConfig {
+  /** Spec 48: "x:y" or null for Auto. */
+  defaultOutputAspectRatio: string | null
+}
+
+export const defaultProjectConfig: ProjectConfig = { defaultOutputAspectRatio: null }
+
 export interface Project {
   version: 1
   name: string
   meta: ProjectMeta
+  config: ProjectConfig
   recording: Recording
   zooms: ZoomRegion[]
   clips: Clip[]
+  /** ISO timestamps (spec 73–74). */
+  updatedAt?: string
+  lastSavedAt?: string
+}
+
+/** Fills in anything an older project.json lacks. */
+export function normaliseProject(raw: unknown): Project {
+  const r = (typeof raw === 'object' && raw !== null ? raw : {}) as Partial<Project>
+  const recording = r.recording ?? { id: 'unknown', createdAt: new Date(0).toISOString(), durationMs: 0, screen: { width: 0, height: 0, file: 'screen.mov' }, clicks: [], keys: [] }
+  return {
+    version: 1,
+    name: typeof r.name === 'string' ? r.name : 'Untitled',
+    meta: { recordingFlags: Array.isArray(r.meta?.recordingFlags) ? r.meta.recordingFlags.filter((n): n is number => typeof n === 'number') : [] },
+    config: { ...defaultProjectConfig, ...(typeof r.config === 'object' && r.config ? r.config : {}) },
+    recording: { ...recording, clicks: recording.clicks ?? [], keys: recording.keys ?? [] },
+    zooms: Array.isArray(r.zooms) ? r.zooms : [],
+    clips: Array.isArray(r.clips) ? r.clips : [],
+    ...(r.updatedAt ? { updatedAt: r.updatedAt } : {}),
+    ...(r.lastSavedAt ? { lastSavedAt: r.lastSavedAt } : {})
+  }
 }

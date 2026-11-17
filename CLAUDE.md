@@ -13,6 +13,7 @@ A macOS screen recorder that turns a capture into a polished video automatically
 - The renderer talks to the system only through `window.recscene`, defined in `src/preload/index.ts`. Add a typed function there and a handler in `src/main/`; never widen `webPreferences`.
 - Project data stays on the user's Mac in a `.recscene` project bundle. Nothing is uploaded unless the user shares a link (not built yet).
 - Native capture lives in the Swift helper `native/RecsceneCapture` (protocol in its README); `src/main/capture.ts` drives it and `src/main/recording.ts` turns a stop into a `.recscene` bundle. Never fake recording with `desktopCapturer`. Build it with `npm run build:native` (runs inside `dev` and `build`).
+- The editor (`src/renderer/src/editor/`) is driven by one action registry in `src/core/editor/actions.ts`: every keyboard shortcut, ⌘K command, shortcuts-guide row and application-menu item goes through `run(id)` in `Editor.tsx`. Add a new editor action there, not as an ad-hoc key handler. Project media is served by the `recscene-media://` scheme (`src/main/project.ts`), which only serves files directly inside a `.recscene` bundle.
 
 ## Working loop
 - Every feature lands with unit tests in `src/core` (vitest) and passes `npm run check` before it is pushed.

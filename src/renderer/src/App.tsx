@@ -1,76 +1,63 @@
 import { useEffect, useState } from 'react'
-import type { RecordingResult } from '@core/captureProtocol'
-import { formatTimecode } from '@core/time'
+import type { OpenedProject } from '@core/projectFile'
+import { Editor } from './editor/Editor'
 
-/**
- * The editor shell from the design canvas: tool rail, stage, inspector and
- * timeline. Every panel is a placeholder until its feature lands; the layout,
- * sizes and tokens are the ones the laptop boards were drawn with.
- */
+/** The main window: the editor when a project is open, otherwise the start screen. */
 export function App(): React.JSX.Element {
   const [version, setVersion] = useState('')
-  const [last, setLast] = useState<RecordingResult | null>(null)
+  const [opened, setOpened] = useState<OpenedProject | null>(null)
+  const [recent, setRecent] = useState<{ projectDir: string; name: string }[]>([])
   const [notice, setNotice] = useState<string | null>(null)
 
   useEffect(() => {
     void window.recscene.version().then(setVersion)
-    const offFinished = window.recscene.onRecordingFinished(setLast)
+    void window.recscene.project.current().then((p) => p && setOpened(p))
+    void window.recscene.project.recent().then(setRecent)
+    const offOpened = window.recscene.project.onOpened((p) => {
+      setOpened(p)
+      void window.recscene.project.recent().then(setRecent)
+    })
     const offNotice = window.recscene.onNotice(setNotice)
     return () => {
-      offFinished()
+      offOpened()
       offNotice()
     }
   }, [])
 
+  if (opened) return <Editor key={opened.projectDir} opened={opened} notice={notice} onDismissNotice={() => setNotice(null)} />
+
   return (
-    <div className="app">
+    <div className="start">
       <header className="titlebar">
         <span className="titlebar__name">Recscene</span>
-        <span className="titlebar__project">{last ? last.projectDir.split('/').pop()?.replace('.recscene', '') : 'Untitled recording'}</span>
         <span className="titlebar__version">{version && `v${version}`}</span>
       </header>
-      <nav className="rail" aria-label="Editor panels">
-        {['Zooms', 'Clips', 'Cursor', 'Camera', 'Background', 'Masks', 'Shortcuts', 'Captions', 'Audio', 'Enhance'].map((name) => (
-          <button key={name} className="rail__item" type="button">
-            {name}
-          </button>
-        ))}
-      </nav>
-      <main className="stage">
-        <div className="stage__frame">
-          <p className="stage__motto">Record the screen. Make it a scene.</p>
-          {notice && (
-            <p className="notice" role="alert">
-              {notice} <button type="button" className="btn btn--ghost" onClick={() => setNotice(null)}>Dismiss</button>
-            </p>
-          )}
-          <button className="btn btn--accent" type="button" onClick={() => void window.recscene.openPicker()}>
-            New recording <kbd>⇧⌘R</kbd>
-          </button>
-          {last && (
-            <dl className="recorder__result">
-              <dt>Saved to</dt>
-              <dd>{last.projectDir}</dd>
-              <dt>Length</dt>
-              <dd>
-                {formatTimecode(last.durationMs)} · {last.frames} frames · {last.width}×{last.height}
-              </dd>
-              <dt>Captured</dt>
-              <dd>
-                {last.clicks} clicks · {last.keys} keystrokes · {last.cursorSamples} cursor samples
-              </dd>
-            </dl>
-          )}
+      <main className="start__body">
+        <p className="stage__motto">Record the screen. Make it a scene.</p>
+        {notice && (
+          <p className="notice" role="alert">
+            {notice} <button type="button" className="btn btn--ghost" onClick={() => setNotice(null)}>Dismiss</button>
+          </p>
+        )}
+        <div className="start__actions">
+          <button className="btn btn--accent" type="button" onClick={() => void window.recscene.openPicker()}>New recording <kbd>⇧⌘R</kbd></button>
+          <button className="btn btn--ghost" type="button" onClick={() => void window.recscene.project.pick()}>Open project… <kbd>⌘O</kbd></button>
         </div>
+        {recent.length > 0 && (
+          <section className="start__recent" aria-label="Recent projects">
+            <h2 className="muted">Recent</h2>
+            <ul>
+              {recent.map((r) => (
+                <li key={r.projectDir}>
+                  <button type="button" className="start__project" onClick={() => void window.recscene.project.open(r.projectDir)}>
+                    <span>{r.name}</span><span className="muted">{r.projectDir.replace(/\/[^/]+$/, '')}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </main>
-      <aside className="inspector" aria-label="Inspector">
-        <h2>Zooms</h2>
-        <p className="muted">Automatic zooms follow your clicks. Adjust them here once a recording is loaded.</p>
-      </aside>
-      <footer className="timeline" aria-label="Timeline">
-        <span className="timeline__playhead">{formatTimecode(0)}</span>
-        <div className="timeline__tracks" />
-      </footer>
     </div>
   )
 }

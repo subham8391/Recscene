@@ -1,5 +1,6 @@
 import type { RecordedEvents } from './captureProtocol'
-import type { Project } from './project'
+import type { RecordingMarker } from './recordingSession'
+import { defaultProjectConfig, type Project } from './project'
 
 /** The folder name for a new recording, e.g. "Recording 2026-11-17 at 15.09.recscene". */
 export function recordingFolderName(date: Date): string {
@@ -25,6 +26,7 @@ export function newProject(input: NewProjectInput): Project {
     version: 1,
     name: input.name,
     meta: { recordingFlags: input.flags ?? [] },
+    config: { ...defaultProjectConfig },
     recording: {
       id: input.id,
       createdAt: input.createdAt,
@@ -37,4 +39,12 @@ export function newProject(input: NewProjectInput): Project {
     zooms: [],
     clips: []
   }
+}
+
+/** A project as the editor receives it: the document, its markers and media URLs the renderer may load. */
+export interface OpenedProject {
+  projectDir: string
+  project: Project
+  markers: RecordingMarker[]
+  media: { screen: string; mic?: string; systemAudio?: string }
 }

@@ -1,0 +1,527 @@
+/* Start screen */
+.start {
+  height: 100%;
+  display: grid;
+  grid-template-rows: var(--titlebar-h) 1fr;
+}
+
+.start__body {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 18px;
+  padding: 24px;
+}
+
+.start__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.start__recent {
+  width: min(100%, 520px);
+}
+
+.start__recent h2 {
+  margin: 0 0 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.start__recent ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.start__project {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+}
+
+.start__project:hover {
+  background: var(--panel2);
+}
+
+/* Layout states (spec 72) */
+.app--hide-sidebar {
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    'title'
+    'stage'
+    'timeline';
+}
+
+.app--hide-timeline {
+  grid-template-rows: var(--titlebar-h) 1fr;
+  grid-template-areas:
+    'title title title'
+    'rail stage inspector';
+}
+
+.app--preview {
+  grid-template-columns: 1fr;
+  grid-template-rows: var(--titlebar-h) 1fr;
+  grid-template-areas:
+    'title'
+    'stage';
+}
+
+.titlebar__center {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  -webkit-app-region: no-drag;
+}
+
+.titlebar .btn {
+  -webkit-app-region: no-drag;
+}
+
+.rail__item--on {
+  background: var(--accentSoft);
+  color: var(--text);
+}
+
+.btn--on {
+  border-color: var(--accent);
+  background: var(--accentSoft);
+}
+
+.btn--ghost kbd,
+.btn--accent kbd {
+  margin-left: 4px;
+  font: 11px Inter, system-ui, sans-serif;
+  opacity: 0.8;
+  border: 1px solid var(--line2);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+/* Stage (spec 48): the canvas takes all the room above the transport bar; notices float over it. */
+.stage {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) 44px;
+  padding: 0;
+  position: relative;
+}
+
+.stage__notice {
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  top: 28px;
+  z-index: 2;
+}
+
+.stage__canvas {
+  position: relative;
+  min-height: 0;
+  margin: 16px;
+  border-radius: 10px;
+  background: var(--stage);
+  overflow: hidden;
+}
+
+.stage__output {
+  position: absolute;
+  background: #000;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.stage__video {
+  position: absolute;
+  object-fit: fill;
+}
+
+.transport {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.transport__time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.transport__spacer {
+  flex: 1 1 auto;
+}
+
+.transport__btn {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text2);
+  font: inherit;
+}
+
+.transport__btn:hover {
+  background: var(--panel2);
+  color: var(--text);
+}
+
+.transport__play {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--text);
+  color: var(--bg);
+  font: inherit;
+  font-size: 14px;
+}
+
+.transport .input {
+  height: 28px;
+}
+
+/* Timeline (specs 50–62) */
+.tl {
+  grid-area: timeline;
+  display: grid;
+  grid-template-rows: 36px 1fr;
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+  min-height: 0;
+}
+
+.tl__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tl__bar .btn--ghost {
+  height: 26px;
+  padding: 0 8px;
+  font-size: 11px;
+}
+
+.tl__spacer {
+  flex: 1 1 auto;
+}
+
+.tl__zoom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.tl__zoom input {
+  width: 120px;
+  accent-color: var(--accent);
+}
+
+.tl__tracksmenu {
+  top: 30px;
+}
+
+.tl__tracksmenu kbd {
+  margin-left: auto;
+  font: 10px Inter, system-ui, sans-serif;
+  color: var(--text3);
+  border: 1px solid var(--line2);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+.tl__body {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.tl__names {
+  border-right: 1px solid var(--line);
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.tl__ruler-pad {
+  height: 20px;
+}
+
+.tl__name {
+  height: 22px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+}
+
+.tl__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  flex: none;
+}
+
+.tl__lane {
+  position: relative;
+  overflow: hidden;
+  cursor: crosshair;
+}
+
+.tl--scrollbar .tl__lane {
+  overflow-x: scroll;
+}
+
+.tl__ruler {
+  position: relative;
+  height: 20px;
+  border-bottom: 1px solid var(--line);
+  font-size: 10px;
+  color: var(--text3);
+}
+
+.tl__tick {
+  position: absolute;
+  top: 0;
+  padding-left: 4px;
+  line-height: 20px;
+  border-left: 1px solid var(--line2);
+  white-space: nowrap;
+}
+
+.tl__marker {
+  position: absolute;
+  top: 12px;
+  width: 7px;
+  height: 7px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.tl__flag {
+  position: absolute;
+  top: 2px;
+  margin-left: -1px;
+  font-size: 10px;
+  color: var(--voice);
+}
+
+.tl__row {
+  position: relative;
+  height: 22px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tl__clip {
+  position: absolute;
+  top: 2px;
+  height: 18px;
+  border-radius: 4px;
+  background: var(--clip);
+  color: #1a1500;
+  font-size: 10px;
+  font-weight: 600;
+  padding-left: 6px;
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.tl__item {
+  position: absolute;
+  top: 3px;
+  height: 16px;
+  border-radius: 4px;
+  opacity: 0.85;
+}
+
+.tl__chip {
+  position: absolute;
+  top: 3px;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--shortcut);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.tl__wave span {
+  position: absolute;
+  bottom: 2px;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--text3);
+  opacity: 0.55;
+}
+
+.tl__playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  margin-left: -0.5px;
+  background: var(--text);
+  pointer-events: none;
+}
+
+.tl__playhead::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -6px;
+  width: 13px;
+  height: 13px;
+  border-radius: 7px 7px 7px 0;
+  background: var(--text);
+  transform: rotate(-45deg);
+}
+
+/* Menus shared by the editor */
+.menu__item {
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+}
+
+.menu__item:hover,
+.menu__item[aria-selected='true'] {
+  background: var(--accentSoft);
+}
+
+.menu--up {
+  top: auto;
+  bottom: 34px;
+}
+
+/* Command menu and shortcuts guide (specs 64–65) */
+.cmd__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.35);
+  display: grid;
+  place-items: start center;
+  padding-top: 80px;
+}
+
+.cmd {
+  width: min(92vw, 560px);
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line2);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.cmd--guide {
+  width: min(92vw, 760px);
+}
+
+.cmd__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.cmd__title {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cmd__input {
+  flex: 1 1 auto;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line2);
+  background: var(--panel2);
+  color: var(--text);
+  font: inherit;
+}
+
+.cmd__list {
+  overflow: auto;
+  padding: 6px;
+}
+
+.cmd__group h3 {
+  margin: 8px 8px 4px;
+  font-size: 11px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.cmd__row {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+}
+
+.cmd__row--on {
+  background: var(--accentSoft);
+}
+
+.cmd__row kbd {
+  font: 11px Inter, system-ui, sans-serif;
+  color: var(--text3);
+  border: 1px solid var(--line2);
+  border-radius: 4px;
+  padding: 0 5px;
+}
+
+.cmd__empty {
+  padding: 12px;
+}
+
+.cmd__foot {
+  padding: 8px 12px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+}
