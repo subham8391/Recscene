@@ -3,6 +3,7 @@ import { fitBox, outputRatio, recordingBox, type Box } from '@core/editor/aspect
 import { cameraAtRest, cameraStep, cameraViewport, cursorAt, targetViewport, viewportTransform, type CameraState, type CursorSample } from '@core/editor/camera'
 import { zoomAt } from '@core/editor/zooms'
 import type { Project } from '@core/project'
+import { CursorLayer } from './CursorLayer'
 
 export interface StageHandle {
   /** Renders the current frame at `height` px into a PNG (specs 77–78). */
@@ -21,8 +22,12 @@ interface Props {
   /** Microphone gain for the current clip; 0 mutes (spec 91, 93). */
   micVolume: number
   previewMaxHeight: number
-  /** Cursor samples for zooms that follow the mouse (spec 106). */
+  /** Cursor samples for zooms that follow the mouse (spec 106) and the drawn cursor (125–147). */
   cursor: CursorSample[]
+  /** Source range of the recording the cursor rules apply to. */
+  sourceDurationMs: number
+  clipState: { hidden: boolean; smooth: boolean }
+  clickSoundUrl: (kind: 'down' | 'up') => string | null
   onDuration?: (ms: number) => void
   /** Reports where the recording sits on screen, for overlays such as the crop tool. */
   onBox?: (box: Box) => void
@@ -33,7 +38,11 @@ interface Props {
  * The preview canvas (spec 48): the output box in the project's aspect ratio
  * with the (cropped) recording contained inside. Effects arrive with their specs.
  */
-export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, screenUrl, micUrl, sourceMs, playing, rate, micVolume, previewMaxHeight, cursor, onDuration, onBox, children }, ref) {
+export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, screenUrl, micUrl, sourceMs, playing, rate, micVolume, previewMaxHeight, cursor, sourceDurationMs, clipState, clickSoundUrl, onDuration, onBox, children }, ref) {
+  const live = useRef({ sourceMs, playing, rate, clipState, innerWidth: 0 })
+  useEffect(() => {
+    live.current = { ...live.current, sourceMs, playing, rate, clipState }
+  })
   const host = useRef<HTMLDivElement>(null)
   const video = useRef<HTMLVideoElement>(null)
   const audio = useRef<HTMLAudioElement>(null)
@@ -41,7 +50,9 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
   const camera = useRef<CameraState>(cameraAtRest({ center: { x: 0.5, y: 0.5 }, scale: 1 }))
   const latest = useRef({ sourceMs, zooms: project.zooms, spring: project.config.screenMovementSpring, cursor })
   const [size, setSize] = useState({ width: 0, height: 0 })
-  latest.current = { sourceMs, zooms: project.zooms, spring: project.config.screenMovementSpring, cursor }
+  useEffect(() => {
+    latest.current = { sourceMs, zooms: project.zooms, spring: project.config.screenMovementSpring, cursor }
+  })
 
   useLayoutEffect(() => {
     const el = host.current
@@ -111,6 +122,7 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
   const videoTop = inner.y - output.y - (crop ? crop.y * videoHeight : 0)
 
   useEffect(() => {
+    live.current.innerWidth = inner.width
     onBox?.({ x: inner.x, y: inner.y, width: inner.width, height: inner.height })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inner.x, inner.y, inner.width, inner.height])
@@ -153,6 +165,21 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
         <div className="stage__inner" style={{ left: inner.x - output.x, top: inner.y - output.y, width: inner.width, height: inner.height }}>
           <div ref={cameraLayer} className="stage__camera">
             <video ref={video} className="stage__video" src={screenUrl} playsInline preload="auto" style={{ left: videoLeft - (inner.x - output.x), top: videoTop - (inner.y - output.y), width: videoWidth, height: videoHeight }} onLoadedMetadata={(e) => onDuration?.(Math.round(e.currentTarget.duration * 1000))} />
+            <div className="stage__cursorhost" style={{ left: videoLeft - (inner.x - output.x), top: videoTop - (inner.y - output.y), width: videoWidth, height: videoHeight }}>
+              <CursorLayer
+                samples={cursor}
+                clicks={project.recording.clicks}
+                config={project.config}
+                recording={project.recording.screen}
+                startMs={0}
+                endMs={sourceDurationMs}
+                sourceMs={() => live.current.sourceMs}
+                clipState={() => live.current.clipState}
+                playing={() => live.current.playing && live.current.rate > 0 && live.current.rate <= 2}
+                boxWidth={() => live.current.innerWidth}
+                soundUrl={clickSoundUrl}
+              />
+            </div>
           </div>
         </div>
         {micUrl && <audio ref={audio} src={micUrl} preload="auto" />}

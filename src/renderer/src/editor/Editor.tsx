@@ -50,6 +50,7 @@ import { formatTimecode } from '@core/time'
 import type { OpenedProject } from '@core/projectFile'
 import { ClipPanel } from './ClipPanel'
 import { CommandMenu } from './CommandMenu'
+import { CursorPanel } from './CursorPanel'
 import { CropTool } from './CropTool'
 import { Stage, type StageHandle } from './Stage'
 import { Timeline, type TrackId, type TrackVisibility } from './Timeline'
@@ -394,6 +395,9 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           ref={stage}
           project={shownProject}
           cursor={opened.cursor}
+          sourceDurationMs={sourceDurationMs}
+          clipState={{ hidden: !!currentClip?.hideCursor, smooth: !currentClip?.disableSmoothMouseMovement }}
+          clickSoundUrl={(kind) => (project.config.clickSoundEffect ? opened.media.assets + `/sounds/clicks/${project.config.clickSoundEffect}/${kind}.wav` : null)}
           screenUrl={opened.media.screen}
           micUrl={opened.media.mic}
           sourceMs={sourceMs}
@@ -489,7 +493,23 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           ) : (
             <>
           <h2>{PANELS.find((p) => p.id === panel)?.label}</h2>
+          {panel === 'cursor' ? (
+            <CursorPanel
+              config={project.config}
+              hasCursor={opened.cursor.length > 0}
+              clipHidden={!!currentClip?.hideCursor}
+              onConfig={(patch) => edit({ ...project, config: { ...project.config, ...patch } })}
+              onPreviewSound={() => {
+                const url = project.config.clickSoundEffect ? opened.media.assets + `/sounds/clicks/${project.config.clickSoundEffect}/click.wav` : null
+                if (!url) return
+                const a = new Audio(url)
+                a.volume = project.config.clickSoundEffectVolume
+                void a.play().catch(() => undefined)
+              }}
+            />
+          ) : (
           <p className="muted">This panel's controls arrive with its own specs. The shell, playback, timeline, undo and saving are in place.</p>
+          )}
           <dl className="recorder__result">
             <dt>Recording</dt><dd>{project.recording.screen.width}×{project.recording.screen.height} · {formatTimecode(durationMs)}</dd>
             <dt>Captured</dt><dd>{project.recording.clicks.length} clicks · {project.recording.keys.length} keystrokes · {project.meta.recordingFlags.length} flags · {opened.markers.length} markers</dd>
