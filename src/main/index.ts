@@ -1,6 +1,7 @@
 import { join } from 'node:path'
 import { app, BrowserWindow, globalShortcut, ipcMain, screen, shell } from 'electron'
 import type { RecordingResult, StartOptions } from '@core/captureProtocol'
+import { RecordingEnvironment } from './environment'
 import { SpeakerNotes } from './notes'
 import { Picker } from './picker'
 import { Preferences } from './preferences'
@@ -20,6 +21,7 @@ let recording: RecordingService | null = null
 let picker: Picker | null = null
 let widget: Widget | null = null
 let notes: SpeakerNotes | null = null
+let environment: RecordingEnvironment | null = null
 let stopping: Promise<void> | null = null
 
 function createMainWindow(): BrowserWindow {
@@ -54,7 +56,7 @@ function showMainWindow(): BrowserWindow {
   return mainWindow
 }
 
-async function stopRecording(): Promise<void> {
+async function stopRecording(reason?: string): Promise<void> {
   if (!recording?.isRecording) return
   if (stopping) return stopping
   stopping = (async () => {
@@ -62,13 +64,20 @@ async function stopRecording(): Promise<void> {
       widget?.hide()
       picker?.close()
       const result: RecordingResult = await recording.stop()
-      showMainWindow().webContents.send('recording:finished', result)
+      const window = showMainWindow()
+      window.webContents.send('recording:finished', result)
+      if (reason) window.webContents.send('app:notice', reason)
     } finally {
       stopping = null
     }
   })()
   return stopping
 }
+
+const optionalShortcuts = (): { accelerator: string; handler: () => void }[] => [
+  { accelerator: FLAG_SHORTCUT, handler: () => { if (recording?.isRecording) void recording.addFlag().catch(() => undefined) } },
+  { accelerator: PROMPTER_SHORTCUT, handler: () => notes?.togglePrompter() }
+]
 
 function onRecordShortcut(): void {
   if (recording?.isRecording) void stopRecording()
@@ -85,23 +94,30 @@ void app.whenReady().then(() => {
   widget = new Widget(recording, stopRecording)
   notes = new SpeakerNotes(prefs)
   picker = new Picker(recording, prefs, projectsRoot, notes)
+  environment = new RecordingEnvironment(prefs, optionalShortcuts)
   recording.on('cancelled', () => {
     widget?.hide()
     picker?.close()
     notes?.hide(false)
+    void environment?.leave()
   })
-  recording.on('stopped', () => notes?.hide(false))
+  recording.on('stopped', () => {
+    notes?.hide(false)
+    void environment?.leave()
+  })
   recording.on('started', (options: StartOptions) => {
     const t = options.target
     const displayId = t.kind === 'display' ? t.id : t.kind === 'area' ? t.displayId : screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).id
     widget?.show(displayId)
     if (notes?.current().showSpeakerNotes) notes.show(displayId)
+    void environment?.enter({
+      hideDesktop: prefs.get('hideDesktopContentWhileRecording') === true,
+      projectsRoot: projectsRoot(),
+      onLowDisk: (message) => void stopRecording(message)
+    })
   })
   globalShortcut.register(RECORD_SHORTCUT, onRecordShortcut)
-  globalShortcut.register(FLAG_SHORTCUT, () => {
-    if (recording?.isRecording) void recording.addFlag().catch(() => undefined)
-  })
-  globalShortcut.register(PROMPTER_SHORTCUT, () => notes?.togglePrompter())
+  for (const s of optionalShortcuts()) globalShortcut.register(s.accelerator, s.handler)
   mainWindow = createMainWindow()
   // Development aid: RECSCENE_OPEN_PICKER=1 opens the picker as soon as the app is ready.
   if (!app.isPackaged && process.env['RECSCENE_OPEN_PICKER']) setTimeout(() => picker?.open(), 800)
@@ -112,6 +128,7 @@ void app.whenReady().then(() => {
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll()
+  void environment?.leave()
   recording?.dispose()
 })
 

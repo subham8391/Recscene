@@ -10,10 +10,16 @@ import { formatTimecode } from '@core/time'
 export function App(): React.JSX.Element {
   const [version, setVersion] = useState('')
   const [last, setLast] = useState<RecordingResult | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
 
   useEffect(() => {
     void window.recscene.version().then(setVersion)
-    return window.recscene.onRecordingFinished(setLast)
+    const offFinished = window.recscene.onRecordingFinished(setLast)
+    const offNotice = window.recscene.onNotice(setNotice)
+    return () => {
+      offFinished()
+      offNotice()
+    }
   }, [])
 
   return (
@@ -33,6 +39,11 @@ export function App(): React.JSX.Element {
       <main className="stage">
         <div className="stage__frame">
           <p className="stage__motto">Record the screen. Make it a scene.</p>
+          {notice && (
+            <p className="notice" role="alert">
+              {notice} <button type="button" className="btn btn--ghost" onClick={() => setNotice(null)}>Dismiss</button>
+            </p>
+          )}
           <button className="btn btn--accent" type="button" onClick={() => void window.recscene.openPicker()}>
             New recording <kbd>⇧⌘R</kbd>
           </button>

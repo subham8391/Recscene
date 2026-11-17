@@ -11,6 +11,8 @@ asar: true
 extraResources:
   - from: native/bin
     to: bin
+  - from: resources/sounds
+    to: sounds
 mac:
   category: public.app-category.video
   target:

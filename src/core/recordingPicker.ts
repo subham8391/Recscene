@@ -43,6 +43,8 @@ export interface PickerPrefs {
   lastArea: Rect | null
   /** Spec 27: whether the speaker notes window is shown while recording. */
   showSpeakerNotes: boolean
+  /** Spec 29: also exposed in Settings › Recording. */
+  hideDesktopContentWhileRecording: boolean
 }
 
 export const defaultPickerPrefs: PickerPrefs = {
@@ -53,7 +55,8 @@ export const defaultPickerPrefs: PickerPrefs = {
   systemAudio: 'all',
   recordingAreaCover: true,
   lastArea: null,
-  showSpeakerNotes: false
+  showSpeakerNotes: false,
+  hideDesktopContentWhileRecording: false
 }
 
 const isSize = (v: unknown): v is Size =>
@@ -74,7 +77,8 @@ export function pickerPrefsFrom(raw: unknown): PickerPrefs {
     systemAudio: r.systemAudio === 'none' ? 'none' : 'all',
     recordingAreaCover: typeof r.recordingAreaCover === 'boolean' ? r.recordingAreaCover : true,
     lastArea: isRect(r.lastArea) ? { x: r.lastArea.x, y: r.lastArea.y, width: r.lastArea.width, height: r.lastArea.height } : null,
-    showSpeakerNotes: r.showSpeakerNotes === true
+    showSpeakerNotes: r.showSpeakerNotes === true,
+    hideDesktopContentWhileRecording: r.hideDesktopContentWhileRecording === true
   }
 }
 

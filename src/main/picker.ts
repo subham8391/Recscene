@@ -6,7 +6,7 @@ import type { Preferences } from './preferences'
 import type { RecordingService } from './recording'
 import { createOverlayWindow } from './windows'
 
-const PREF_KEYS: (keyof PickerPrefs)[] = ['source', 'recordingCountdownDuration', 'recordingAreaCropPresets', 'recordMicrophone', 'systemAudio', 'recordingAreaCover', 'lastArea', 'showSpeakerNotes']
+const PREF_KEYS: (keyof PickerPrefs)[] = ['source', 'recordingCountdownDuration', 'recordingAreaCropPresets', 'recordMicrophone', 'systemAudio', 'recordingAreaCover', 'lastArea', 'showSpeakerNotes', 'hideDesktopContentWhileRecording']
 
 /**
  * The recording picker (specs 1–5, 13, 17, 21, 31): a transparent window the
