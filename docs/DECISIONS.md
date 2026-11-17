@@ -32,6 +32,8 @@
 
 **2026-11-17 (projects home built).** On launch, unfinished recordings (spec 40) show in the home's banner with Recover and Delete instead of a modal dialog; File › Recover Unfinished Recordings keeps the dialog. Project thumbnails are PNGs cached inside the bundle (`thumbnail.png`), drawn from the footage once and refreshed from the edited frame on every save. Deleting a project moves the bundle to the macOS Trash. The projects folder preference (`projectsFolderPath`, spec 255) lives in the home's storage box until the Settings window exists.
 
+**2026-11-17 (camera recording built).** The webcam is recorded by the helper into `camera.mov` (H.264, 30 fps, tallest format at or under the 720/1080 preference) on the screen recording's clock: frames before the screen's first frame are dropped and pauses are cut out, so the two files line up without an offset. Spec 9's "record muted camera" needs no option: the camera's own audio is never recorded, the microphone is the only voice source. The preview bubble is a separate always-on-top window fed by the renderer's own camera stream, excluded from the capture like every app window. Camera access is asked by the app first (Electron's prompt), then by the helper; both are attributed to the app by macOS.
+
 ## Open
 - **Q1** Licensing model: one-time with a year of updates versus subscription. Decide before M3.
 - **Q2** Transcription and captions: on-device (whisper.cpp) versus a cloud service. Lean on-device for privacy; decide at M2.

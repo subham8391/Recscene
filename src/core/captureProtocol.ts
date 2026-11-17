@@ -45,12 +45,24 @@ export interface StartOptions {
   micAutoGain?: boolean
   /** Spec 16: voice processing while recording the microphone. */
   micEnhance?: boolean
+  /** Spec 8: a camera id from the `cameras` command or "default"; omitted records no camera. */
+  camera?: string | null
+  /** Spec 10: the camera is recorded at the tallest format at or under this height. */
+  cameraMaxHeight?: number
+}
+
+/** A webcam the helper can record (spec 8). */
+export interface CameraInfo {
+  id: string
+  name: string
+  maxHeight: number
 }
 
 export type HelperCommand =
   | { cmd: 'ping' }
   | { cmd: 'permissions'; request?: boolean }
   | { cmd: 'list' }
+  | { cmd: 'cameras' }
   | ({ cmd: 'start' } & StartOptions)
   | { cmd: 'stop' }
   | { cmd: 'pause' }
@@ -67,20 +79,23 @@ export interface Permissions {
   inputMonitoring: boolean
   accessibility: boolean
   microphone: 'granted' | 'denied' | 'restricted' | 'notDetermined'
+  camera: 'granted' | 'denied' | 'restricted' | 'notDetermined'
 }
 
 export interface StoppedFiles {
   screen: string
   events: string
   mic?: string
+  camera?: string
 }
 
 export type HelperEvent =
   | { event: 'pong'; version: string }
   | ({ event: 'permissions' } & Permissions)
   | { event: 'targets'; displays: DisplayTarget[]; windows: WindowTarget[] }
+  | { event: 'cameras'; cameras: CameraInfo[] }
   | { event: 'started'; outputDir: string; width: number; height: number }
-  | { event: 'stopped'; durationMs: number; files: StoppedFiles; micOffsetMs?: number; frames: number }
+  | { event: 'stopped'; durationMs: number; files: StoppedFiles; micOffsetMs?: number; frames: number; cameraWidth?: number; cameraHeight?: number }
   | { event: 'paused'; timeMs: number }
   | { event: 'resumed'; timeMs: number }
   | { event: 'marked'; kind: 'marker' | 'flag'; timeMs: number }
@@ -91,7 +106,7 @@ export type HelperEvent =
   | { event: 'warning'; message: string }
   | { event: 'error'; code: string; message: string }
 
-const EVENT_NAMES = new Set(['pong', 'permissions', 'targets', 'started', 'stopped', 'paused', 'resumed', 'marked', 'cancelled', 'probed', 'imported', 'muxed', 'warning', 'error'])
+const EVENT_NAMES = new Set(['pong', 'permissions', 'targets', 'cameras', 'started', 'stopped', 'paused', 'resumed', 'marked', 'cancelled', 'probed', 'imported', 'muxed', 'warning', 'error'])
 
 /** Parses one stdout line. Returns null for blank lines and anything that is not a helper event. */
 export function parseHelperLine(line: string): HelperEvent | null {
@@ -171,4 +186,6 @@ export interface RecordingResult {
   clicks: number
   keys: number
   cursorSamples: number
+  /** Spec 8: true when a webcam track was recorded. */
+  camera?: boolean
 }

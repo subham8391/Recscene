@@ -2,7 +2,7 @@
  * Pure logic behind the recording picker (specs 1–5, 13, 17, 21, 31, 39).
  * Rectangles are in display points with a top-left origin, matching the helper.
  */
-import type { Permissions, WindowTarget } from './captureProtocol'
+import type { CameraInfo, Permissions, WindowTarget } from './captureProtocol'
 
 export type SourceKind = 'display' | 'window' | 'area' | 'device'
 
@@ -49,7 +49,21 @@ export interface PickerPrefs {
   enableAutoGainControl: boolean
   /** Spec 16: enhancement applied while the microphone is captured. */
   enableVoiceRecordingEnhancements: boolean
+  /** Spec 8: record the webcam as a second track. */
+  recordCamera: boolean
+  /** Spec 8: the chosen camera's id, or null for the first one. */
+  cameraDeviceId: string | null
+  /** Spec 8: the live preview bubble while recording is on screen only, never in the output. */
+  hideCameraPreview: boolean
+  /** Spec 11: the preview bubble is cropped square or shows the full sensor frame. */
+  webcamPreviewType: WebcamPreviewType
+  /** Spec 10. */
+  maximumWebcamHeight: WebcamHeight
 }
+
+export type WebcamPreviewType = 'square' | 'full-frame'
+export type WebcamHeight = 720 | 1080
+export const WEBCAM_HEIGHTS: readonly WebcamHeight[] = [720, 1080]
 
 export const defaultPickerPrefs: PickerPrefs = {
   source: 'display',
@@ -62,7 +76,12 @@ export const defaultPickerPrefs: PickerPrefs = {
   showSpeakerNotes: false,
   hideDesktopContentWhileRecording: false,
   enableAutoGainControl: true,
-  enableVoiceRecordingEnhancements: false
+  enableVoiceRecordingEnhancements: false,
+  recordCamera: false,
+  cameraDeviceId: null,
+  hideCameraPreview: false,
+  webcamPreviewType: 'square',
+  maximumWebcamHeight: 1080
 }
 
 const isSize = (v: unknown): v is Size =>
@@ -86,8 +105,37 @@ export function pickerPrefsFrom(raw: unknown): PickerPrefs {
     showSpeakerNotes: r.showSpeakerNotes === true,
     hideDesktopContentWhileRecording: r.hideDesktopContentWhileRecording === true,
     enableAutoGainControl: r.enableAutoGainControl !== false,
-    enableVoiceRecordingEnhancements: r.enableVoiceRecordingEnhancements === true
+    enableVoiceRecordingEnhancements: r.enableVoiceRecordingEnhancements === true,
+    recordCamera: r.recordCamera === true,
+    cameraDeviceId: typeof r.cameraDeviceId === 'string' && r.cameraDeviceId ? r.cameraDeviceId : null,
+    hideCameraPreview: r.hideCameraPreview === true,
+    webcamPreviewType: r.webcamPreviewType === 'full-frame' ? 'full-frame' : 'square',
+    maximumWebcamHeight: r.maximumWebcamHeight === 720 ? 720 : 1080
   }
+}
+
+export const CAMERA_MISSING = 'Camera you have previously selected seems to not be connected anymore'
+export const NO_CAMERA = 'No camera is connected'
+export const NO_CAMERA_PERMISSION = 'Recscene does not have permission to use your webcam'
+
+/**
+ * Spec 8: which camera a recording would use. The remembered device when it
+ * is still connected, otherwise the first one with a note that the remembered
+ * one is gone; null when none is connected or the camera is off.
+ */
+export function selectedCamera(prefs: PickerPrefs, cameras: readonly CameraInfo[]): { camera: CameraInfo | null; missing: boolean } {
+  if (!prefs.recordCamera) return { camera: null, missing: false }
+  const remembered = prefs.cameraDeviceId ? cameras.find((c) => c.id === prefs.cameraDeviceId) : undefined
+  if (remembered) return { camera: remembered, missing: false }
+  return { camera: cameras[0] ?? null, missing: prefs.cameraDeviceId !== null && cameras.length > 0 }
+}
+
+/** The camera row's second line: "FaceTime HD Camera · 1080p" or "Don't record camera". */
+export function cameraLabel(prefs: PickerPrefs, cameras: readonly CameraInfo[]): string {
+  const { camera } = selectedCamera(prefs, cameras)
+  if (!prefs.recordCamera) return "Don't record camera"
+  if (!camera) return NO_CAMERA
+  return `${camera.name} · ${Math.min(camera.maxHeight, prefs.maximumWebcamHeight)}p`
 }
 
 export function countdownLabel(ms: number | null): string {
@@ -186,6 +234,8 @@ export interface PickerState {
   permissions: Permissions
   prefs: PickerPrefs
   freeSpaceBytes: number
+  /** Spec 8: webcams the helper can record. */
+  cameras: CameraInfo[]
 }
 
 /** What the picker sends back when Record is pressed. */
@@ -198,4 +248,8 @@ export interface RecordRequest {
   systemAudio: boolean
   micAutoGain: boolean
   micEnhance: boolean
+  /** Spec 8: the camera id to record, or null for none. */
+  camera: string | null
+  /** Spec 10. */
+  cameraMaxHeight: WebcamHeight
 }

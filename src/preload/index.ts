@@ -90,7 +90,13 @@ const api = {
     savePrefs: (values: Partial<PickerPrefs>): Promise<PickerPrefs> => ipcRenderer.invoke('picker:savePrefs', values) as Promise<PickerPrefs>,
     record: (request: RecordRequest): Promise<{ projectDir: string }> => ipcRenderer.invoke('picker:record', request) as Promise<{ projectDir: string }>,
     cancel: (): Promise<void> => ipcRenderer.invoke('picker:cancel') as Promise<void>,
-    onCover: (listener: () => void): (() => void) => on('picker:cover', listener)
+    onCover: (listener: () => void): (() => void) => on('picker:cover', listener),
+    /** Spec 8: asks macOS for camera access on the app's behalf. */
+    askCamera: (): Promise<boolean> => ipcRenderer.invoke('picker:askCamera') as Promise<boolean>
+  },
+  /** The live camera bubble while recording (specs 8, 11). */
+  cameraPreview: {
+    state: (): Promise<{ cameraName: string; previewType: 'square' | 'full-frame' } | null> => ipcRenderer.invoke('campreview:state') as Promise<{ cameraName: string; previewType: 'square' | 'full-frame' } | null>
   },
   notes: {
     prefs: (): Promise<SpeakerNotesPrefs> => ipcRenderer.invoke('notes:prefs') as Promise<SpeakerNotesPrefs>,

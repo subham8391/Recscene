@@ -11,7 +11,7 @@ import { appPrefsFrom } from '@core/appPrefs'
 import { CaptureClient, resolveHelperPath } from './capture'
 import type { Preferences } from './preferences'
 
-export type RendererStartOptions = Omit<StartOptions, 'outputDir'> & { name?: string }
+export type RendererStartOptions = Omit<StartOptions, 'outputDir'> & { name?: string; cameraName?: string | null }
 
 let projectsFolderPref: () => unknown = () => undefined
 
@@ -38,7 +38,7 @@ export interface SessionSnapshot extends SessionState {
  */
 export class RecordingService extends EventEmitter {
   private client: CaptureClient
-  private current: { projectDir: string; createdAt: Date; width: number; height: number; mic: boolean; options: RendererStartOptions; session: SessionState } | null = null
+  private current: { projectDir: string; createdAt: Date; width: number; height: number; mic: boolean; cameraName: string | null; options: RendererStartOptions; session: SessionState } | null = null
   private busy = false
   private toastTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -55,6 +55,16 @@ export class RecordingService extends EventEmitter {
 
   listTargets(): ReturnType<CaptureClient['listTargets']> {
     return this.client.listTargets()
+  }
+
+  /** Spec 8. */
+  listCameras(): ReturnType<CaptureClient['listCameras']> {
+    return this.client.listCameras()
+  }
+
+  /** The camera being recorded right now (for the preview bubble), or null. */
+  get cameraName(): string | null {
+    return this.current?.cameraName ?? null
   }
 
   get isRecording(): boolean {
@@ -101,7 +111,7 @@ export class RecordingService extends EventEmitter {
     const projectDir = join(projectsRoot(), recordingFolderName(createdAt))
     await mkdir(projectDir, { recursive: true })
     const started = await this.client.start({ ...options, outputDir: projectDir })
-    this.current = { projectDir, createdAt, width: started.width, height: started.height, mic: options.mic ?? false, options, session: startSession(Date.now()) }
+    this.current = { projectDir, createdAt, width: started.width, height: started.height, mic: options.mic ?? false, cameraName: options.cameraName ?? null, options, session: startSession(Date.now()) }
     this.emit('started', options)
     this.publish()
     return { projectDir }
@@ -171,6 +181,7 @@ export class RecordingService extends EventEmitter {
     const stopped = await this.exclusive('finish recording', () => this.client.stop())
     const eventsFile = JSON.parse(await readFile(stopped.files.events, 'utf8')) as EventsFile
     const events = normaliseEvents(eventsFile, stopped.durationMs)
+    const camera = stopped.files.camera && stopped.cameraWidth && stopped.cameraHeight ? { width: stopped.cameraWidth, height: stopped.cameraHeight, file: basename(stopped.files.camera) } : undefined
     const project = newProject({
       id: randomUUID(),
       name: basename(current.projectDir, '.recscene'),
@@ -178,6 +189,7 @@ export class RecordingService extends EventEmitter {
       durationMs: stopped.durationMs,
       screen: { width: current.width, height: current.height, file: basename(stopped.files.screen) },
       ...(stopped.files.mic ? { mic: { file: basename(stopped.files.mic) } } : {}),
+      ...(camera ? { camera } : {}),
       events,
       flags: current.session.flags
     })
@@ -193,7 +205,8 @@ export class RecordingService extends EventEmitter {
       height: current.height,
       clicks: events.clicks.length,
       keys: events.keys.length,
-      cursorSamples: events.cursor.length
+      cursorSamples: events.cursor.length,
+      camera: !!camera
     }
     this.emit('stopped', result)
     return result
@@ -221,7 +234,9 @@ export class RecordingService extends EventEmitter {
     const eventsFile = JSON.parse(await readFile(eventsPath, 'utf8').catch(() => '{"version":1,"region":{"x":0,"y":0,"width":0,"height":0},"clicks":[],"keys":[],"cursor":[]}')) as EventsFile
     const events = normaliseEvents(eventsFile, probed.durationMs)
     const created = await stat(screen).then((s) => s.birthtime).catch(() => new Date())
-    return this.writeProject(projectDir, { createdAt: created, durationMs: probed.durationMs, width: probed.width, height: probed.height, events, mic: await stat(join(projectDir, 'mic.m4a')).then(() => 'mic.m4a').catch(() => undefined), flags: [], markers: [], frames: 0 })
+    const cameraFile = join(projectDir, 'camera.mov')
+    const camera = (await stat(cameraFile).then((s) => s.size > 0).catch(() => false)) ? await this.client.probe(cameraFile).then((c) => ({ width: c.width, height: c.height, file: 'camera.mov' })).catch(() => undefined) : undefined
+    return this.writeProject(projectDir, { createdAt: created, durationMs: probed.durationMs, width: probed.width, height: probed.height, events, mic: await stat(join(projectDir, 'mic.m4a')).then(() => 'mic.m4a').catch(() => undefined), camera, flags: [], markers: [], frames: 0 })
   }
 
   /** Spec 7: a project from an existing mp4, mov or gif, with no cursor or click data. */
@@ -240,7 +255,7 @@ export class RecordingService extends EventEmitter {
     return this.writeProject(projectDir, { createdAt: new Date(), durationMs: imported.durationMs, width: imported.width, height: imported.height, events: { clicks: [], keys: [], cursor: [] }, flags: [], markers: [], frames: 0 })
   }
 
-  private async writeProject(projectDir: string, input: { createdAt: Date; durationMs: number; width: number; height: number; events: ReturnType<typeof normaliseEvents>; mic?: string; flags: number[]; markers: SessionState['markers']; frames: number }): Promise<RecordingResult> {
+  private async writeProject(projectDir: string, input: { createdAt: Date; durationMs: number; width: number; height: number; events: ReturnType<typeof normaliseEvents>; mic?: string; camera?: { width: number; height: number; file: string }; flags: number[]; markers: SessionState['markers']; frames: number }): Promise<RecordingResult> {
     const project = newProject({
       id: randomUUID(),
       name: basename(projectDir, '.recscene'),
@@ -248,6 +263,7 @@ export class RecordingService extends EventEmitter {
       durationMs: input.durationMs,
       screen: { width: input.width, height: input.height, file: 'screen.mov' },
       ...(input.mic ? { mic: { file: input.mic } } : {}),
+      ...(input.camera ? { camera: input.camera } : {}),
       events: input.events,
       flags: input.flags,
       autoZoomLevel: this.autoZoomLevel()
@@ -255,7 +271,7 @@ export class RecordingService extends EventEmitter {
     const projectFile = join(projectDir, 'project.json')
     await writeFile(projectFile, JSON.stringify(project, null, 2))
     await writeFile(join(projectDir, 'recording-markers.json'), JSON.stringify(markersFile(input.markers), null, 2))
-    return { projectDir, projectFile, durationMs: input.durationMs, frames: input.frames, width: input.width, height: input.height, clicks: input.events.clicks.length, keys: input.events.keys.length, cursorSamples: input.events.cursor.length }
+    return { projectDir, projectFile, durationMs: input.durationMs, frames: input.frames, width: input.width, height: input.height, clicks: input.events.clicks.length, keys: input.events.keys.length, cursorSamples: input.events.cursor.length, camera: !!input.camera }
   }
 
   /** Specs 102–103, 109: the level automatic zooms are created with, or null to create none. */

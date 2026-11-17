@@ -141,7 +141,8 @@ export class ProjectService {
       media: {
         assets: ASSETS_URL,
         screen: mediaUrl(projectDir, project.recording.screen.file),
-        ...(project.recording.microphone && (await has(project.recording.microphone.file)) ? { mic: mediaUrl(projectDir, project.recording.microphone.file) } : {})
+        ...(project.recording.microphone && (await has(project.recording.microphone.file)) ? { mic: mediaUrl(projectDir, project.recording.microphone.file) } : {}),
+        ...(project.recording.camera && (await has(project.recording.camera.file)) ? { camera: mediaUrl(projectDir, project.recording.camera.file) } : {})
       }
     }
     this.current = opened

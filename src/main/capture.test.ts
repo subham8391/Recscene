@@ -39,7 +39,7 @@ describe('CaptureClient', () => {
     const second = 'ets","displays":[],"windows":[]}\n'
     helper.stdout.emit('data', Buffer.from(first))
     helper.stdout.emit('data', Buffer.from(second))
-    await expect(a).resolves.toEqual({ screen: true, inputMonitoring: false, accessibility: false, microphone: 'granted' })
+    await expect(a).resolves.toEqual({ screen: true, inputMonitoring: false, accessibility: false, microphone: 'granted', camera: 'notDetermined' })
     await expect(b).resolves.toMatchObject({ event: 'targets', displays: [], windows: [] })
   })
 

@@ -14,6 +14,8 @@ func handle(_ command: Command) async {
             output.send(.permissions(await Permissions.current(request: request)))
         case .list:
             output.send(try await Targets.list())
+        case .cameras:
+            output.send(.cameras(Camera.list()))
         case .start(let options):
             guard session == nil else { throw ProtocolError.alreadyRecording }
             let s = try await Session(options: options)

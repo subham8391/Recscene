@@ -5,18 +5,23 @@ import {
   applyAspect,
   applySavedDimensions,
   ASPECT_PRESETS,
+  CAMERA_MISSING,
+  cameraLabel,
   clampArea,
   COUNTDOWN_OPTIONS,
   countdownLabel,
   formatBytes,
   rectFromDrag,
   removeSavedDimensions,
+  selectedCamera,
+  WEBCAM_HEIGHTS,
   type DisplayInfo,
   type PickerPrefs,
   type PickerState,
   type Rect,
   type SourceKind
 } from '@core/recordingPicker'
+import { useCameraStream } from './useCameraStream'
 
 type Phase = { kind: 'pick' } | { kind: 'countdown'; remainingMs: number } | { kind: 'starting' } | { kind: 'cover' } | { kind: 'error'; message: string }
 
@@ -44,11 +49,16 @@ export function Picker(): React.JSX.Element {
   const [aspect, setAspect] = useState<number | null>(null)
   const [sizesOpen, setSizesOpen] = useState(false)
   const [micOpen, setMicOpen] = useState(false)
+  const [camOpen, setCamOpen] = useState(false)
+  const [camError, setCamError] = useState<string | null>(null)
   const [phase, setPhase] = useState<Phase>({ kind: 'pick' })
   const drag = useRef<{ start: { x: number; y: number }; corner?: Corner; origin?: Rect } | null>(null)
 
   const display = useMemo<DisplayInfo | undefined>(() => state?.displays.find((d) => d.id === state.displayId), [state])
   const bounds = display?.bounds
+  const cameraChoice = useMemo(() => (prefs && state ? selectedCamera(prefs, state.cameras) : { camera: null, missing: false }), [prefs, state])
+  // Spec 8: the camera row shows a live thumbnail while the camera is on; the helper records the real file.
+  const camThumb = useCameraStream(cameraChoice.camera?.name ?? null, !!prefs?.recordCamera && cameraChoice.camera !== null && phase.kind === 'pick', (m) => setCamError(m))
 
   // Local (window) coordinates are display-relative; the area is kept in global points like the helper wants.
   const toGlobal = useCallback((p: { x: number; y: number }) => ({ x: p.x + (bounds?.x ?? 0), y: p.y + (bounds?.y ?? 0) }), [bounds])
@@ -71,6 +81,17 @@ export function Picker(): React.JSX.Element {
   const savePrefs = (values: Partial<PickerPrefs>): void => {
     setPrefs((p) => (p ? { ...p, ...values } : p))
     void window.recscene.picker.savePrefs(values)
+  }
+
+  /** Spec 8: turning the camera on asks macOS for access first (the helper inherits the answer). */
+  const toggleCamera = async (): Promise<void> => {
+    if (!prefs) return
+    if (prefs.recordCamera) return savePrefs({ recordCamera: false })
+    setCamError(null)
+    const ok = await window.recscene.picker.askCamera()
+    if (!ok) return setCamError('Recscene does not have permission to use your webcam. Allow it in System Settings › Privacy & Security › Camera.')
+    savePrefs({ recordCamera: true })
+    void window.recscene.picker.state().then((s) => setState(s))
   }
 
   const pickSource = (id: SourceKind): void => {
@@ -107,7 +128,9 @@ export function Picker(): React.JSX.Element {
         mic: prefs.recordMicrophone,
         systemAudio: prefs.systemAudio === 'all',
         micAutoGain: prefs.enableAutoGainControl,
-        micEnhance: prefs.enableVoiceRecordingEnhancements
+        micEnhance: prefs.enableVoiceRecordingEnhancements,
+        camera: prefs.recordCamera ? (cameraChoice.camera?.id ?? null) : null,
+        cameraMaxHeight: prefs.maximumWebcamHeight
       })
     } catch (e) {
       setPhase({ kind: 'error', message: e instanceof Error ? e.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '') : String(e) })
@@ -286,10 +309,31 @@ export function Picker(): React.JSX.Element {
           )}
 
           <div className="devices">
-            <button type="button" className="device" disabled title="Camera arrives with specs 8–12 in M2">
-              <span className="device__thumb device__thumb--cam" />
-              <span className="device__text"><span className="device__label">Camera</span><span className="device__value">Off · M2</span></span>
-            </button>
+            <div className="menu-anchor">
+              <button type="button" className={`device${prefs.recordCamera ? ' device--on' : ''}`} aria-pressed={prefs.recordCamera} title={prefs.recordCamera ? "Don't record camera" : 'Record webcam'} onClick={() => void toggleCamera()} onContextMenu={(e) => { e.preventDefault(); setCamOpen((o) => !o) }}>
+                <span className={`device__thumb device__thumb--cam${prefs.webcamPreviewType === 'square' ? '' : ' device__thumb--wide'}`}>
+                  {prefs.recordCamera && cameraChoice.camera ? <video ref={camThumb} className="device__cam" muted playsInline /> : null}
+                </span>
+                <span className="device__text"><span className="device__label">Camera</span><span className="device__value">{cameraLabel(prefs, state.cameras)}</span></span>
+                <button type="button" className="device__more" aria-label="Camera options" aria-haspopup="menu" aria-expanded={camOpen} onClick={(e) => { e.stopPropagation(); setCamOpen((o) => !o) }}>▾</button>
+              </button>
+              {camOpen && (
+                <div role="menu" className="menu menu--mic menu--cam">
+                  {state.cameras.length === 0 && <span className="muted menu__empty">No camera is connected</span>}
+                  {state.cameras.map((c) => (
+                    <label key={c.id} className="menu__check">
+                      <input type="radio" name="camera" checked={prefs.recordCamera && cameraChoice.camera?.id === c.id} onChange={() => { savePrefs({ cameraDeviceId: c.id }); if (!prefs.recordCamera) void toggleCamera() }} />
+                      {c.name} <span className="muted">· up to {Math.min(c.maxHeight, 1080)}p</span>
+                    </label>
+                  ))}
+                  <label className="menu__check"><input type="radio" name="camera" checked={!prefs.recordCamera} onChange={() => savePrefs({ recordCamera: false })} />Don't record camera</label>
+                  <label className="menu__check"><input type="checkbox" checked={prefs.hideCameraPreview} onChange={(e) => savePrefs({ hideCameraPreview: e.target.checked })} />Hide camera preview</label>
+                  <label className="menu__check"><input type="checkbox" checked={prefs.webcamPreviewType === 'full-frame'} onChange={(e) => savePrefs({ webcamPreviewType: e.target.checked ? 'full-frame' : 'square' })} />Full-frame webcam preview</label>
+                  <div className="menu__row menu__row--res"><span className="muted">Maximum camera resolution</span><span className="seg seg--sm" role="group" aria-label="Maximum camera resolution">{WEBCAM_HEIGHTS.map((h) => <button key={h} type="button" aria-pressed={prefs.maximumWebcamHeight === h} onClick={() => savePrefs({ maximumWebcamHeight: h })}>{h}p</button>)}</span></div>
+                  <span className="muted menu__empty">The preview is on screen only and is never recorded. Mirroring, shape and position are set in the editor.</span>
+                </div>
+              )}
+            </div>
             <div className="menu-anchor">
               <button type="button" className={`device${prefs.recordMicrophone ? ' device--on' : ''}`} aria-pressed={prefs.recordMicrophone} onClick={() => savePrefs({ recordMicrophone: !prefs.recordMicrophone })} onContextMenu={(e) => { e.preventDefault(); setMicOpen((o) => !o) }}>
                 <span className="device__thumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg></span>
@@ -323,7 +367,7 @@ export function Picker(): React.JSX.Element {
 
           <div className="panel__foot">
             <span className="muted panel__status">
-              Permissions: Screen {permissions.screen ? '✓' : '✗'} · Keystrokes {permissions.inputMonitoring ? '✓' : '✗'} · Mic {permissions.microphone === 'granted' ? '✓' : '○'}
+              Permissions: Screen {permissions.screen ? '✓' : '✗'} · Camera {permissions.camera === 'granted' ? '✓' : '○'} · Keystrokes {permissions.inputMonitoring ? '✓' : '✗'} · Mic {permissions.microphone === 'granted' ? '✓' : '○'}
               <br />Free space {formatBytes(state.freeSpaceBytes)} · {prefs.recordMicrophone ? 'mic on' : 'mic off'} · {prefs.systemAudio === 'all' ? 'system audio on' : 'system audio off'}
             </span>
             <span className="panel__spacer" />
@@ -333,6 +377,8 @@ export function Picker(): React.JSX.Element {
             </button>
           </div>
           {phase.kind === 'error' && <p className="panel__error" role="alert">{phase.message}</p>}
+          {camError && <p className="panel__error" role="alert">{camError}</p>}
+          {prefs.recordCamera && cameraChoice.missing && <p className="panel__error" role="alert">{CAMERA_MISSING}. Recording with {cameraChoice.camera?.name} instead.</p>}
           {!permissions.screen && <p className="panel__error" role="alert">Recscene does not have permission to record your screen. Allow it in System Settings › Privacy &amp; Security › Screen Recording.</p>}
         </div>
       )}

@@ -12,6 +12,7 @@ import { projectsRoot, RecordingService, setProjectsFolderSource } from './recor
 import { offerRecovery } from './recovery'
 import { LibraryService } from './library'
 import { Widget } from './widget'
+import { CameraPreview } from './cameraPreview'
 import { loadRoute, preloadPath } from './windows'
 
 /** Spec 33: opens the picker when idle, finishes the recording while one runs. */
@@ -25,6 +26,7 @@ let mainWindow: BrowserWindow | null = null
 let recording: RecordingService | null = null
 let picker: Picker | null = null
 let widget: Widget | null = null
+let cameraPreview: CameraPreview | null = null
 let notes: SpeakerNotes | null = null
 let environment: RecordingEnvironment | null = null
 let projects: ProjectService | null = null
@@ -73,6 +75,7 @@ async function stopRecording(reason?: string): Promise<void> {
   stopping = (async () => {
     try {
       widget?.hide()
+      cameraPreview?.hide()
       picker?.close()
       const result: RecordingResult = await recording.stop()
       const window = showMainWindow()
@@ -149,16 +152,19 @@ void app.whenReady().then(() => {
   setProjectsFolderSource(() => prefs.get('projectsFolderPath'))
   recording = new RecordingService(prefs)
   widget = new Widget(recording, stopRecording)
+  cameraPreview = new CameraPreview()
   notes = new SpeakerNotes(prefs)
   picker = new Picker(recording, prefs, projectsRoot, notes)
   environment = new RecordingEnvironment(prefs, optionalShortcuts)
   recording.on('cancelled', () => {
     widget?.hide()
+    cameraPreview?.hide()
     picker?.close()
     notes?.hide(false)
     void environment?.leave()
   })
   recording.on('stopped', () => {
+    cameraPreview?.hide()
     notes?.hide(false)
     void environment?.leave()
   })
@@ -166,6 +172,8 @@ void app.whenReady().then(() => {
     const t = options.target
     const displayId = t.kind === 'display' ? t.id : t.kind === 'area' ? t.displayId : screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).id
     widget?.show(displayId)
+    const cameraName = recording?.cameraName
+    if (cameraName && prefs.get('hideCameraPreview') !== true) cameraPreview?.show(displayId, { cameraName, previewType: prefs.get('webcamPreviewType') === 'full-frame' ? 'full-frame' : 'square' })
     if (notes?.current().showSpeakerNotes) notes.show(displayId)
     void environment?.enter({
       hideDesktop: prefs.get('hideDesktopContentWhileRecording') === true,

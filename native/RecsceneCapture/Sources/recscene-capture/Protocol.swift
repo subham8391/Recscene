@@ -57,6 +57,10 @@ struct StartOptions: Codable {
     var micAutoGain = true
     /// Spec 16: voice processing (noise suppression) while recording the microphone.
     var micEnhance = false
+    /// Spec 8: a camera uniqueID from the `cameras` command, or "default"; nil records no camera.
+    var camera: String?
+    /// Spec 10: the camera is recorded at the tallest format at or under this height.
+    var cameraMaxHeight = 1080
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -70,6 +74,8 @@ struct StartOptions: Codable {
         excludeProcessIds = try c.decodeIfPresent([Int32].self, forKey: .excludeProcessIds) ?? []
         micAutoGain = try c.decodeIfPresent(Bool.self, forKey: .micAutoGain) ?? true
         micEnhance = try c.decodeIfPresent(Bool.self, forKey: .micEnhance) ?? false
+        camera = try c.decodeIfPresent(String.self, forKey: .camera)
+        cameraMaxHeight = try c.decodeIfPresent(Int.self, forKey: .cameraMaxHeight) ?? 1080
     }
 }
 
@@ -77,6 +83,8 @@ enum Command {
     case ping
     case permissions(request: Bool)
     case list
+    /// Lists the webcams (spec 8).
+    case cameras
     case start(StartOptions)
     case stop
     case pause
@@ -98,6 +106,7 @@ enum Command {
         switch head.cmd {
         case "ping": return .ping
         case "list": return .list
+        case "cameras": return .cameras
         case "stop": return .stop
         case "pause": return .pause
         case "resume": return .resume
@@ -188,12 +197,14 @@ struct PermissionsInfo: Codable {
     var inputMonitoring: Bool
     var accessibility: Bool
     var microphone: String
+    var camera: String
 }
 
 struct StoppedFiles: Codable {
     var screen: String
     var events: String
     var mic: String?
+    var camera: String?
 }
 
 /// Everything the helper prints. `event` is the discriminator.
@@ -201,8 +212,9 @@ enum OutEvent: Encodable {
     case pong(version: String)
     case permissions(PermissionsInfo)
     case targets(displays: [DisplayInfo], windows: [WindowInfo])
+    case cameras([CameraInfo])
     case started(outputDir: String, width: Int, height: Int)
-    case stopped(durationMs: Double, files: StoppedFiles, micOffsetMs: Double?, frames: Int)
+    case stopped(durationMs: Double, files: StoppedFiles, micOffsetMs: Double?, frames: Int, cameraWidth: Int?, cameraHeight: Int?)
     case paused(timeMs: Double)
     case resumed(timeMs: Double)
     case marked(kind: String, timeMs: Double)
@@ -216,6 +228,7 @@ enum OutEvent: Encodable {
     private enum CodingKeys: String, CodingKey {
         case event, version, screen, inputMonitoring, accessibility, microphone, displays, windows, outputDir, width, height
         case durationMs, files, micOffsetMs, frames, message, code, timeMs, kind, hasAudio, output, converted
+        case camera, cameras, cameraWidth, cameraHeight
     }
 
     func encode(to encoder: Encoder) throws {
@@ -229,6 +242,9 @@ enum OutEvent: Encodable {
             try c.encode(p.inputMonitoring, forKey: .inputMonitoring)
             try c.encode(p.accessibility, forKey: .accessibility)
             try c.encode(p.microphone, forKey: .microphone)
+            try c.encode(p.camera, forKey: .camera)
+        case .cameras(let list):
+            try c.encode("cameras", forKey: .event); try c.encode(list, forKey: .cameras)
         case let .targets(displays, windows):
             try c.encode("targets", forKey: .event)
             try c.encode(displays, forKey: .displays); try c.encode(windows, forKey: .windows)
@@ -236,12 +252,14 @@ enum OutEvent: Encodable {
             try c.encode("started", forKey: .event)
             try c.encode(outputDir, forKey: .outputDir)
             try c.encode(width, forKey: .width); try c.encode(height, forKey: .height)
-        case let .stopped(durationMs, files, micOffsetMs, frames):
+        case let .stopped(durationMs, files, micOffsetMs, frames, cameraWidth, cameraHeight):
             try c.encode("stopped", forKey: .event)
             try c.encode(durationMs, forKey: .durationMs)
             try c.encode(files, forKey: .files)
             try c.encodeIfPresent(micOffsetMs, forKey: .micOffsetMs)
             try c.encode(frames, forKey: .frames)
+            try c.encodeIfPresent(cameraWidth, forKey: .cameraWidth)
+            try c.encodeIfPresent(cameraHeight, forKey: .cameraHeight)
         case .paused(let timeMs):
             try c.encode("paused", forKey: .event); try c.encode(timeMs, forKey: .timeMs)
         case .resumed(let timeMs):

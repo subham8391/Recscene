@@ -418,6 +418,90 @@ html[data-route='notes'] {
 
 .device__thumb--cam {
   background: linear-gradient(160deg, #e9c1a3, #a16a4c);
+  overflow: hidden;
+}
+
+.device__thumb--wide {
+  width: 48px;
+}
+
+.device__cam {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.menu--cam {
+  min-width: 300px;
+}
+
+.menu__row--res {
+  justify-content: space-between;
+  gap: 10px;
+  height: 32px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.seg--sm {
+  display: inline-flex;
+  border: 1px solid var(--line2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.seg--sm button {
+  height: 22px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--text2);
+  font: inherit;
+  font-size: 11px;
+}
+
+.seg--sm button[aria-pressed='true'] {
+  background: var(--accentSoft);
+  color: var(--text);
+}
+
+/* Camera preview bubble while recording (specs 8, 11) */
+html[data-route='campreview'] body {
+  background: transparent;
+}
+
+.campreview {
+  position: fixed;
+  inset: 0;
+  border-radius: 24px;
+  overflow: hidden;
+  background: #111;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+  -webkit-app-region: drag;
+}
+
+.campreview--square {
+  border-radius: 50%;
+}
+
+.campreview__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.campreview__error {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 11px;
+  text-align: center;
+  padding: 12px;
 }
 
 .device__text {

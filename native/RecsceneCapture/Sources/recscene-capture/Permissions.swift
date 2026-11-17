@@ -32,11 +32,25 @@ enum Permissions {
         }
     }
 
+    /// Spec 8: "granted", "denied", "restricted" or "notDetermined".
+    static func camera(request: Bool) async -> String {
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized: return "granted"
+        case .denied: return "denied"
+        case .restricted: return "restricted"
+        case .notDetermined:
+            guard request else { return "notDetermined" }
+            return await AVCaptureDevice.requestAccess(for: .video) ? "granted" : "denied"
+        @unknown default: return "notDetermined"
+        }
+    }
+
     static func current(request: Bool) async -> PermissionsInfo {
         PermissionsInfo(
             screen: screen(request: request),
             inputMonitoring: inputMonitoring(request: request),
             accessibility: accessibility(request: false),
-            microphone: await microphone(request: request))
+            microphone: await microphone(request: request),
+            camera: await camera(request: request))
     }
 }
