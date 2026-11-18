@@ -61,6 +61,7 @@ import { PresetsPopover } from './PresetsPopover'
 import { applyPreset, type Preset } from '@core/editor/presets'
 import { buildCues, CUE_DEFAULTS, cutRanges, detectFillers, fillerRanges, GENERATING_TOAST, longPauses, ONE_LINE, REGENERATE_WARNING, replaceWordText, setWordsHidden, subtitleFile, tightenPause, timedCues, wordsRange, type SubtitleFormat } from '@core/editor/captions'
 import { backgroundSource, masterGain, micGain, musicGain, systemGain } from '@core/editor/audio'
+import { silenceGaps as gapsOf, speechRanges, type TimeRange } from '@core/editor/speech'
 import { ENABLE_QUESTION, setAllHidden, setHidden, setHiddenForLabel, setKindDisabled, shortcutEvents } from '@core/editor/shortcuts'
 import { ClipPanel } from './ClipPanel'
 import { CommandMenu } from './CommandMenu'
@@ -179,6 +180,31 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
     if (src.kind === 'library') return `${opened.media.library}/${encodeURIComponent(src.file)}`
     return projectMusic?.file === src.file ? projectMusic.url : null
   }, [backgroundAudio, opened.media.assets, opened.media.library, projectMusic])
+
+  // Spec 286: speech ranges from the microphone track, decoded once the feature is on.
+  const [speech, setSpeech] = useState<{ url: string; ranges: TimeRange[] } | null>(null)
+  const wantSpeech = project.config.hideDuringSilenceMs !== null && !!opened.media.mic
+  const micUrlForSpeech = opened.media.mic
+  useEffect(() => {
+    if (!wantSpeech || !micUrlForSpeech) return
+    let cancelled = false
+    void (async () => {
+      try {
+        const buf = await (await fetch(micUrlForSpeech)).arrayBuffer()
+        const ctx = new AudioContext()
+        const decoded = await ctx.decodeAudioData(buf)
+        void ctx.close()
+        if (!cancelled) setSpeech({ url: micUrlForSpeech, ranges: speechRanges(decoded.getChannelData(0), decoded.sampleRate) })
+      } catch {
+        if (!cancelled) setSpeech({ url: micUrlForSpeech, ranges: [] })
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [wantSpeech, micUrlForSpeech])
+  const speechState: 'off' | 'checking' | 'found' | 'none' = !wantSpeech ? 'off' : !speech || speech.url !== micUrlForSpeech ? 'checking' : speech.ranges.length ? 'found' : 'none'
+  const silenceGaps = useMemo(() => (wantSpeech && speech && speech.url === micUrlForSpeech && speech.ranges.length && project.config.hideDuringSilenceMs !== null ? gapsOf(speech.ranges, sourceDurationMs, project.config.hideDuringSilenceMs) : []), [wantSpeech, speech, micUrlForSpeech, sourceDurationMs, project.config.hideDuringSilenceMs])
 
   const backgroundImage = project.config.backgroundImage
   useEffect(() => {
@@ -705,6 +731,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           cursorTypes={opened.cursorTypes}
           previewQuality={prefs.playbackQualityMode}
           reelMode={prefs.reelPreviewMode}
+          silenceGaps={silenceGaps}
           sourceDurationMs={sourceDurationMs}
           clipState={{ hidden: !!currentClip?.hideCursor, smooth: !currentClip?.disableSmoothMouseMovement }}
           clickSoundUrl={(kind) => (project.config.clickSoundEffect ? opened.media.assets + `/sounds/clicks/${project.config.clickSoundEffect}/${kind}.wav` : null)}
@@ -854,6 +881,9 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
             <CameraPanel
               config={project.config}
               hasCamera={hasCamera}
+              hasMic={!!opened.media.mic}
+              speechState={speechState}
+              micMuted={project.config.muteMicrophone}
               layouts={layouts}
               customPlaying={!!layoutAt(layouts, sourceMs) && !layoutAt(layouts, sourceMs)?.isDisabled}
               onConfig={(patch) => edit({ ...project, config: { ...project.config, ...patch } })}
@@ -1026,7 +1056,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
       {overlay && <CommandMenu mode={overlay} actions={withOverrides(ACTIONS, prefs.shortcutOverrides)} onRun={(id) => { setOverlay(null); run(id) }} onClose={() => setOverlay(null)} />}
       {exporting && (
         <ExportDialog
-          input={{ project, clips, sourceDurationMs, screenUrl: opened.media.screen, micUrl: opened.media.mic, cameraUrl: opened.media.camera, musicUrl, backgroundImageUrl: backgroundImage ? backgroundImageUrl : null, assetsUrl: opened.media.assets, cursor: opened.cursor, cursorTypes: opened.cursorTypes, projectName: project.name }}
+          input={{ project, clips, sourceDurationMs, screenUrl: opened.media.screen, micUrl: opened.media.mic, cameraUrl: opened.media.camera, musicUrl, backgroundImageUrl: backgroundImage ? backgroundImageUrl : null, assetsUrl: opened.media.assets, cursor: opened.cursor, cursorTypes: opened.cursorTypes, silenceGaps, projectName: project.name }}
           durationMs={durationMs}
           onClose={() => setExporting(false)}
           onNotice={notify}
