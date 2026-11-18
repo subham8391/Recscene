@@ -19,6 +19,8 @@ import {
   type Point01
 } from '@core/editor/cameraLayout'
 import { formatTimecode } from '@core/time'
+import { CAMERA_LOOKS, lookFilter, sharpenLabel } from '@core/editor/looks'
+import { clampSilenceMs, HIDE_SILENCE_DEFAULT_MS, HIDE_SILENCE_MAX_MS, HIDE_SILENCE_MIN_MS, NO_MIC_FOR_SILENCE, NO_SPEECH_FOUND } from '@core/editor/speech'
 
 const LAYOUT_TYPES: LayoutType[] = ['both', 'split', 'only-camera', 'only-screen']
 
@@ -49,6 +51,12 @@ function LayoutPicker({ value, onChange, disabled }: { value: LayoutType; onChan
 interface PanelProps {
   config: CameraConfig
   hasCamera: boolean
+  /** Spec 286 needs the microphone track. */
+  hasMic: boolean
+  /** Spec 286: what the speech check found. */
+  speechState: 'off' | 'checking' | 'found' | 'none'
+  /** Spec 286: a muted microphone never hides the camera. */
+  micMuted: boolean
   layouts: CameraLayout[]
   /** True while a timeline layout covers the playhead (spec 152's warning). */
   customPlaying: boolean
@@ -57,7 +65,7 @@ interface PanelProps {
 }
 
 /** The Camera inspector from the Camera board (specs 148–155, 160, 164, delay from 287). */
-export function CameraPanel({ config, hasCamera, layouts, customPlaying, onConfig, onAction }: PanelProps): React.JSX.Element {
+export function CameraPanel({ config, hasCamera, hasMic, speechState, micMuted, layouts, customPlaying, onConfig, onAction }: PanelProps): React.JSX.Element {
   if (!hasCamera) {
     return (
       <div className="panel-body">
@@ -123,7 +131,37 @@ export function CameraPanel({ config, hasCamera, layouts, customPlaying, onConfi
         )}
         <label className="toggle"><span><b>Mirror horizontally</b></span><input type="checkbox" checked={config.mirrorCamera} onChange={(e) => onConfig({ mirrorCamera: e.target.checked })} /></label>
         <label className="toggle"><span><b>Face tracking</b><small>Arrives with the camera cutout work.</small></span><input type="checkbox" disabled /></label>
-        <label className="toggle"><span><b>Hide during silence</b><small>Needs the microphone's speech ranges (audio panel).</small></span><input type="checkbox" disabled checked={config.hideDuringSilenceMs !== null} /></label>
+        <label className="toggle"><span><b>Hide during silence</b><small>{hasMic ? 'Hide the camera during silence.' : NO_MIC_FOR_SILENCE}</small></span><input type="checkbox" disabled={!hasMic} checked={config.hideDuringSilenceMs !== null} onChange={(e) => onConfig({ hideDuringSilenceMs: e.target.checked ? HIDE_SILENCE_DEFAULT_MS : null })} /></label>
+        {config.hideDuringSilenceMs !== null && (
+          <>
+            <div className="hd"><span>Minimum silence duration</span><span>{(config.hideDuringSilenceMs / 1000).toFixed(1)} s</span></div>
+            <input type="range" min={HIDE_SILENCE_MIN_MS} max={HIDE_SILENCE_MAX_MS} step={100} value={config.hideDuringSilenceMs} aria-label="Minimum silence duration" onChange={(e) => onConfig({ hideDuringSilenceMs: clampSilenceMs(Number(e.target.value)) })} onDoubleClick={() => onConfig({ hideDuringSilenceMs: HIDE_SILENCE_DEFAULT_MS })} />
+            {speechState === 'checking' && <p className="note">Checking the microphone for speech…</p>}
+            {speechState === 'none' && <p className="note">{NO_SPEECH_FOUND}</p>}
+            {micMuted && <p className="note">The microphone is muted, so the camera never hides.</p>}
+          </>
+        )}
+      </section>
+
+      <section className="sec">
+        <div className="hd"><h3>Color grading</h3><span>{config.lut === 'original' ? 'Off' : `${Math.round(config.lutIntensity * 100)}%`}</span></div>
+        <div className="looks" role="group" aria-label="Camera look">
+          {CAMERA_LOOKS.map((l) => (
+            <button key={l.id} type="button" aria-pressed={config.lut === l.id} title={l.description} onClick={() => onConfig({ lut: l.id })}>
+              <span className="looks__swatch" style={{ filter: lookFilter(l.id, 1) || undefined }} />
+              {l.name}
+            </button>
+          ))}
+        </div>
+        {config.lut !== 'original' && (
+          <>
+            <div className="hd"><span>Color grading intensity</span><span>{Math.round(config.lutIntensity * 100)}%</span></div>
+            <input type="range" min={0} max={1} step={0.01} value={config.lutIntensity} aria-label="Color grading intensity" onChange={(e) => onConfig({ lutIntensity: Number(e.target.value) })} onDoubleClick={() => onConfig({ lutIntensity: 1 })} />
+          </>
+        )}
+        <div className="hd"><span>Sharpen</span><span>{sharpenLabel(config.sharpen01)}</span></div>
+        <input type="range" min={0} max={1} step={0.01} value={config.sharpen01} aria-label="Sharpen" onChange={(e) => onConfig({ sharpen01: Number(e.target.value) })} onDoubleClick={() => onConfig({ sharpen01: 0 })} />
+        <p className="note">Looks are colour filters applied in the preview and the export; custom .cube LUT files are not supported yet.</p>
       </section>
 
       <section className="sec">

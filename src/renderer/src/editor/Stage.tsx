@@ -5,6 +5,9 @@ import { cameraAtRest, cameraStep, cameraViewport, cursorAt, targetViewport, vie
 import { zoomAt } from '@core/editor/zooms'
 import { cameraMotionAtRest, cameraMotionStep, cameraTimeMs, effectiveLayout, motionBox, placeCamera, type CameraMotion } from '@core/editor/cameraLayout'
 import { activeMask, type MaskRegion } from '@core/editor/masks'
+import { applySilence, type TimeRange } from '@core/editor/speech'
+import { cameraFilter } from '@core/editor/looks'
+import { ensureSharpenFilter } from './cameraLooks'
 import type { Project } from '@core/project'
 import { CursorLayer } from './CursorLayer'
 import { MaskLayer } from './MaskLayer'
@@ -52,6 +55,8 @@ interface Props {
   previewQuality: 'high-quality' | 'high-speed'
   /** Spec 71: a social app mock over the preview, never exported. */
   reelMode: 'instagram' | 'tiktok' | null
+  /** Spec 286: silences long enough to hide the camera, in source time. */
+  silenceGaps: TimeRange[]
   /** Source range of the recording the cursor rules apply to. */
   sourceDurationMs: number
   clipState: { hidden: boolean; smooth: boolean }
@@ -74,7 +79,7 @@ interface Props {
  * The preview canvas (spec 48): the output box in the project's aspect ratio
  * with the (cropped) recording contained inside. Effects arrive with their specs.
  */
-export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, screenUrl, micUrl, cameraUrl, sourceMs, playing, rate, audio: gains, micMode, musicUrl, outputMs, previewMaxHeight, cursor, cursorTypes, previewQuality, reelMode, sourceDurationMs, clipState, clickSoundUrl, backgroundImageUrl, assetsUrl, selectedMaskId, onMaskRegionPreview, onMaskRegionCommit, onSelectMask, onDuration, onBox, children }, ref) {
+export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, screenUrl, micUrl, cameraUrl, sourceMs, playing, rate, audio: gains, micMode, musicUrl, outputMs, previewMaxHeight, cursor, cursorTypes, previewQuality, reelMode, silenceGaps, sourceDurationMs, clipState, clickSoundUrl, backgroundImageUrl, assetsUrl, selectedMaskId, onMaskRegionPreview, onMaskRegionCommit, onSelectMask, onDuration, onBox, children }, ref) {
   const live = useRef({ sourceMs, playing, rate, clipState, innerWidth: 0 })
   useEffect(() => {
     live.current = { ...live.current, sourceMs, playing, rate, clipState }
@@ -90,10 +95,10 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
   const camLayer = useRef<HTMLDivElement>(null)
   const camMotion = useRef<CameraMotion | null>(null)
   const camera = useRef<CameraState>(cameraAtRest({ center: { x: 0.5, y: 0.5 }, scale: 1 }))
-  const latest = useRef({ sourceMs, zooms: project.zooms, spring: project.config.screenMovementSpring, cursor, config: project.config, layouts: project.layouts, frame: { width: 0, height: 0 }, cameraFrame: project.recording.camera ?? null, hasCamera: !!cameraUrl, blurOn: previewQuality === 'high-quality' })
+  const latest = useRef({ sourceMs, zooms: project.zooms, spring: project.config.screenMovementSpring, cursor, config: project.config, layouts: project.layouts, frame: { width: 0, height: 0 }, cameraFrame: project.recording.camera ?? null, hasCamera: !!cameraUrl, blurOn: previewQuality === 'high-quality', silenceGaps })
   const [size, setSize] = useState({ width: 0, height: 0 })
   useEffect(() => {
-    latest.current = { ...latest.current, sourceMs, zooms: project.zooms, spring: project.config.screenMovementSpring, cursor, config: project.config, layouts: project.layouts, cameraFrame: project.recording.camera ?? null, hasCamera: !!cameraUrl, blurOn: previewQuality === 'high-quality' }
+    latest.current = { ...latest.current, sourceMs, zooms: project.zooms, spring: project.config.screenMovementSpring, cursor, config: project.config, layouts: project.layouts, cameraFrame: project.recording.camera ?? null, hasCamera: !!cameraUrl, blurOn: previewQuality === 'high-quality', silenceGaps }
   })
 
   useLayoutEffect(() => {
@@ -213,9 +218,9 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
       }
       // The webcam box (specs 148–164): spring between layouts, shrink during zooms, fade when hidden.
       const lay = camLayer.current
-      const { config, layouts, frame: f, cameraFrame, hasCamera } = latest.current
+      const { config, layouts, frame: f, cameraFrame, hasCamera, silenceGaps: gaps } = latest.current
       if (lay && f.width > 0) {
-        const eff = effectiveLayout(config, layouts, ms)
+        const eff = applySilence(effectiveLayout(config, layouts, ms), config, gaps, ms, config.muteMicrophone)
         const placed = hasCamera && cameraFrame ? placeCamera({ frame: f, cameraFrame, type: eff.type, cameraSize: eff.cameraSize, position: eff.cameraPositionPoint, config, zoomed: !!active && !active.isDisabled, paddingRatio: config.backgroundPaddingRatio / 100 }) : null
         const box = placed?.camera ?? null
         camMotion.current = camMotion.current ? cameraMotionStep(camMotion.current, box, dt) : cameraMotionAtRest(box, f)
@@ -247,7 +252,12 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
   const outScale = output.width / 1920
   // A split layout (Camera board) gives the screen only part of the frame; the camera box itself is animated per frame.
   const camRec = project.recording.camera
-  const eff = effectiveLayout(project.config, project.layouts, sourceMs)
+  const eff = applySilence(effectiveLayout(project.config, project.layouts, sourceMs), project.config, silenceGaps, sourceMs, project.config.muteMicrophone)
+  // Spec 287: the look and sharpen as a filter on the camera element (the sharpen kernel lives in a shared SVG filter).
+  const camFilter = cameraFilter(project.config)
+  useEffect(() => {
+    if (project.config.sharpen01 > 0.001) ensureSharpenFilter(project.config.sharpen01)
+  }, [project.config.sharpen01])
   const region: Box = cameraUrl && camRec && eff.type === 'split'
     ? placeCamera({ frame: output, cameraFrame: camRec, type: 'split', cameraSize: eff.cameraSize, position: eff.cameraPositionPoint, config: project.config, zoomed: false, paddingRatio: project.config.backgroundPaddingRatio / 100 }).screen
     : { x: 0, y: 0, width: output.width, height: output.height }
@@ -372,6 +382,7 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
           ctx.beginPath()
           ctx.roundRect(cb.x, cb.y, cb.width, cb.height, project.config.cameraRoundness * Math.min(cb.width, cb.height))
           ctx.clip()
+          ctx.filter = camFilter || 'none'
           if (project.config.mirrorCamera) {
             ctx.translate(cb.x + cb.width, 0)
             ctx.scale(-1, 1)
@@ -447,7 +458,7 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
         </div>
         {cameraUrl && camRec && (
           <div ref={camLayer} className="stage__cam" data-layout={eff.type} style={{ visibility: 'hidden' }}>
-            <video ref={camVideo} className={`stage__cam__video${project.config.mirrorCamera ? ' stage__cam__video--mirror' : ''}`} src={cameraUrl} crossOrigin="anonymous" muted playsInline preload="auto" />
+            <video ref={camVideo} className={`stage__cam__video${project.config.mirrorCamera ? ' stage__cam__video--mirror' : ''}`} style={{ filter: camFilter || undefined }} src={cameraUrl} crossOrigin="anonymous" muted playsInline preload="auto" />
           </div>
         )}
         {micUrl && <audio ref={audio} src={micUrl} preload="auto" crossOrigin="anonymous" />}

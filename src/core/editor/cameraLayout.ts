@@ -6,6 +6,7 @@
 import type { Box } from './aspect'
 import { springStep, type SpringParams, type SpringState } from './camera'
 import type { Ms } from '../project'
+import type { LookId } from './looks'
 
 /** `both` is the camera overlay, `split` puts them side by side, `only-camera` fills the frame, `only-screen` hides the camera. */
 export type LayoutType = 'both' | 'split' | 'only-camera' | 'only-screen'
@@ -40,10 +41,16 @@ export interface CameraConfig {
   splitRatio: number
   /** Split layouts: camera on the left instead of the right. */
   splitFlip: boolean
-  /** Spec 286: stored for the audio panel; null means never hide. */
+  /** Spec 286: hide the camera during silences at least this long; null means never hide. */
   hideDuringSilenceMs: number | null
   /** Spec 287's camera delay (ms, −200…200): shifts the camera track against the screen. */
   cameraDelayMs: number
+  /** Spec 287: the look applied to the camera (a built-in look id). */
+  lut: LookId
+  /** Spec 287: how much of the look is applied, 0–1. */
+  lutIntensity: number
+  /** Spec 287: sharpen 0–1, 0 is off. */
+  sharpen01: number
 }
 
 export const defaultCameraConfig: CameraConfig = {
@@ -56,7 +63,10 @@ export const defaultCameraConfig: CameraConfig = {
   splitRatio: 0.5,
   splitFlip: false,
   hideDuringSilenceMs: null,
-  cameraDelayMs: 0
+  cameraDelayMs: 0,
+  lut: 'original',
+  lutIntensity: 1,
+  sharpen01: 0
 }
 
 export const CAMERA_SIZE_MIN = 0.2

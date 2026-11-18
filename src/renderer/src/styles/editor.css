@@ -99,6 +99,44 @@
   object-fit: fill;
 }
 
+/* Camera looks (spec 287): a strip of swatches with the look's filter applied */
+.looks {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.looks button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm, 6px);
+  background: none;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.looks button[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--text-1);
+}
+
+.looks__swatch {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 4px;
+  background:
+    radial-gradient(circle at 50% 42%, #e8b89a 0 22%, transparent 23%),
+    linear-gradient(180deg, #5b7fa6 0%, #334e6e 60%, #2a2f45 100%);
+}
+
 /* Webcam box (specs 148–164): positioned by the stage every frame */
 .stage__cam {
   position: absolute;

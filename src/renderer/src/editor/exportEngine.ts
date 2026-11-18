@@ -18,6 +18,9 @@ import { screenBlurPx } from '@core/editor/camera'
 import { outputSize, videoBitrate, type ExportProgress, type ExportSettings, type ExportTarget } from '@core/editor/exportSettings'
 import { zoomAt } from '@core/editor/zooms'
 import { cameraMotionAtRest, cameraMotionStep, cameraTimeMs, effectiveLayout, motionBox, placeCamera, type CameraMotion } from '@core/editor/cameraLayout'
+import { applySilence, type TimeRange } from '@core/editor/speech'
+import { cameraFilter } from '@core/editor/looks'
+import { ensureSharpenFilter } from './cameraLooks'
 import { activeMask } from '@core/editor/masks'
 import type { Project } from '@core/project'
 import { drawMask } from './maskDraw'
@@ -41,6 +44,8 @@ export interface ExportInput {
   cursor: CursorSample[]
   /** Specs 134–136. */
   cursorTypes: CursorTypeChange[]
+  /** Spec 286: silences long enough to hide the camera, in source time. */
+  silenceGaps: TimeRange[]
   projectName: string
 }
 
@@ -230,6 +235,8 @@ export async function runExport(
     if (!ok) camVideo = null
   }
   let camMotion: CameraMotion | null = null
+  const camFilter = cameraFilter(cfg)
+  if (cfg.sharpen01 > 0.001) ensureSharpenFilter(cfg.sharpen01)
   const shortcuts = shortcutEvents(project.recording.keys, cfg)
   const cues = project.transcript ? buildCues(project.transcript.words, cfg.captionOneLine ? ONE_LINE : CUE_DEFAULTS) : []
 
@@ -255,7 +262,7 @@ export async function runExport(
     const sourceMs = outputToSource(input.clips, outputMs)
     const clip = clipAtOutput(input.clips, outputMs)?.clip
     // Camera layout at this moment (148–164): a split layout leaves the screen only part of the frame.
-    const eff = effectiveLayout(cfg, project.layouts, sourceMs)
+    const eff = applySilence(effectiveLayout(cfg, project.layouts, sourceMs), cfg, input.silenceGaps, sourceMs, cfg.muteMicrophone)
     const activeZoom = zoomAt(project.zooms, sourceMs)
     const placed = camVideo && camRec ? placeCamera({ frame: size, cameraFrame: camRec, type: eff.type, cameraSize: eff.cameraSize, position: eff.cameraPositionPoint, config: cfg, zoomed: !!activeZoom && !activeZoom.isDisabled, paddingRatio: cfg.backgroundPaddingRatio / 100 }) : null
     let laid = laidWhole
@@ -479,6 +486,8 @@ export async function runExport(
         ctx.beginPath()
         ctx.roundRect(b.x, b.y, b.width, b.height, cfg.cameraRoundness * Math.min(b.width, b.height))
         ctx.clip()
+        // Spec 287: look and sharpen.
+        ctx.filter = camFilter || 'none'
         if (cfg.mirrorCamera) {
           ctx.translate(b.x + b.width, 0)
           ctx.scale(-1, 1)
