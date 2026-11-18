@@ -225,7 +225,7 @@ export async function runExport(
   const crop = cfg.recordingCrop
   const rec = project.recording.screen
   const cropped = crop ? { width: rec.width * crop.width, height: rec.height * crop.height } : rec
-  const ratio = outputRatio(cfg.defaultOutputAspectRatio, cropped, cfg.backgroundPaddingRatio)
+  const ratio = outputRatio(cfg.defaultOutputAspectRatio, cropped)
   const size = outputSize(settings.height, ratio)
   const totalMs = outputDurationMs(input.clips)
   const frames = Math.max(1, Math.ceil((totalMs / 1000) * settings.fps))
