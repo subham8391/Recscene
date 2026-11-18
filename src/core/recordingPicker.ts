@@ -59,6 +59,8 @@ export interface PickerPrefs {
   webcamPreviewType: WebcamPreviewType
   /** Spec 10. */
   maximumWebcamHeight: WebcamHeight
+  /** Spec 41: the quick export widget (42–47) after a recording instead of the editor. */
+  showQuickExportWidget: boolean
 }
 
 export type WebcamPreviewType = 'square' | 'full-frame'
@@ -81,7 +83,8 @@ export const defaultPickerPrefs: PickerPrefs = {
   cameraDeviceId: null,
   hideCameraPreview: false,
   webcamPreviewType: 'square',
-  maximumWebcamHeight: 1080
+  maximumWebcamHeight: 1080,
+  showQuickExportWidget: true
 }
 
 const isSize = (v: unknown): v is Size =>
@@ -110,7 +113,8 @@ export function pickerPrefsFrom(raw: unknown): PickerPrefs {
     cameraDeviceId: typeof r.cameraDeviceId === 'string' && r.cameraDeviceId ? r.cameraDeviceId : null,
     hideCameraPreview: r.hideCameraPreview === true,
     webcamPreviewType: r.webcamPreviewType === 'full-frame' ? 'full-frame' : 'square',
-    maximumWebcamHeight: r.maximumWebcamHeight === 720 ? 720 : 1080
+    maximumWebcamHeight: r.maximumWebcamHeight === 720 ? 720 : 1080,
+    showQuickExportWidget: r.showQuickExportWidget !== false
   }
 }
 

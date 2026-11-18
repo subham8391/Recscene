@@ -1,5 +1,6 @@
 import { mkdir, open, rename, rm, writeFile, type FileHandle } from 'node:fs/promises'
 import { basename, join } from 'node:path'
+import { existsSync } from 'node:fs'
 import { app, BrowserWindow, clipboard, ClipboardItem, dialog, ipcMain, shell } from 'electron'
 import { substitutePlaceholders, type ExportSettings, type ExportTarget } from '@core/editor/exportSettings'
 import type { CaptureClient } from './capture'
@@ -51,6 +52,12 @@ export class ExportService {
       const result = await dialog.showSaveDialog({ title: 'Export video', defaultPath: join(app.getPath('home'), 'Movies', 'Recscene', `${name}.${ext}`), filters: [{ name: ext.toUpperCase(), extensions: [ext] }] })
       if (result.canceled || !result.filePath) return null
       destination = result.filePath.endsWith(`.${ext}`) ? result.filePath : `${result.filePath}.${ext}`
+    } else if (args.target === 'quick') {
+      // Specs 42–43: the quick export widget saves without asking, into the Movies folder.
+      const dir = join(app.getPath('home'), 'Movies', 'Recscene')
+      await mkdir(dir, { recursive: true })
+      destination = join(dir, `${name}.${ext}`)
+      for (let n = 2; existsSync(destination); n += 1) destination = join(dir, `${name} ${n}.${ext}`)
     } else {
       await mkdir(this.clipboardDir(), { recursive: true })
       destination = join(this.clipboardDir(), `${name} ${Date.now().toString(36)}.${ext}`)

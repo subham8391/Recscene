@@ -122,6 +122,8 @@ export const ACTIONS: readonly ActionDef[] = [
   { id: 'copyFrame', label: 'Copy current frame as image / slice settings', group: 'Clipboard', shortcut: 'Cmd+C' },
   { id: 'export', label: 'Export video…', group: 'Export', shortcut: 'Cmd+E' },
   { id: 'exportFrame', label: 'Export current frame as image…', group: 'Export' },
+  { id: 'copyZipProject', label: 'Copy and zip project', group: 'Export' },
+  { id: 'extractRawFiles', label: 'Extract raw recording files…', group: 'Export' },
   { id: 'openSettings', label: 'Settings…', group: 'Help', shortcut: 'Cmd+,' },
   { id: 'checkForUpdates', label: 'Check for updates…', group: 'Help' },
   { id: 'openChangelog', label: 'Open changelog', group: 'Help' },

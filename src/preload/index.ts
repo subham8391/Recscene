@@ -72,12 +72,27 @@ const api = {
     exportFrame: (png: ArrayBuffer, timeMs: number): Promise<string | null> => ipcRenderer.invoke('project:exportFrame', png, timeMs) as Promise<string | null>,
     onOpened: (listener: (opened: OpenedProject) => void): (() => void) => on('project:opened', listener),
     close: (): Promise<void> => ipcRenderer.invoke('project:close') as Promise<void>,
+    /** Loads a bundle without opening it in the editor (quick export preview). */
+    read: (projectDir: string): Promise<OpenedProject> => ipcRenderer.invoke('project:read', projectDir) as Promise<OpenedProject>,
+    /** Spec 250: a dropped .recscene bundle (or a file inside one). */
+    openDropped: (file: File): Promise<OpenedProject> => ipcRenderer.invoke('project:openPath', webUtils.getPathForFile(file)) as Promise<OpenedProject>,
+    /** Spec 249. */
+    copyZip: (): Promise<string> => ipcRenderer.invoke('project:copyZip') as Promise<string>,
+    /** Spec 251. */
+    extractRaw: (): Promise<string | null> => ipcRenderer.invoke('project:extractRaw') as Promise<string | null>,
     onClosed: (listener: () => void): (() => void) => on('project:closed', listener),
     pickBackgroundImage: (): Promise<{ file: string; url: string } | null> => ipcRenderer.invoke('project:pickBackgroundImage') as Promise<{ file: string; url: string } | null>,
     /** A dropped File (its path is resolved here) or pasted PNG bytes. */
     importBackgroundImage: (source: File | ArrayBuffer): Promise<{ file: string; url: string }> =>
       ipcRenderer.invoke('project:importBackgroundImage', source instanceof ArrayBuffer ? source : webUtils.getPathForFile(source)) as Promise<{ file: string; url: string }>,
     mediaUrl: (file: string): Promise<string | null> => ipcRenderer.invoke('project:mediaUrl', file) as Promise<string | null>
+  },
+  /** The quick export widget (specs 42–47). */
+  quickExport: {
+    state: (): Promise<{ result: RecordingResult; opened: OpenedProject; prefs: { muteQuickExportWidgetPreview: boolean; alwaysSaveProjectWhenUsingQuickExportWidget: boolean } } | null> => ipcRenderer.invoke('quickexport:state') as Promise<{ result: RecordingResult; opened: OpenedProject; prefs: { muteQuickExportWidgetPreview: boolean; alwaysSaveProjectWhenUsingQuickExportWidget: boolean } } | null>,
+    setPrefs: (values: Record<string, boolean>): Promise<void> => ipcRenderer.invoke('quickexport:setPrefs', values) as Promise<void>,
+    edit: (): Promise<void> => ipcRenderer.invoke('quickexport:edit') as Promise<void>,
+    done: (action: 'keep' | 'delete'): Promise<void> => ipcRenderer.invoke('quickexport:done', action) as Promise<void>
   },
   /** Presets (specs 224–232): files in the presets folder. */
   presets: {

@@ -526,6 +526,8 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
         case 'track:shortcuts': return selectedZoom ? setZooms(updateZoom(zooms, selectedZoom.id, { zoom: 1.4 })) : toggleTrack('shortcuts')
         case 'track:masks': return selectedZoom ? setZooms(updateZoom(zooms, selectedZoom.id, { zoom: 1.6 })) : toggleTrack('masks')
         case 'track:captions': return selectedZoom ? setZooms(updateZoom(zooms, selectedZoom.id, { zoom: 1.8 })) : toggleTrack('captions')
+        case 'copyZipProject': return void (save().then(() => window.recscene.project.copyZip()).then(() => notify('Copied project to clipboard')).catch(() => notify('Failed to copy project to clipboard')))
+        case 'extractRawFiles': return void window.recscene.project.extractRaw().then((p) => p && notify('Raw recording files extracted')).catch(() => notify('Failed to extract raw recording files'))
         case 'openSettings': return void window.recscene.settings.open()
         case 'checkForUpdates': return void window.recscene.settings.checkForUpdates()
         case 'openChangelog': return void window.recscene.settings.openChangelog()

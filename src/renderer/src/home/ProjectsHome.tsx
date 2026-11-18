@@ -272,7 +272,7 @@ export function ProjectsHome({ version, notice, onDismissNotice }: Props): React
           <button type="button" className="home__record" onClick={() => void window.recscene.openPicker()}><span className="home__dot" />New recording</button>
         </header>
 
-        <div className="home__body">
+        <div className="home__body" onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) void window.recscene.project.openDropped(f).catch((err: unknown) => setToast(err instanceof Error ? err.message.replace(/^Error invoking remote method '[^']*': (Error: )?/, '') : String(err))) }}>
           {notice && (
             <p className="notice" role="alert">
               {notice} <button type="button" className="btn btn--ghost" onClick={onDismissNotice}>Dismiss</button>

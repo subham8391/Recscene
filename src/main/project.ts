@@ -1,5 +1,6 @@
 import { createReadStream, existsSync } from 'node:fs'
-import { cp, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
+import { execFile } from 'node:child_process'
+import { cp, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { Readable } from 'node:stream'
 import { basename, dirname, join, resolve } from 'node:path'
 import { app, BrowserWindow, clipboard, ClipboardItem, dialog, ipcMain, protocol, shell } from 'electron'
@@ -107,6 +108,10 @@ export class ProjectService {
     ipcMain.handle('project:pickBackgroundImage', () => this.pickBackgroundImage())
     ipcMain.handle('project:importBackgroundImage', (_e, source: string | ArrayBuffer) => this.importBackgroundImage(source))
     ipcMain.handle('project:close', () => this.close())
+    ipcMain.handle('project:read', (_e, projectDir: string) => this.read(projectDir))
+    ipcMain.handle('project:openPath', (_e, path: string) => this.openPath(path))
+    ipcMain.handle('project:copyZip', () => this.copyZip())
+    ipcMain.handle('project:extractRaw', () => this.extractRaw())
     ipcMain.handle('project:mediaUrl', (_e, file: string) => (this.current ? mediaUrl(this.current.projectDir, file) : null))
   }
 
@@ -128,7 +133,8 @@ export class ProjectService {
     return pruned.map((projectDir) => ({ projectDir, name: projectNameFromDir(projectDir) }))
   }
 
-  async open(projectDir: string): Promise<OpenedProject> {
+  /** Loads a bundle without opening it anywhere (the quick export widget, spec 47's preview). */
+  async read(projectDir: string): Promise<OpenedProject> {
     let raw: unknown
     try {
       raw = JSON.parse(await readFile(join(projectDir, 'project.json'), 'utf8'))
@@ -160,6 +166,11 @@ export class ProjectService {
         ...(project.recording.camera && (await has(project.recording.camera.file)) ? { camera: mediaUrl(projectDir, project.recording.camera.file) } : {})
       }
     }
+    return opened
+  }
+
+  async open(projectDir: string): Promise<OpenedProject> {
+    const opened = await this.read(projectDir)
     this.current = opened
     const list = this.prefs.get('recentProjects')
     this.prefs.set({ recentProjects: markRecent(Array.isArray(list) ? (list as string[]) : [], projectDir) })
@@ -170,6 +181,49 @@ export class ProjectService {
       window.focus()
     }
     return opened
+  }
+
+  /** Spec 250: a dropped or double-clicked path; the bundle folder, or a file inside it. */
+  async openPath(path: string): Promise<OpenedProject> {
+    const target = path.endsWith('.recscene') ? path : dirname(path).endsWith('.recscene') ? dirname(path) : null
+    if (!target) throw new Error('File extension must be .recscene')
+    if (!(await stat(join(target, 'project.json')).then((s) => s.isFile()).catch(() => false))) throw new Error("Folder doesn't contain any Recscene project files.")
+    return this.open(target)
+  }
+
+  /** Spec 249: zips the bundle to a temp file and puts it on the pasteboard for Finder, Mail or Slack. */
+  async copyZip(): Promise<string> {
+    const current = this.current
+    if (!current) throw new Error('No project is open')
+    const dir = join(app.getPath('temp'), 'recscene-zips')
+    await mkdir(dir, { recursive: true })
+    const zip = join(dir, `${basename(current.projectDir, '.recscene')}.recscene.zip`)
+    await rm(zip, { force: true })
+    await new Promise<void>((resolve, reject) => execFile('ditto', ['-c', '-k', '--keepParent', current.projectDir, zip], (error) => (error ? reject(new Error('Failed to copy zipped project file to clipboard')) : resolve())))
+    try {
+      await clipboard.write([new ClipboardItem({ 'public.file-url': `file://${zip}`, 'text/plain': zip })])
+    } catch {
+      shell.showItemInFolder(zip)
+    }
+    return zip
+  }
+
+  /** Spec 251: copies the source files (no effects applied) into a chosen folder. */
+  async extractRaw(): Promise<string | null> {
+    const current = this.current
+    if (!current) throw new Error('No project is open')
+    const result = await dialog.showOpenDialog({ title: 'Select folder to extract raw recording files', buttonLabel: 'Extract', properties: ['openDirectory', 'createDirectory'] })
+    const target = result.filePaths[0]
+    if (result.canceled || !target) return null
+    const dest = join(target, `${basename(current.projectDir, '.recscene')} raw`)
+    await mkdir(dest, { recursive: true })
+    const names = ['screen.mov', 'camera.mov', 'mic.m4a', 'events.json', 'recording-markers.json']
+    for (const name of names) {
+      const from = join(current.projectDir, name)
+      if (await stat(from).then((s) => s.isFile()).catch(() => false)) await cp(from, join(dest, name))
+    }
+    shell.showItemInFolder(dest)
+    return dest
   }
 
   /** Back to the projects home: the editor saved already (spec 73's autosave) or asked. */

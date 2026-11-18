@@ -48,6 +48,8 @@
 
 **2026-11-18 (settings built).** All app preferences live in one typed model (`src/core/settings.ts`) read from the preferences file; the Settings window writes through one IPC and broadcasts `prefs:changed` so open editors follow without a restart. Global shortcuts are registered from the preferences (remappable, spec 66) with the record/flag/prompter ids; editor shortcuts are overridden per action id on top of the registry. Appearance sets Electron's theme source and the renderer's `data-theme`. There is no support server: "Share diagnostics info" copies the report to the clipboard, update checks only state the version until signed builds exist, and analytics is a stored flag that sends nothing.
 
+**2026-11-18 (quick export and project files built).** After a recording the quick export widget shows by default (`showQuickExportWidget`, spec 41); it is its own always-on-top window that runs the same export engine as the editor with a `quick` target that writes to `~/Movies/Recscene` without a dialog. The project is written before the widget appears, so Keep/Delete only decides whether the bundle stays. Zipping uses `ditto` and puts a file URL on the pasteboard; `.recscene` bundles are registered as a package document type and drops go through one open-path check.
+
 ## Open
 - **Q1** Licensing model: one-time with a year of updates versus subscription. Decide before M3.
 - **Q2** Transcription and captions: on-device (whisper.cpp) versus a cloud service. Lean on-device for privacy; decide at M2.

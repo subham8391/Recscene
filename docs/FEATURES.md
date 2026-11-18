@@ -5,7 +5,7 @@ Spec numbers refer to `docs/research/screen-studio-feature-specs.md`. A feature 
 ## M1 — daily driver
 | Area | Specs | Notes |
 | --- | --- | --- |
-| Recording picker: screen, window, area; countdown; menu bar control | 1–47 | Done: 1–5, 7–13, 15–17, 21–41 (41 as a preference; 8–12 record the webcam to `camera.mov` with a live preview bubble, 12's mirror lives in the editor). Deferred: 6 (device: M2), 14 (editor audio panel), 18–19 (per-app and device audio: M2), 20 (single engine, not applicable), 42–47 (need export) |
+| Recording picker: screen, window, area; countdown; menu bar control | 1–47 | Done: 1–5, 7–13, 15–17, 21–41 (41 as a preference; 8–12 record the webcam to `camera.mov` with a live preview bubble, 12's mirror lives in the editor). 42–43, 45 and 47 as the quick export widget (Save to ~/Movies/Recscene, Copy, mute preview, Edit, keep or delete the project, quick export settings; 44 Share and 46 title wait for shareable links). Deferred: 6 (device: M2), 18–19 (per-app and device audio: M2), 20 (single engine, not applicable) |
 | Editor shell: stage, rail, inspector, timeline, playhead, scrubber | 48–79 | Done: 48 (aspect picker; Crop and Mask buttons wait for 100–101 and 189–198), 49 (sections and ⌘1–8; panel contents arrive with their specs), 50–65, 67 (preview size), 72–78. Deferred: 66 (remapping, Settings), 68–70 (renderer settings, with the GPU renderer), 71 (reel mode, with 9:16 export), 79 (seasonal) |
 | Automatic zooms from clicks; manual zoom regions; zoom speed and depth | 102–124 | Done: 102–112, 114–124 (113 glide is reserved in the competitor too; 123's motion blur waits for the GPU renderer). Logic in `src/core/editor/zooms.ts` and `camera.ts` |
 | Cursor: smoothing, size, click highlight, hide when idle | 125–147 | Done: 126–133, 137–145 (144–145 in the preview; 146–147 stored, applied by the GPU renderer). 125 ships four sets with a pointer only and 134–136 are stored but inert until the helper records cursor types; the 20 custom sets are not drawn |
@@ -29,7 +29,7 @@ Spec numbers refer to `docs/research/screen-studio-feature-specs.md`. A feature 
 | Area | Specs | Notes |
 | --- | --- | --- |
 | Licensing, sign-in, devices, auto-update | 273–282 | Q1 |
-| Shareable links with comments | 246–251 | the only cloud feature |
+| Shareable links with comments | 246–251 | the only cloud feature. Done without the cloud: 249 copy and zip project, 250 open shared projects (drop a bundle on the home, open from Finder), 251 extract raw recording files |
 | Transcript editing, filler-word removal | 291 | |
 | AI and recorded voice-overs | 292 | |
 | Super-resolution ("clarity"), loupe zoom | 283–284 | Apple silicon only |
