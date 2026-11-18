@@ -315,8 +315,8 @@ export function Picker(): React.JSX.Element {
                   {prefs.recordCamera && cameraChoice.camera ? <video ref={camThumb} className="device__cam" muted playsInline /> : null}
                 </span>
                 <span className="device__text"><span className="device__label">Camera</span><span className="device__value">{cameraLabel(prefs, state.cameras)}</span></span>
-                <button type="button" className="device__more" aria-label="Camera options" aria-haspopup="menu" aria-expanded={camOpen} onClick={(e) => { e.stopPropagation(); setCamOpen((o) => !o) }}>▾</button>
               </button>
+                <button type="button" className="device__more" aria-label="Camera options" aria-haspopup="menu" aria-expanded={camOpen} onClick={(e) => { e.stopPropagation(); setCamOpen((o) => !o) }}>▾</button>
               {camOpen && (
                 <div role="menu" className="menu menu--mic menu--cam">
                   {state.cameras.length === 0 && <span className="muted menu__empty">No camera is connected</span>}
@@ -338,8 +338,8 @@ export function Picker(): React.JSX.Element {
               <button type="button" className={`device${prefs.recordMicrophone ? ' device--on' : ''}`} aria-pressed={prefs.recordMicrophone} onClick={() => savePrefs({ recordMicrophone: !prefs.recordMicrophone })} onContextMenu={(e) => { e.preventDefault(); setMicOpen((o) => !o) }}>
                 <span className="device__thumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg></span>
                 <span className="device__text"><span className="device__label">Microphone</span><span className="device__value">{prefs.recordMicrophone ? 'Default mic' : 'Not recorded'}</span></span>
-                <button type="button" className="device__more" aria-label="Microphone options" aria-haspopup="menu" aria-expanded={micOpen} onClick={(e) => { e.stopPropagation(); setMicOpen((o) => !o) }}>▾</button>
               </button>
+                <button type="button" className="device__more" aria-label="Microphone options" aria-haspopup="menu" aria-expanded={micOpen} onClick={(e) => { e.stopPropagation(); setMicOpen((o) => !o) }}>▾</button>
               {micOpen && (
                 <div role="menu" className="menu menu--mic">
                   <label className="menu__check"><input type="checkbox" checked={!prefs.enableAutoGainControl} onChange={(e) => savePrefs({ enableAutoGainControl: !e.target.checked })} />Disable auto gain control</label>
