@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import { app, BrowserWindow, type Rectangle } from 'electron'
 
-export type Route = 'editor' | 'picker' | 'widget' | 'notes' | 'campreview'
+export type Route = 'editor' | 'picker' | 'widget' | 'notes' | 'campreview' | 'settings'
 
 /** Loads the renderer at a hash route, in development from the Vite server and otherwise from disk. */
 export function loadRoute(window: BrowserWindow, route: Route): void {

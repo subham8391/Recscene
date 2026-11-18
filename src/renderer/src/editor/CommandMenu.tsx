@@ -1,17 +1,19 @@
 import { useState } from 'react'
-import { ACTIONS, filterActions, formatShortcut, groupActions, type ActionDef } from '@core/editor/actions'
+import { filterActions, formatShortcut, groupActions, type ActionDef } from '@core/editor/actions'
 
 interface Props {
   mode: 'command' | 'guide'
+  /** The registry with the user's shortcut overrides applied (spec 66). */
+  actions: readonly ActionDef[]
   onRun: (id: string) => void
   onClose: () => void
 }
 
 /** ⌘K command menu and ⌘/ shortcuts guide (specs 64–65) over the same action list. */
-export function CommandMenu({ mode, onRun, onClose }: Props): React.JSX.Element {
+export function CommandMenu({ mode, actions, onRun, onClose }: Props): React.JSX.Element {
   const [query, setQuery] = useState('')
   const [index, setIndex] = useState(0)
-  const results = filterActions(query, ACTIONS)
+  const results = filterActions(query, actions)
   const groups = groupActions(results)
 
   const onKey = (e: React.KeyboardEvent): void => {

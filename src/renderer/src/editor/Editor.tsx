@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { actionForKey } from '@core/editor/actions'
+import { ACTIONS, actionForKey } from '@core/editor/actions'
+import { withOverrides } from '@core/settings'
 import { ASPECT_OPTIONS, aspectLabel, type Box } from '@core/editor/aspect'
 import {
   applyTypingSuggestion,
@@ -525,6 +526,10 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
         case 'track:shortcuts': return selectedZoom ? setZooms(updateZoom(zooms, selectedZoom.id, { zoom: 1.4 })) : toggleTrack('shortcuts')
         case 'track:masks': return selectedZoom ? setZooms(updateZoom(zooms, selectedZoom.id, { zoom: 1.6 })) : toggleTrack('masks')
         case 'track:captions': return selectedZoom ? setZooms(updateZoom(zooms, selectedZoom.id, { zoom: 1.8 })) : toggleTrack('captions')
+        case 'openSettings': return void window.recscene.settings.open()
+        case 'checkForUpdates': return void window.recscene.settings.checkForUpdates()
+        case 'openChangelog': return void window.recscene.settings.openChangelog()
+        case 'openAppDataFolder': return void window.recscene.settings.openAppData()
         case 'presets':
         case 'createPreset': return setPresetsOpen(true)
         case 'importPreset': return void window.recscene.presets.importFile().then((p) => p && notify('Preset imported')).catch(() => notify('Not a Recscene preset file'))
@@ -631,7 +636,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           return
         }
       }
-      const action = actionForKey(e)
+      const action = actionForKey(e, withOverrides(ACTIONS, prefs.shortcutOverrides))
       if (!action) return
       e.preventDefault()
       run(action.id)
@@ -1010,7 +1015,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           onClose={() => setPresetsOpen(false)}
         />
       )}
-      {overlay && <CommandMenu mode={overlay} onRun={(id) => { setOverlay(null); run(id) }} onClose={() => setOverlay(null)} />}
+      {overlay && <CommandMenu mode={overlay} actions={withOverrides(ACTIONS, prefs.shortcutOverrides)} onRun={(id) => { setOverlay(null); run(id) }} onClose={() => setOverlay(null)} />}
       {exporting && (
         <ExportDialog
           input={{ project, clips, sourceDurationMs, screenUrl: opened.media.screen, micUrl: opened.media.mic, cameraUrl: opened.media.camera, musicUrl, backgroundImageUrl: backgroundImage ? backgroundImageUrl : null, assetsUrl: opened.media.assets, cursor: opened.cursor, projectName: project.name }}

@@ -46,6 +46,8 @@
 
 **2026-11-18 (presets built).** A preset is a JSON file `<name>.recscenepreset` in `~/Documents/Recscene Presets` (preference `presetsFolderPath`) holding a copy of the inspector config without the recording-specific keys (range, crop, typing suggestions, hidden shortcuts, background image, background audio file); applying copies the keys over the project's config and keeps those. New recordings start from the default preset, else the last saved project's config when `useLastProjectConfigForNewProjects` is on, else the built-in defaults.
 
+**2026-11-18 (settings built).** All app preferences live in one typed model (`src/core/settings.ts`) read from the preferences file; the Settings window writes through one IPC and broadcasts `prefs:changed` so open editors follow without a restart. Global shortcuts are registered from the preferences (remappable, spec 66) with the record/flag/prompter ids; editor shortcuts are overridden per action id on top of the registry. Appearance sets Electron's theme source and the renderer's `data-theme`. There is no support server: "Share diagnostics info" copies the report to the clipboard, update checks only state the version until signed builds exist, and analytics is a stored flag that sends nothing.
+
 ## Open
 - **Q1** Licensing model: one-time with a year of updates versus subscription. Decide before M3.
 - **Q2** Transcription and captions: on-device (whisper.cpp) versus a cloud service. Lean on-device for privacy; decide at M2.

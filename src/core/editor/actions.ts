@@ -122,6 +122,10 @@ export const ACTIONS: readonly ActionDef[] = [
   { id: 'copyFrame', label: 'Copy current frame as image / slice settings', group: 'Clipboard', shortcut: 'Cmd+C' },
   { id: 'export', label: 'Export video…', group: 'Export', shortcut: 'Cmd+E' },
   { id: 'exportFrame', label: 'Export current frame as image…', group: 'Export' },
+  { id: 'openSettings', label: 'Settings…', group: 'Help', shortcut: 'Cmd+,' },
+  { id: 'checkForUpdates', label: 'Check for updates…', group: 'Help' },
+  { id: 'openChangelog', label: 'Open changelog', group: 'Help' },
+  { id: 'openAppDataFolder', label: 'Open app data folder', group: 'Help' },
   { id: 'commandMenu', label: 'Show command menu…', group: 'Help', shortcut: 'Cmd+K' },
   { id: 'shortcutsGuide', label: 'Show shortcuts guide', group: 'Help', shortcut: 'Cmd+/' }
 ]
