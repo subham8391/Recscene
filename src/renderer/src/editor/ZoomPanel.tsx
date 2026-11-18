@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { cursorAt, SPRING_FOCUSED, SPRING_SMOOTH, type CursorSample } from '@core/editor/camera'
-import { applyLevelToAll, isAutoType, SNAP_MAX, ZOOM_MAX, ZOOM_MIN, ZOOM_PRESETS, type ZoomRange, updateZoom } from '@core/editor/zooms'
+import { applyLevelToAll, isAutoType, SNAP_MAX, ZOOM_MAX, ZOOM_MIN, type ZoomRange, updateZoom } from '@core/editor/zooms'
 import type { Project } from '@core/project'
 import { formatTimecode } from '@core/time'
 
@@ -19,7 +19,7 @@ interface Props {
 }
 
 /** The Zoom inspector from the Main board (specs 105–123 controls). */
-export function ZoomPanel({ project, zooms, zoom, index, cursor, screenUrl, defaultZoomLevel, onZooms, onConfig, onDefaultLevel, onAction }: Props): React.JSX.Element {
+export function ZoomPanel({ project, zooms, zoom, index, cursor, screenUrl, onZooms, onConfig, onDefaultLevel, onAction }: Props): React.JSX.Element {
   const picker = useRef<HTMLDivElement>(null)
   const set = (patch: Partial<ZoomRange>): void => onZooms(updateZoom(zooms, zoom.id, patch))
   const auto = isAutoType(zoom.type)
@@ -53,12 +53,7 @@ export function ZoomPanel({ project, zooms, zoom, index, cursor, screenUrl, defa
       <section className="sec">
         <div className="hd"><h3>Zoom level</h3><span>{Math.round(zoom.zoom * 100)}%</span></div>
         <input type="range" min={ZOOM_MIN} max={ZOOM_MAX} step={0.005} value={zoom.zoom} onChange={(e) => { set({ zoom: Number(e.target.value) }); onDefaultLevel(Number(e.target.value)) }} />
-        <div className="seg" role="group" aria-label="Zoom level presets">
-          {ZOOM_PRESETS.map((lvl, i) => (
-            <button key={lvl} type="button" aria-pressed={Math.abs(zoom.zoom - lvl) < 0.001} title={`Key ${i + 1}`} onClick={() => { set({ zoom: lvl }); onDefaultLevel(lvl) }}>{lvl}</button>
-          ))}
-          <button type="button" title="Key 0 · default level" onClick={() => set({ zoom: defaultZoomLevel })}>0</button>
-        </div>
+        <div className="hd hd--hint" aria-hidden="true"><span>{ZOOM_MIN}×</span><span>keys 1–9 pick a level · 0 default</span><span>{ZOOM_MAX}×</span></div>
         <button type="button" className="btn btn--ghost" disabled={zooms.length < 2} onClick={() => onZooms(applyLevelToAll(zooms, zoom.id))}>Apply zoom level to all other zooms</button>
         <p className="note">⌘= and ⌘- change the level by 0.2 while a zoom is selected. The slider also sets the default for new zooms.</p>
       </section>
