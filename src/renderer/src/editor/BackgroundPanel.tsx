@@ -4,6 +4,7 @@ import { applyInset, GRADIENT_PRESETS, gradientCss, insetValue, isHexColor, rand
 import { SPRING_FOCUSED, SPRING_SMOOTH } from '@core/editor/camera'
 import { WALLPAPER_COLLECTIONS, WALLPAPERS } from '@core/editor/wallpapers'
 import type { Project } from '@core/project'
+import { frameLabel, framesFor, NO_MOCKUPS, type FrameFilter } from '@core/editor/deviceFrames'
 
 interface Props {
   project: Project
@@ -24,6 +25,8 @@ const Slider = ({ id, label, value, min, max, step, format, onChange }: { id: st
 
 /** The Background & Screen panel from the Background board (specs 165–188). */
 export function BackgroundPanel({ project, assetsUrl, backgroundImageUrl, onConfig, onPickImage, onDropImage, onPasteImage }: Props): React.JSX.Element {
+  const [frameFilter, setFrameFilter] = useState<FrameFilter>('flexible')
+  const frames = framesFor(project.recording.screen, frameFilter)
   const c = project.config
   const [collection, setCollection] = useState<string>(c.backgroundSystemName.split('/')[0] ?? 'macOS')
   const [favourites, setFavourites] = useState<string[]>([])
@@ -145,8 +148,24 @@ export function BackgroundPanel({ project, assetsUrl, backgroundImageUrl, onConf
       </section>
 
       <section className="card">
-        <label className="toggle"><span><b>Wrap in device mockup</b><small>Pick a frame; stretch to fit, or show all frames even if they don't match. Frames arrive with specs 185–187.</small></span><input type="checkbox" checked={c.enableDeviceMockup} onChange={(e) => onConfig({ enableDeviceMockup: e.target.checked })} /></label>
-        {c.enableDeviceMockup && <small className="note">No mockups available for that device</small>}
+        <label className="toggle"><span><b>Wrap in device mockup</b><small>Wrap recording in device mockup.</small></span><input type="checkbox" checked={c.enableDeviceMockup} onChange={(e) => onConfig({ enableDeviceMockup: e.target.checked })} /></label>
+        {c.enableDeviceMockup && (
+          <>
+            <div className="seg" role="group" aria-label="Device frames filter">
+              <button type="button" aria-pressed={frameFilter === 'perfect'} title="Show only device frames that precisely match your recording size." onClick={() => setFrameFilter('perfect')}>Perfect</button>
+              <button type="button" aria-pressed={frameFilter === 'flexible'} title="Show all device frames, even those that don't precisely match your recording size." onClick={() => setFrameFilter('flexible')}>Flexible</button>
+            </div>
+            {frames.length === 0 ? (
+              <small className="note">{NO_MOCKUPS}</small>
+            ) : (
+              <select className="input" aria-label="Device frames" value={c.deviceFrameKey ?? ''} onChange={(e) => onConfig({ deviceFrameKey: e.target.value || null })}>
+                <option value="">No frame</option>
+                {frames.map((f) => <option key={f.key} value={f.key}>{frameLabel(f)}</option>)}
+              </select>
+            )}
+            <label className="toggle"><span><b>Adjust device size</b><small>Stretch or shrink the device mockup to match the recording size.</small></span><input type="checkbox" checked={c.adjustDeviceFrameToRecordingSize} onChange={(e) => onConfig({ adjustDeviceFrameToRecordingSize: e.target.checked })} /></label>
+          </>
+        )}
       </section>
 
       <section className="sec">

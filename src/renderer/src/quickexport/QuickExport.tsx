@@ -36,7 +36,7 @@ export function QuickExport(): React.JSX.Element {
     setError(null)
     const controller = new AbortController()
     abort.current = controller
-    const input = { project, clips: project.clips, sourceDurationMs: project.recording.durationMs, screenUrl: opened.media.screen, micUrl: opened.media.mic, cameraUrl: opened.media.camera, musicUrl: null, backgroundImageUrl: null, assetsUrl: opened.media.assets, cursor: opened.cursor, projectName: project.name }
+    const input = { project, clips: project.clips, sourceDurationMs: project.recording.durationMs, screenUrl: opened.media.screen, micUrl: opened.media.mic, cameraUrl: opened.media.camera, musicUrl: null, backgroundImageUrl: null, assetsUrl: opened.media.assets, cursor: opened.cursor, cursorTypes: opened.cursorTypes, projectName: project.name }
     report({ phase: 'preparing', frame: 0, frames: 1, startedAt: Date.now() })
     void runExport(input, settings, target, report, controller.signal)
       .then((r) => {

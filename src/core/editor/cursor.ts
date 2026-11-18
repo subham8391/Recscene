@@ -6,13 +6,77 @@
 import type { ClickEvent, Point } from '../project'
 import { cursorAt, springStep, type CursorSample, type SpringParams, type SpringState } from './camera'
 
-export type CursorSetId = 'macos' | 'macos-tahoe' | 'touch' | 'halloween'
+export type CursorSetId = 'macos' | 'macos-tahoe' | 'touch' | 'halloween' | `custom-${number}`
+/** Spec 125: four drawn sets plus twenty tinted custom pointers. */
+export const CUSTOM_SET_COLOURS = ['#5f45f0', '#e0393e', '#2a9d5e', '#2f7fe0', '#d9a41c', '#df4f80', '#1e9a9a', '#e0692a', '#8f79ff', '#45c77f', '#f2c14e', '#f06a98', '#34bfbf', '#5ea0f7', '#f58d4d', '#e36060', '#ffffff', '#111111', '#a6a7b1', '#ffd6e7'] as const
 export const CURSOR_SETS: { id: CursorSetId; label: string }[] = [
   { id: 'macos', label: 'macOS' },
   { id: 'macos-tahoe', label: 'macOS Tahoe' },
   { id: 'touch', label: 'Touch' },
-  { id: 'halloween', label: 'Halloween' }
+  { id: 'halloween', label: 'Halloween' },
+  ...CUSTOM_SET_COLOURS.map((_, i) => ({ id: `custom-${i + 1}` as CursorSetId, label: `Custom ${i + 1}` }))
 ]
+
+/** The recorded system cursor types the sets can draw (spec 125); anything else draws as the pointer. */
+export type CursorType = 'pointer' | 'ibeam' | 'pointinghand' | 'crosshair' | 'openhand' | 'closedhand' | 'resize-leftright' | 'resize-updown' | 'notallowed'
+export const CURSOR_TYPES: readonly CursorType[] = ['pointer', 'ibeam', 'pointinghand', 'crosshair', 'openhand', 'closedhand', 'resize-leftright', 'resize-updown', 'notallowed']
+
+export function normaliseCursorType(type: string): CursorType {
+  if ((CURSOR_TYPES as readonly string[]).includes(type)) return type as CursorType
+  if (type.startsWith('resize-left') || type.startsWith('resize-right')) return 'resize-leftright'
+  if (type.startsWith('resize-up') || type.startsWith('resize-down')) return 'resize-updown'
+  if (type === 'ibeam-vertical') return 'ibeam'
+  return 'pointer'
+}
+
+/** Sets that draw only a pointer behave as if "always use pointer" were on (spec 134). */
+export function setDrawsTypes(set: CursorSetId): boolean {
+  return set === 'macos' || set === 'macos-tahoe'
+}
+
+export interface CursorTypeChange {
+  timeMs: number
+  type: string
+}
+
+export const MIN_TYPE_MS = 150
+
+/** Spec 136: drops type changes that lasted under the minimum (rapid moves over elements). */
+export function optimiseCursorTypes(changes: readonly CursorTypeChange[], minMs = MIN_TYPE_MS): CursorTypeChange[] {
+  const out: CursorTypeChange[] = []
+  const list = [...changes].sort((a, b) => a.timeMs - b.timeMs)
+  for (let i = 0; i < list.length; i += 1) {
+    const c = list[i]!
+    const next = list[i + 1]
+    const lasted = next ? next.timeMs - c.timeMs : Infinity
+    const prev = out[out.length - 1]
+    if (lasted < minMs && prev) continue
+    if (prev && normaliseCursorType(prev.type) === normaliseCursorType(c.type)) continue
+    out.push(c)
+  }
+  return out
+}
+
+/** Specs 125, 134–136: which cursor the set draws at `timeMs`. */
+export function cursorTypeAt(changes: readonly CursorTypeChange[], timeMs: number, config: Pick<CursorConfig, 'alwaysUseDefaultCursor' | 'optimizeOriginalCursorTypes' | 'cursorSet'>): CursorType {
+  if (config.alwaysUseDefaultCursor || !setDrawsTypes(config.cursorSet.id)) return 'pointer'
+  const list = config.optimizeOriginalCursorTypes ? optimiseCursorTypes(changes) : [...changes].sort((a, b) => a.timeMs - b.timeMs)
+  let current: CursorType = 'pointer'
+  for (const c of list) {
+    if (c.timeMs > timeMs) break
+    current = normaliseCursorType(c.type)
+  }
+  return current
+}
+
+/** Where the recorded point sits inside a 24 × 24 sprite, per type (the arrow's tip, the I-beam's centre…). */
+export function cursorHotspot(type: CursorType): { x: number; y: number } {
+  switch (type) {
+    case 'pointer': return { x: 3.6, y: 1.9 }
+    case 'pointinghand': return { x: 9, y: 2 }
+    default: return { x: 12, y: 12 }
+  }
+}
 
 export const CURSOR_SIZE_DEFAULT = 1.5
 export const CURSOR_SIZE_MIN = 0.5

@@ -528,6 +528,9 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
         case 'track:captions': return selectedZoom ? setZooms(updateZoom(zooms, selectedZoom.id, { zoom: 1.8 })) : toggleTrack('captions')
         case 'copyZipProject': return void (save().then(() => window.recscene.project.copyZip()).then(() => notify('Copied project to clipboard')).catch(() => notify('Failed to copy project to clipboard')))
         case 'extractRawFiles': return void window.recscene.project.extractRaw().then((p) => p && notify('Raw recording files extracted')).catch(() => notify('Failed to extract raw recording files'))
+        case 'reelMode:off': return setPrefs({ reelPreviewMode: null })
+        case 'reelMode:instagram': return setPrefs({ reelPreviewMode: 'instagram' })
+        case 'reelMode:tiktok': return setPrefs({ reelPreviewMode: 'tiktok' })
         case 'openSettings': return void window.recscene.settings.open()
         case 'checkForUpdates': return void window.recscene.settings.checkForUpdates()
         case 'openChangelog': return void window.recscene.settings.openChangelog()
@@ -699,6 +702,9 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           ref={stage}
           project={shownProject}
           cursor={opened.cursor}
+          cursorTypes={opened.cursorTypes}
+          previewQuality={prefs.playbackQualityMode}
+          reelMode={prefs.reelPreviewMode}
           sourceDurationMs={sourceDurationMs}
           clipState={{ hidden: !!currentClip?.hideCursor, smooth: !currentClip?.disableSmoothMouseMovement }}
           clickSoundUrl={(kind) => (project.config.clickSoundEffect ? opened.media.assets + `/sounds/clicks/${project.config.clickSoundEffect}/${kind}.wav` : null)}
@@ -1020,7 +1026,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
       {overlay && <CommandMenu mode={overlay} actions={withOverrides(ACTIONS, prefs.shortcutOverrides)} onRun={(id) => { setOverlay(null); run(id) }} onClose={() => setOverlay(null)} />}
       {exporting && (
         <ExportDialog
-          input={{ project, clips, sourceDurationMs, screenUrl: opened.media.screen, micUrl: opened.media.mic, cameraUrl: opened.media.camera, musicUrl, backgroundImageUrl: backgroundImage ? backgroundImageUrl : null, assetsUrl: opened.media.assets, cursor: opened.cursor, projectName: project.name }}
+          input={{ project, clips, sourceDurationMs, screenUrl: opened.media.screen, micUrl: opened.media.mic, cameraUrl: opened.media.camera, musicUrl, backgroundImageUrl: backgroundImage ? backgroundImageUrl : null, assetsUrl: opened.media.assets, cursor: opened.cursor, cursorTypes: opened.cursorTypes, projectName: project.name }}
           durationMs={durationMs}
           onClose={() => setExporting(false)}
           onNotice={notify}

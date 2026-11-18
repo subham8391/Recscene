@@ -146,12 +146,15 @@ export interface EventsFile {
   clicks: { timeMs: number; position: Point; button: 'left' | 'right' | 'middle' }[]
   keys: { timeMs: number; label: string }[]
   cursor: { timeMs: number; x: number; y: number }[]
+  /** Specs 134–136: system cursor type changes; absent in older recordings. */
+  cursorTypes?: { timeMs: number; type: string }[]
 }
 
 export interface RecordedEvents {
   clicks: ClickEvent[]
   keys: KeyEvent[]
   cursor: { timeMs: number; x: number; y: number }[]
+  cursorTypes: { timeMs: number; type: string }[]
 }
 
 /**
@@ -175,6 +178,10 @@ export function normaliseEvents(file: EventsFile, durationMs: number): RecordedE
     cursor: file.cursor
       .filter((s) => inRange(s.timeMs) && inRegion(s.x, s.y))
       .map((s) => ({ timeMs: s.timeMs, x: s.x, y: s.y }))
+      .sort(byTime),
+    cursorTypes: (file.cursorTypes ?? [])
+      .filter((c) => inRange(c.timeMs) && typeof c.type === 'string' && c.type.length > 0)
+      .map((c) => ({ timeMs: c.timeMs, type: c.type }))
       .sort(byTime)
   }
 }

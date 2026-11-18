@@ -11,7 +11,10 @@ import { outputRatio } from '@core/editor/aspect'
 import { screenLayout, withAlpha } from '@core/editor/background'
 import { cameraAtRest, cameraStep, cameraViewport, cursorAt, targetViewport, type CursorSample } from '@core/editor/camera'
 import { clipAtOutput, isAudioMuted, outputDurationMs, outputToSource, sourceToOutput, type Clip } from '@core/editor/clips'
-import { activeClickEffects, cursorAtRest, cursorBlurPx, cursorRotation, cursorStep, cursorTarget, isPressed, removeShakes } from '@core/editor/cursor'
+import { activeClickEffects, cursorAtRest, cursorBlurPx, cursorHotspot, cursorRotation, cursorStep, cursorTarget, cursorTypeAt, isPressed, removeShakes, type CursorTypeChange } from '@core/editor/cursor'
+import { drawSprite } from './cursorSprites'
+import { frameByKey, layoutFrame } from '@core/editor/deviceFrames'
+import { screenBlurPx } from '@core/editor/camera'
 import { outputSize, videoBitrate, type ExportProgress, type ExportSettings, type ExportTarget } from '@core/editor/exportSettings'
 import { zoomAt } from '@core/editor/zooms'
 import { cameraMotionAtRest, cameraMotionStep, cameraTimeMs, effectiveLayout, motionBox, placeCamera, type CameraMotion } from '@core/editor/cameraLayout'
@@ -36,17 +39,13 @@ export interface ExportInput {
   backgroundImageUrl: string | null
   assetsUrl: string
   cursor: CursorSample[]
+  /** Specs 134–136. */
+  cursorTypes: CursorTypeChange[]
   projectName: string
 }
 
 export interface ExportResult {
   path: string
-}
-
-const CURSOR_PATHS: Record<string, string> = {
-  macos: 'M3.5 2l5.5 16 2.3-5.3 6.2-2.2z',
-  'macos-tahoe': 'M4 2.5l5.3 15.8 2.4-5.6 5.9-1.9z',
-  halloween: 'M3 2l6 18 2.6-6.2 6.3-2.4z'
 }
 
 function loadImage(url: string): Promise<HTMLImageElement | null> {
@@ -238,15 +237,19 @@ export async function runExport(
   const ctx = canvas.getContext('2d', { alpha: false })
   if (!ctx) throw new Error('No canvas context')
   const exportScale = size.width / 1920
-  const laidWhole = screenLayout(size, cropped, cfg.backgroundPaddingRatio, cfg.insetPadding, exportScale)
-  const radius = cfg.windowBorderRadius * exportScale
+  const laidWhole0 = screenLayout(size, cropped, cfg.backgroundPaddingRatio, cfg.insetPadding, exportScale)
+  // Specs 185–187: with a device frame the recording takes the frame's screen rectangle inside the padded area.
+  const deviceFrame = cfg.enableDeviceMockup ? frameByKey(cfg.deviceFrameKey) : null
+  const frameLayout = deviceFrame ? layoutFrame(deviceFrame, { width: laidWhole0.screen.width, height: laidWhole0.screen.height }, cropped, cfg.adjustDeviceFrameToRecordingSize) : null
+  const laidWhole = frameLayout ? { ...laidWhole0, screen: { x: laidWhole0.screen.x + frameLayout.screen.x, y: laidWhole0.screen.y + frameLayout.screen.y, width: frameLayout.screen.width, height: frameLayout.screen.height } } : laidWhole0
+  const screenRadiusPx = frameLayout ? frameLayout.screenRadius : cfg.windowBorderRadius * exportScale
+  const radius = screenRadiusPx
   const samples = removeShakes(input.cursor, cfg.removeCurshorShakeTreshold, rec)
   const spring = cfg.screenMovementSpring
   let camera = cameraAtRest({ center: { x: 0.5, y: 0.5 }, scale: 1 })
   let cursorMotion = cursorAtRest(cursorAt(samples, 0))
   let cursorOpacity = 1
   const dt = 1000 / settings.fps
-  const cursorPath = new Path2D(CURSOR_PATHS[cfg.cursorSet.id] ?? CURSOR_PATHS['macos']!)
 
   const drawFrame = (outputMs: number): void => {
     const sourceMs = outputToSource(input.clips, outputMs)
@@ -286,6 +289,7 @@ export async function runExport(
       ctx.roundRect(laid.outer.x, laid.outer.y, laid.outer.width, laid.outer.height, radius + (screen.x - laid.outer.x))
       ctx.fill()
     }
+    const shadowBox = deviceFrame && frameLayout ? { x: laidWhole0.screen.x + frameLayout.frame.x, y: laidWhole0.screen.y + frameLayout.frame.y, width: frameLayout.frame.width, height: frameLayout.frame.height, radius: frameLayout.radius } : { ...screen, radius }
     if (cfg.shadowIntensity > 0 && cfg.backgroundPaddingRatio > 0) {
       const rad = (cfg.shadowAngle * Math.PI) / 180
       ctx.save()
@@ -295,9 +299,27 @@ export async function runExport(
       ctx.shadowOffsetY = Math.sin(rad) * cfg.shadowDistance * exportScale * (cfg.shadowIsDirectional ? 1 : 0.5)
       ctx.fillStyle = '#000'
       ctx.beginPath()
-      ctx.roundRect(screen.x, screen.y, screen.width, screen.height, radius)
+      ctx.roundRect(shadowBox.x, shadowBox.y, shadowBox.width, shadowBox.height, shadowBox.radius)
       ctx.fill()
       ctx.restore()
+    }
+    // Device frame (185–187): bezel, chin or stand, camera or notch.
+    if (deviceFrame && frameLayout) {
+      const fb = shadowBox
+      const fs = screen
+      const shorter = Math.min(fs.width, fs.height)
+      ctx.fillStyle = deviceFrame.tone
+      ctx.beginPath()
+      ctx.roundRect(fb.x, fb.y, fb.width, fb.height, fb.radius)
+      ctx.fill()
+      ctx.fillStyle = deviceFrame.tone2
+      if (deviceFrame.chin === 'lip') ctx.fillRect(fb.x, fb.y + fb.height - frameLayout.chinHeight, fb.width, frameLayout.chinHeight)
+      if (deviceFrame.chin === 'chin') ctx.fillRect(fb.x, fb.y + fb.height - frameLayout.chinHeight, fb.width, frameLayout.chinHeight)
+      if (deviceFrame.chin === 'stand') ctx.fillRect(fb.x + (fb.width - fs.width * 0.22) / 2, fb.y + fb.height - frameLayout.chinHeight, fs.width * 0.22, frameLayout.chinHeight)
+      ctx.fillStyle = '#000'
+      if (deviceFrame.notch === 'notch') { ctx.beginPath(); ctx.roundRect(fb.x + fb.width / 2 - shorter * 0.1, fb.y, shorter * 0.2, Math.max(4, (fs.y - fb.y) * 0.9), [0, 0, shorter * 0.02, shorter * 0.02]); ctx.fill() }
+      if (deviceFrame.notch === 'island') { ctx.beginPath(); ctx.roundRect(fb.x + fb.width / 2 - shorter * 0.14, fs.y + shorter * 0.03, shorter * 0.28, shorter * 0.08, shorter * 0.04); ctx.fill() }
+      if (deviceFrame.notch === 'camera') { ctx.beginPath(); ctx.arc(fb.x + fb.width / 2, fb.y + (fs.y - fb.y) / 2, Math.max(2, shorter * 0.006), 0, Math.PI * 2); ctx.fill() }
     }
     // Screen with camera (102–124)
     const cursorPos = cursorAt(samples, sourceMs)
@@ -308,6 +330,9 @@ export async function runExport(
     ctx.beginPath()
     ctx.roundRect(screen.x, screen.y, screen.width, screen.height, radius)
     ctx.clip()
+    // Specs 146–147: the screen's motion blur from pans and zoom changes.
+    const screenBlur = screenBlurPx(camera, screen.width, cfg.motionBlurAmount, cfg.motionBlurScreenMoveAmount, cfg.motionBlurScreenZoomAmount)
+    if (screenBlur > 0.4) ctx.filter = `blur(${screenBlur.toFixed(1)}px)`
     ctx.translate(screen.x + screen.width / 2 - view.center.x * screen.width * view.scale, screen.y + screen.height / 2 - view.center.y * screen.height * view.scale)
     ctx.scale(view.scale, view.scale)
     const sx = crop ? crop.x * video.videoWidth : 0
@@ -315,6 +340,7 @@ export async function runExport(
     const sw = crop ? crop.width * video.videoWidth : video.videoWidth
     const sh = crop ? crop.height * video.videoHeight : video.videoHeight
     ctx.drawImage(video, sx, sy, sw, sh, 0, 0, screen.width, screen.height)
+    ctx.filter = 'none'
     // Masks (189–198) over the recording, before the cursor
     const am = activeMask(project.masks, sourceMs)
     if (am) drawMask(ctx, am, video, crop, { width: screen.width, height: screen.height }, size.width)
@@ -341,27 +367,15 @@ export async function runExport(
       ctx.globalAlpha = Math.min(1, cursorOpacity)
       const blur = cursorBlurPx(cursorMotion, screen.width, cfg.motionBlurAmount, cfg.motionBlurCursorAmount)
       if (blur > 0.5) ctx.filter = `blur(${blur.toFixed(1)}px)`
+      // Specs 125, 134–136: the sprite for the recorded cursor type, rotated around its hotspot.
+      const type = cursorTypeAt(input.cursorTypes, sourceMs, cfg)
+      const hot = cursorHotspot(type)
       ctx.translate(cursorMotion.x.value * screen.width, cursorMotion.y.value * screen.height)
-      ctx.rotate((cursorRotation(cursorMotion, cfg.cursorRotateOnXMovementRatio, cfg.cursorBaseRotation) * Math.PI) / 180)
+      if (type === 'pointer') ctx.rotate((cursorRotation(cursorMotion, cfg.cursorRotateOnXMovementRatio, cfg.cursorBaseRotation) * Math.PI) / 180)
       const press = cursorMotion.press.value
       ctx.scale((cs / 24) * press, (cs / 24) * press)
-      ctx.translate(-3.6, -1.9)
-      if (cfg.cursorSet.id === 'touch') {
-        ctx.beginPath()
-        ctx.arc(12, 12, 9, 0, Math.PI * 2)
-        ctx.fillStyle = 'rgba(255,255,255,0.85)'
-        ctx.fill()
-        ctx.lineWidth = 2
-        ctx.strokeStyle = 'rgba(0,0,0,0.45)'
-        ctx.stroke()
-      } else {
-        ctx.lineJoin = 'round'
-        ctx.lineWidth = 1.6
-        ctx.strokeStyle = cfg.cursorSet.id === 'halloween' ? '#2b0a00' : '#fff'
-        ctx.stroke(cursorPath)
-        ctx.fillStyle = cfg.cursorSet.id === 'halloween' ? '#ff8a1f' : cfg.cursorSet.id === 'macos-tahoe' ? '#111' : '#000'
-        ctx.fill(cursorPath)
-      }
+      ctx.translate(-hot.x, -hot.y)
+      drawSprite(ctx, cfg.cursorSet.id, type)
       ctx.restore()
     }
     ctx.restore()

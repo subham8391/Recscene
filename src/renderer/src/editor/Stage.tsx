@@ -11,6 +11,10 @@ import { MaskLayer } from './MaskLayer'
 import { buildMicChain, peakOf } from './micGraph'
 import { ShortcutLayer } from './ShortcutLayer'
 import { CaptionLayer } from './CaptionLayer'
+import { DeviceFrameLayer } from './DeviceFrame'
+import { frameByKey, layoutFrame } from '@core/editor/deviceFrames'
+import { screenBlurPx } from '@core/editor/camera'
+import type { CursorTypeChange } from '@core/editor/cursor'
 import { buildCues, CUE_DEFAULTS, ONE_LINE } from '@core/editor/captions'
 import { shortcutEvents } from '@core/editor/shortcuts'
 import { drawMask } from './maskDraw'
@@ -42,6 +46,12 @@ interface Props {
   previewMaxHeight: number
   /** Cursor samples for zooms that follow the mouse (spec 106) and the drawn cursor (125–147). */
   cursor: CursorSample[]
+  /** Specs 134–136. */
+  cursorTypes: CursorTypeChange[]
+  /** Spec 70: performance mode turns the screen's motion blur off in the preview. */
+  previewQuality: 'high-quality' | 'high-speed'
+  /** Spec 71: a social app mock over the preview, never exported. */
+  reelMode: 'instagram' | 'tiktok' | null
   /** Source range of the recording the cursor rules apply to. */
   sourceDurationMs: number
   clipState: { hidden: boolean; smooth: boolean }
@@ -64,7 +74,7 @@ interface Props {
  * The preview canvas (spec 48): the output box in the project's aspect ratio
  * with the (cropped) recording contained inside. Effects arrive with their specs.
  */
-export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, screenUrl, micUrl, cameraUrl, sourceMs, playing, rate, audio: gains, micMode, musicUrl, outputMs, previewMaxHeight, cursor, sourceDurationMs, clipState, clickSoundUrl, backgroundImageUrl, assetsUrl, selectedMaskId, onMaskRegionPreview, onMaskRegionCommit, onSelectMask, onDuration, onBox, children }, ref) {
+export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, screenUrl, micUrl, cameraUrl, sourceMs, playing, rate, audio: gains, micMode, musicUrl, outputMs, previewMaxHeight, cursor, cursorTypes, previewQuality, reelMode, sourceDurationMs, clipState, clickSoundUrl, backgroundImageUrl, assetsUrl, selectedMaskId, onMaskRegionPreview, onMaskRegionCommit, onSelectMask, onDuration, onBox, children }, ref) {
   const live = useRef({ sourceMs, playing, rate, clipState, innerWidth: 0 })
   useEffect(() => {
     live.current = { ...live.current, sourceMs, playing, rate, clipState }
@@ -80,10 +90,10 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
   const camLayer = useRef<HTMLDivElement>(null)
   const camMotion = useRef<CameraMotion | null>(null)
   const camera = useRef<CameraState>(cameraAtRest({ center: { x: 0.5, y: 0.5 }, scale: 1 }))
-  const latest = useRef({ sourceMs, zooms: project.zooms, spring: project.config.screenMovementSpring, cursor, config: project.config, layouts: project.layouts, frame: { width: 0, height: 0 }, cameraFrame: project.recording.camera ?? null, hasCamera: !!cameraUrl })
+  const latest = useRef({ sourceMs, zooms: project.zooms, spring: project.config.screenMovementSpring, cursor, config: project.config, layouts: project.layouts, frame: { width: 0, height: 0 }, cameraFrame: project.recording.camera ?? null, hasCamera: !!cameraUrl, blurOn: previewQuality === 'high-quality' })
   const [size, setSize] = useState({ width: 0, height: 0 })
   useEffect(() => {
-    latest.current = { ...latest.current, sourceMs, zooms: project.zooms, spring: project.config.screenMovementSpring, cursor, config: project.config, layouts: project.layouts, cameraFrame: project.recording.camera ?? null, hasCamera: !!cameraUrl }
+    latest.current = { ...latest.current, sourceMs, zooms: project.zooms, spring: project.config.screenMovementSpring, cursor, config: project.config, layouts: project.layouts, cameraFrame: project.recording.camera ?? null, hasCamera: !!cameraUrl, blurOn: previewQuality === 'high-quality' }
   })
 
   useLayoutEffect(() => {
@@ -196,6 +206,10 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
       if (el) {
         const v = cameraViewport(camera.current)
         el.style.transform = viewportTransform(v, el.clientWidth, el.clientHeight)
+        // Specs 146–147: the screen blurs with pans and zoom changes (off in performance mode, spec 70).
+        const cfg = latest.current.config
+        const blur = latest.current.blurOn ? screenBlurPx(camera.current, el.clientWidth, cfg.motionBlurAmount, cfg.motionBlurScreenMoveAmount, cfg.motionBlurScreenZoomAmount) : 0
+        el.style.filter = blur > 0.4 ? `blur(${blur.toFixed(1)}px)` : ''
       }
       // The webcam box (specs 148–164): spring between layouts, shrink during zooms, fade when hidden.
       const lay = camLayer.current
@@ -239,7 +253,12 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
     : { x: 0, y: 0, width: output.width, height: output.height }
   const laid0 = screenLayout({ width: region.width, height: region.height }, cropped, project.config.backgroundPaddingRatio, project.config.insetPadding, outScale)
   const laid = { screen: { ...laid0.screen, x: laid0.screen.x + region.x, y: laid0.screen.y + region.y }, outer: { ...laid0.outer, x: laid0.outer.x + region.x, y: laid0.outer.y + region.y } }
-  const inner: Box = { x: output.x + laid.screen.x, y: output.y + laid.screen.y, width: laid.screen.width, height: laid.screen.height }
+  // Specs 185–187: a device frame sits in the padded area and the recording takes its screen rectangle.
+  const deviceFrame = project.config.enableDeviceMockup ? frameByKey(project.config.deviceFrameKey) : null
+  const frameLayout = deviceFrame ? layoutFrame(deviceFrame, { width: laid.screen.width, height: laid.screen.height }, cropped, project.config.adjustDeviceFrameToRecordingSize) : null
+  const inner: Box = frameLayout
+    ? { x: output.x + laid.screen.x + frameLayout.screen.x, y: output.y + laid.screen.y + frameLayout.screen.y, width: frameLayout.screen.width, height: frameLayout.screen.height }
+    : { x: output.x + laid.screen.x, y: output.y + laid.screen.y, width: laid.screen.width, height: laid.screen.height }
   const outer: Box = { x: output.x + laid.outer.x, y: output.y + laid.outer.y, width: laid.outer.width, height: laid.outer.height }
   const bg = project.config
   const backgroundStyle: React.CSSProperties =
@@ -375,8 +394,12 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
         {(outer.width > inner.width || outer.height > inner.height) && (
           <div className="stage__inset" style={{ left: outer.x - output.x, top: outer.y - output.y, width: outer.width, height: outer.height, background: withAlpha(bg.insetColor, bg.insetAlpha), borderRadius: radius + (inner.x - outer.x) }} />
         )}
-        <div className="stage__shadow" style={{ left: inner.x - output.x, top: inner.y - output.y, width: inner.width, height: inner.height, borderRadius: radius, boxShadow: shadowCss(bg, outScale) }} />
-        <div className="stage__inner" style={{ left: inner.x - output.x, top: inner.y - output.y, width: inner.width, height: inner.height, borderRadius: radius }}>
+        {deviceFrame && frameLayout ? (
+          <DeviceFrameLayer frame={deviceFrame} layout={frameLayout} offset={{ x: laid.screen.x, y: laid.screen.y }} shadow={shadowCss(bg, outScale)} />
+        ) : (
+          <div className="stage__shadow" style={{ left: inner.x - output.x, top: inner.y - output.y, width: inner.width, height: inner.height, borderRadius: radius, boxShadow: shadowCss(bg, outScale) }} />
+        )}
+        <div className="stage__inner" style={{ left: inner.x - output.x, top: inner.y - output.y, width: inner.width, height: inner.height, borderRadius: frameLayout ? frameLayout.screenRadius : radius }}>
           <div ref={cameraLayer} className="stage__camera">
             <video ref={video} className="stage__video" src={screenUrl} crossOrigin="anonymous" playsInline preload="auto" style={{ left: videoLeft - (inner.x - output.x), top: videoTop - (inner.y - output.y), width: videoWidth, height: videoHeight }} onLoadedMetadata={(e) => onDuration?.(Math.round(e.currentTarget.duration * 1000))} />
             <div className="stage__cursorhost stage__maskhost" style={{ left: videoLeft - (inner.x - output.x), top: videoTop - (inner.y - output.y), width: videoWidth, height: videoHeight }}>
@@ -394,6 +417,7 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
             <div className="stage__cursorhost" style={{ left: videoLeft - (inner.x - output.x), top: videoTop - (inner.y - output.y), width: videoWidth, height: videoHeight }}>
               <CursorLayer
                 samples={cursor}
+                cursorTypes={cursorTypes}
                 clicks={project.recording.clicks}
                 config={project.config}
                 recording={project.recording.screen}
@@ -409,6 +433,13 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
           </div>
           <ShortcutLayer events={shortcutEvents(project.recording.keys, project.config)} config={project.config} sourceMs={sourceMs} frame={{ width: inner.width, height: inner.height }} />
         </div>
+        {reelMode && (
+          <div className={`reel reel--${reelMode}`} aria-hidden="true">
+            <div className="reel__top">{reelMode === 'instagram' ? <><span className="reel__title">Reels</span><span className="reel__icon">◎</span></> : <><span>Following</span><span className="reel__on">For You</span></>}</div>
+            <div className="reel__side"><span>♡</span><span>💬</span><span>➤</span><span>⋯</span></div>
+            <div className="reel__bottom"><span className="reel__user">@recscene</span><span className="reel__caption">Record the screen. Make it a scene.</span></div>
+          </div>
+        )}
         {project.transcript && (
           <CaptionLayer cues={buildCues(project.transcript.words, project.config.captionOneLine ? ONE_LINE : CUE_DEFAULTS)} config={project.config} sourceMs={sourceMs} screen={{ x: inner.x - output.x, y: inner.y - output.y, width: inner.width, height: inner.height }} output={{ width: output.width, height: output.height }} />
         )}

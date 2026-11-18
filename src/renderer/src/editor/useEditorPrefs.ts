@@ -13,6 +13,8 @@ export interface EditorPrefs {
   shortcutOverrides: Record<string, string>
   /** Spec 70: performance mode turns the preview's motion blur off. */
   playbackQualityMode: 'high-quality' | 'high-speed'
+  /** Spec 71. */
+  reelPreviewMode: 'instagram' | 'tiktok' | null
 }
 
 export const defaultEditorPrefs: EditorPrefs = {
@@ -24,7 +26,8 @@ export const defaultEditorPrefs: EditorPrefs = {
   playbackPreviewMaxHeight: 1080,
   autoSaveProject: true,
   shortcutOverrides: {},
-  playbackQualityMode: 'high-quality'
+  playbackQualityMode: 'high-quality',
+  reelPreviewMode: null
 }
 
 export function editorPrefsFrom(raw: Record<string, unknown>): EditorPrefs {
@@ -39,7 +42,8 @@ export function editorPrefsFrom(raw: Record<string, unknown>): EditorPrefs {
     playbackPreviewMaxHeight: h === 480 || h === 720 || h === 1080 || h === 1440 || h === 2160 ? h : 1080,
     autoSaveProject: bool('autoSaveProject'),
     shortcutOverrides: typeof raw['shortcutOverrides'] === 'object' && raw['shortcutOverrides'] ? Object.fromEntries(Object.entries(raw['shortcutOverrides'] as Record<string, unknown>).filter((e): e is [string, string] => typeof e[1] === 'string')) : {},
-    playbackQualityMode: raw['playbackQualityMode'] === 'high-speed' ? 'high-speed' : 'high-quality'
+    playbackQualityMode: raw['playbackQualityMode'] === 'high-speed' ? 'high-speed' : 'high-quality',
+    reelPreviewMode: raw['reelPreviewMode'] === 'instagram' || raw['reelPreviewMode'] === 'tiktok' ? raw['reelPreviewMode'] : null
   }
 }
 

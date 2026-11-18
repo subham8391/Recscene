@@ -106,6 +106,18 @@ export function cameraStep(c: CameraState, target: Viewport, dtMs: number, p: Sp
   return { x: springStep(c.x, target.center.x, dtMs, p), y: springStep(c.y, target.center.y, dtMs, p), scale: springStep(c.scale, target.scale, dtMs, p) }
 }
 
+/**
+ * Specs 146–147: blur radius for the screen layer from the camera's own
+ * motion: pan speed (fraction of the box per second) while the scale is
+ * steady, and the scale's rate of change while zooming.
+ */
+export function screenBlurPx(c: CameraState, boxWidth: number, master: number, moveAmount: number, zoomAmount: number): number {
+  const pan = Math.hypot(c.x.velocity, c.y.velocity) * boxWidth * Math.max(1, c.scale.value)
+  const zooming = Math.abs(c.scale.velocity) * boxWidth * 0.5
+  const px = ((pan / 600) * moveAmount + (zooming / 600) * zoomAmount) * master
+  return Math.min(10, px)
+}
+
 export function cameraViewport(c: CameraState): Viewport {
   return { center: { x: c.x.value, y: c.y.value }, scale: Math.max(1, c.scale.value) }
 }

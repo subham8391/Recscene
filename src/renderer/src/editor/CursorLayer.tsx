@@ -1,11 +1,14 @@
 import { useEffect, useRef } from 'react'
 import { springStep } from '@core/editor/camera'
 import type { CursorSample } from '@core/editor/camera'
-import { activeClickEffects, cursorAtRest, cursorBlurPx, cursorRotation, cursorStep, cursorTarget, isPressed, removeShakes, type CursorConfig, type CursorMotion, type CursorSetId } from '@core/editor/cursor'
+import { activeClickEffects, cursorAtRest, cursorBlurPx, cursorHotspot, cursorRotation, cursorStep, cursorTarget, cursorTypeAt, isPressed, removeShakes, type CursorConfig, type CursorMotion, type CursorType, type CursorTypeChange } from '@core/editor/cursor'
+import { spriteSvg } from './cursorSprites'
 import type { ClickEvent } from '@core/project'
 
 interface Props {
   samples: CursorSample[]
+  /** Specs 134–136: recorded cursor type changes. */
+  cursorTypes: CursorTypeChange[]
   clicks: ClickEvent[]
   config: CursorConfig
   recording: { width: number; height: number }
@@ -21,21 +24,16 @@ interface Props {
   soundUrl: (kind: 'down' | 'up') => string | null
 }
 
-/** Cursor sprites (spec 125): pointer only until cursor types are recorded. */
-function CursorSprite({ set }: { set: CursorSetId }): React.JSX.Element {
-  if (set === 'touch') return <circle cx="12" cy="12" r="9" fill="rgba(255,255,255,0.85)" stroke="rgba(0,0,0,0.45)" strokeWidth="2" />
-  if (set === 'halloween') return <path d="M3 2l6 18 2.6-6.2 6.3-2.4z" fill="#ff8a1f" stroke="#2b0a00" strokeWidth="1.6" strokeLinejoin="round" />
-  if (set === 'macos-tahoe') return <path d="M4 2.5l5.3 15.8 2.4-5.6 5.9-1.9z" fill="#111" stroke="#fff" strokeWidth="1.9" strokeLinejoin="round" />
-  return <path d="M3.5 2l5.5 16 2.3-5.3 6.2-2.2z" fill="#000" stroke="#fff" strokeWidth="1.6" strokeLinejoin="round" />
-}
 
 /**
  * The cursor drawn over the recording (specs 126–147), inside the camera layer
  * so it zooms with the screen. Animated per frame outside React state.
  */
-export function CursorLayer({ samples, clicks, config, recording, startMs, endMs, sourceMs, clipState, playing, boxWidth, soundUrl }: Props): React.JSX.Element {
+export function CursorLayer({ samples, clicks, config, recording, startMs, endMs, sourceMs, clipState, playing, boxWidth, soundUrl, cursorTypes }: Props): React.JSX.Element {
   const host = useRef<HTMLDivElement>(null)
   const sprite = useRef<HTMLDivElement>(null)
+  const svgHost = useRef<SVGSVGElement>(null)
+  const drawn = useRef<{ set: string; type: CursorType } | null>(null)
   const effects = useRef<HTMLDivElement>(null)
   const motion = useRef<CursorMotion>(cursorAtRest({ x: 0.5, y: 0.5 }))
   const opacity = useRef({ value: 1, velocity: 0 })
@@ -74,7 +72,16 @@ export function CursorLayer({ samples, clicks, config, recording, startMs, endMs
         const size = Math.max(8, h * 0.028 * c.cursorSize)
         const rot = cursorRotation(m, c.cursorRotateOnXMovementRatio, c.cursorBaseRotation)
         const blur = cursorBlurPx(m, boxWidth(), c.motionBlurAmount, c.motionBlurCursorAmount)
-        el.style.transform = `translate(${(m.x.value * w).toFixed(1)}px, ${(m.y.value * h).toFixed(1)}px) rotate(${rot.toFixed(1)}deg) scale(${m.press.value.toFixed(3)})`
+        // Specs 125, 134–136: the sprite for the recorded cursor type, anchored at its hotspot.
+        const type = cursorTypeAt(cursorTypes, t, c)
+        if (!drawn.current || drawn.current.set !== c.cursorSet.id || drawn.current.type !== type) {
+          drawn.current = { set: c.cursorSet.id, type }
+          if (svgHost.current) svgHost.current.innerHTML = spriteSvg(c.cursorSet.id, type)
+        }
+        const hot = cursorHotspot(type)
+        const rotateHot = type === 'pointer' ? rot : 0
+        el.style.transformOrigin = `${((hot.x / 24) * 100).toFixed(1)}% ${((hot.y / 24) * 100).toFixed(1)}%`
+        el.style.transform = `translate(${(m.x.value * w - (hot.x / 24) * size).toFixed(1)}px, ${(m.y.value * h - (hot.y / 24) * size).toFixed(1)}px) rotate(${rotateHot.toFixed(1)}deg) scale(${m.press.value.toFixed(3)})`
         el.style.width = `${size}px`
         el.style.height = `${size}px`
         el.style.opacity = String(Math.max(0, Math.min(1, opacity.current.value)))
@@ -124,7 +131,7 @@ export function CursorLayer({ samples, clicks, config, recording, startMs, endMs
     <div ref={host} className="cursor" aria-hidden="true">
       <div ref={effects} className="cursor__fx" />
       <div ref={sprite} className="cursor__sprite">
-        <svg viewBox="0 0 24 24" width="100%" height="100%"><CursorSprite set={config.cursorSet.id} /></svg>
+        <svg ref={svgHost} viewBox="0 0 24 24" width="100%" height="100%" />
       </div>
     </div>
   )

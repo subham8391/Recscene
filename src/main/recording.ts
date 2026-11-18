@@ -258,7 +258,7 @@ export class RecordingService extends EventEmitter {
       throw error
     })
     await writeFile(join(projectDir, 'events.json'), JSON.stringify({ version: 1, region: { x: 0, y: 0, width: imported.width, height: imported.height }, clicks: [], keys: [], cursor: [] }))
-    return this.writeProject(projectDir, { createdAt: new Date(), durationMs: imported.durationMs, width: imported.width, height: imported.height, events: { clicks: [], keys: [], cursor: [] }, flags: [], markers: [], frames: 0 })
+    return this.writeProject(projectDir, { createdAt: new Date(), durationMs: imported.durationMs, width: imported.width, height: imported.height, events: { clicks: [], keys: [], cursor: [], cursorTypes: [] }, flags: [], markers: [], frames: 0 })
   }
 
   private async writeProject(projectDir: string, input: { createdAt: Date; durationMs: number; width: number; height: number; events: ReturnType<typeof normaliseEvents>; mic?: string; camera?: { width: number; height: number; file: string }; flags: number[]; markers: SessionState['markers']; frames: number }): Promise<RecordingResult> {

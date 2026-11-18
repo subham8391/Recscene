@@ -147,17 +147,17 @@ export class ProjectService {
       .then((t) => (JSON.parse(t) as { markers?: RecordingMarker[] }).markers ?? [])
       .catch(() => [] as RecordingMarker[])
     const has = async (f: string): Promise<boolean> => stat(join(projectDir, f)).then(() => true).catch(() => false)
-    const cursor = await readFile(join(projectDir, 'events.json'), 'utf8')
-      .then((text) => {
-        const parsed = JSON.parse(text) as { cursor?: { timeMs: number; x: number; y: number }[] }
-        return Array.isArray(parsed.cursor) ? parsed.cursor.filter((s) => Number.isFinite(s.timeMs) && Number.isFinite(s.x) && Number.isFinite(s.y)) : []
-      })
-      .catch(() => [] as { timeMs: number; x: number; y: number }[])
+    const events = await readFile(join(projectDir, 'events.json'), 'utf8')
+      .then((text) => JSON.parse(text) as { cursor?: { timeMs: number; x: number; y: number }[]; cursorTypes?: { timeMs: number; type: string }[] })
+      .catch(() => ({}) as { cursor?: { timeMs: number; x: number; y: number }[]; cursorTypes?: { timeMs: number; type: string }[] })
+    const cursor = Array.isArray(events.cursor) ? events.cursor.filter((s) => Number.isFinite(s.timeMs) && Number.isFinite(s.x) && Number.isFinite(s.y)) : []
+    const cursorTypes = Array.isArray(events.cursorTypes) ? events.cursorTypes.filter((s) => Number.isFinite(s.timeMs) && typeof s.type === 'string') : []
     const opened: OpenedProject = {
       projectDir,
       project,
       markers,
       cursor,
+      cursorTypes,
       media: {
         assets: ASSETS_URL,
         library: LIBRARY_URL,
