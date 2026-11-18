@@ -112,6 +112,10 @@ export class ProjectService {
     return this.current?.projectDir ?? null
   }
 
+  get currentOpened(): OpenedProject | null {
+    return this.current
+  }
+
   async recent(): Promise<{ projectDir: string; name: string }[]> {
     const raw = this.prefs.get('recentProjects')
     const list = Array.isArray(raw) ? raw.filter((p): p is string => typeof p === 'string') : []

@@ -97,6 +97,10 @@ enum Command {
     case importVideo(path: String, output: String)
     /// Writes `output` (.mp4) with the video track of `video` passed through and `audio` (.wav) encoded as AAC.
     case mux(video: String, audio: String?, output: String)
+    /// Spec 206: transcribes an audio file on device; `locale` like "en-US" or nil.
+    case transcribe(path: String, locale: String?)
+    /// The locales the speech model supports.
+    case speechLocales
 
     static func parse(_ line: String) throws -> Command {
         guard let data = line.data(using: .utf8) else { throw ProtocolError.badCommand("not utf-8") }
@@ -122,6 +126,11 @@ enum Command {
             struct M: Decodable { let video: String; let audio: String?; let output: String }
             let m = try decoder.decode(M.self, from: data)
             return .mux(video: m.video, audio: m.audio, output: m.output)
+        case "transcribe":
+            struct T: Decodable { let path: String; let locale: String? }
+            let t = try decoder.decode(T.self, from: data)
+            return .transcribe(path: t.path, locale: t.locale)
+        case "speechLocales": return .speechLocales
         case "mark":
             struct M: Decodable { let kind: String? }
             return .mark(kind: try decoder.decode(M.self, from: data).kind ?? "marker")
@@ -222,6 +231,8 @@ enum OutEvent: Encodable {
     case probed(durationMs: Double, width: Int, height: Int, hasAudio: Bool)
     case imported(output: String, durationMs: Double, width: Int, height: Int, converted: Bool)
     case muxed(output: String, durationMs: Double)
+    case transcribed(language: String, words: [TranscriptWord])
+    case speechLocales([String])
     case warning(message: String)
     case error(code: String, message: String)
 
@@ -229,6 +240,7 @@ enum OutEvent: Encodable {
         case event, version, screen, inputMonitoring, accessibility, microphone, displays, windows, outputDir, width, height
         case durationMs, files, micOffsetMs, frames, message, code, timeMs, kind, hasAudio, output, converted
         case camera, cameras, cameraWidth, cameraHeight
+        case language, words, locales
     }
 
     func encode(to encoder: Encoder) throws {
@@ -278,6 +290,11 @@ enum OutEvent: Encodable {
         case let .muxed(output, durationMs):
             try c.encode("muxed", forKey: .event)
             try c.encode(output, forKey: .output); try c.encode(durationMs, forKey: .durationMs)
+        case let .transcribed(language, words):
+            try c.encode("transcribed", forKey: .event)
+            try c.encode(language, forKey: .language); try c.encode(words, forKey: .words)
+        case .speechLocales(let locales):
+            try c.encode("speechLocales", forKey: .event); try c.encode(locales, forKey: .locales)
         case .warning(let message):
             try c.encode("warning", forKey: .event); try c.encode(message, forKey: .message)
         case let .error(code, message):

@@ -2,7 +2,7 @@
  * The editor's action registry (specs 49, 52–58, 63–65, 72–78): one list
  * that drives keyboard handling, the ⌘K command menu and the shortcuts guide.
  */
-export type ActionGroup = 'Playback' | 'Slice' | 'Zoom' | 'Camera' | 'Mask' | 'Shortcuts' | 'Audio' | 'View' | 'Editor' | 'Project' | 'Sidebar' | 'Export' | 'Clipboard' | 'Help'
+export type ActionGroup = 'Playback' | 'Slice' | 'Zoom' | 'Camera' | 'Mask' | 'Shortcuts' | 'Audio' | 'Captions' | 'View' | 'Editor' | 'Project' | 'Sidebar' | 'Export' | 'Clipboard' | 'Help'
 
 export interface ActionDef {
   id: string
@@ -79,6 +79,14 @@ export const ACTIONS: readonly ActionDef[] = [
   { id: 'muteBackgroundAudio', label: 'Mute background audio', group: 'Audio' },
   { id: 'removeBackgroundAudio', label: 'Remove background audio', group: 'Audio' },
   { id: 'openAudioLibraryFolder', label: 'Open audio library folder', group: 'Audio' },
+  { id: 'generateTranscript', label: 'Generate transcript', group: 'Captions' },
+  { id: 'regenerateTranscript', label: 'Re-generate transcript', group: 'Captions' },
+  { id: 'toggleHideTranscript', label: 'Hide transcript', group: 'Captions' },
+  { id: 'editTranscript', label: 'Edit transcript', group: 'Captions' },
+  { id: 'exportTranscript', label: 'Export transcript', group: 'Captions' },
+  { id: 'removeFillerWords', label: 'Remove filler words', group: 'Captions' },
+  { id: 'tightenPauses', label: 'Tighten pauses', group: 'Captions' },
+  { id: 'track:captions', label: 'Toggle Captions track', group: 'View', shortcut: '5' },
   { id: 'cut', label: 'Cut zoom', group: 'Clipboard', shortcut: 'Cmd+X' },
   { id: 'paste', label: 'Paste slice settings', group: 'Clipboard', shortcut: 'Cmd+V' },
   { id: 'undo', label: 'Undo', group: 'Editor', shortcut: 'Cmd+Z' },

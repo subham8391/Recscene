@@ -55,6 +55,8 @@ import { CameraPanel, LayoutPanel } from './CameraPanel'
 import { MaskPanel } from './MaskPanel'
 import { ShortcutsPanel } from './ShortcutsPanel'
 import { AudioPanel } from './AudioPanel'
+import { CaptionsPanel, TranscriptEditor } from './CaptionsPanel'
+import { buildCues, CUE_DEFAULTS, cutRanges, detectFillers, fillerRanges, GENERATING_TOAST, longPauses, ONE_LINE, REGENERATE_WARNING, replaceWordText, setWordsHidden, subtitleFile, tightenPause, timedCues, wordsRange, type SubtitleFormat } from '@core/editor/captions'
 import { backgroundSource, masterGain, micGain, musicGain, systemGain } from '@core/editor/audio'
 import { ENABLE_QUESTION, setAllHidden, setHidden, setHiddenForLabel, setKindDisabled, shortcutEvents } from '@core/editor/shortcuts'
 import { ClipPanel } from './ClipPanel'
@@ -92,7 +94,11 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   const [pb, setPb] = useState<PlaybackState>(() => initialPlayback(prefs.playbackLoop))
   const [preview, setPreview] = useState<number | null>(null)
   const [view, setView] = useState<TimelineView>(() => initialView(opened.project.recording.durationMs))
-  const [visible, setVisible] = useState<TrackVisibility>({ zooms: true, layouts: !!opened.media.camera, masks: opened.project.masks.length > 0, shortcuts: opened.project.recording.keys.length > 0 })
+  const [visible, setVisible] = useState<TrackVisibility>({ zooms: true, layouts: !!opened.media.camera, masks: opened.project.masks.length > 0, shortcuts: opened.project.recording.keys.length > 0, captions: opened.project.transcript !== null })
+  const [generating, setGenerating] = useState(false)
+  const [transcriptEditing, setTranscriptEditing] = useState(false)
+  const [wordSelection, setWordSelection] = useState<[number, number] | null>(null)
+  const [showDeleted, setShowDeleted] = useState(true)
   const [layout, setLayout] = useState<LayoutState>('edit')
   const [panel, setPanel] = useState('background')
   const [overlay, setOverlay] = useState<'command' | 'guide' | null>(null)
@@ -234,6 +240,28 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   }, [prefs.autoSaveProject, saved.dirty, save])
 
   const setClips = (next: Clip[]): void => edit({ ...project, clips: next })
+  // Specs 205–212, 289–290: transcript generation and edit-by-transcript.
+  const cues = useMemo(() => (project.transcript ? buildCues(project.transcript.words, project.config.captionOneLine ? ONE_LINE : CUE_DEFAULTS) : []), [project.transcript, project.config.captionOneLine])
+  const generateTranscript = (): void => {
+    if (!opened.media.mic) return notify('No microphone recorded')
+    if (project.transcript && !window.confirm(REGENERATE_WARNING)) return
+    setGenerating(true)
+    notify(GENERATING_TOAST)
+    void window.recscene.captions
+      .generate(project.config.transcriptLanguage === 'auto' ? null : project.config.transcriptLanguage)
+      .then((t) => {
+        edit({ ...project, transcript: { ...t, words: detectFillers(t.words, t.language) }, config: { ...project.config, showTranscript: true } })
+        setVisible((v) => ({ ...v, captions: true }))
+        notify(t.words.length > 0 ? 'Transcript generated' : 'Transcript generated, but no speech was recognised')
+      })
+      .catch((err: unknown) => notify(err instanceof Error ? err.message.replace(/^Error invoking remote method '[^']*': (Error: )?/, '') : String(err)))
+      .finally(() => setGenerating(false))
+  }
+  const selectedWords = project.transcript && wordSelection ? project.transcript.words.slice(Math.min(...wordSelection), Math.max(...wordSelection) + 1) : []
+  const exportTranscript = (format: SubtitleFormat): void => {
+    const content = subtitleFile(timedCues(cues, clips), format)
+    void window.recscene.captions.exportFile(format, content, project.name).then((p) => p && notify('Transcript exported'))
+  }
   const notify = (toast: string): void => {
     setSaved((s) => ({ ...s, toast }))
     window.setTimeout(() => setSaved((s) => (s.toast === toast ? { ...s, toast: null } : s)), 2000)
@@ -493,6 +521,26 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
         case 'track:layouts': return selectedZoom ? setZooms(updateZoom(zooms, selectedZoom.id, { zoom: 1.2 })) : toggleTrack('layouts')
         case 'track:shortcuts': return selectedZoom ? setZooms(updateZoom(zooms, selectedZoom.id, { zoom: 1.4 })) : toggleTrack('shortcuts')
         case 'track:masks': return selectedZoom ? setZooms(updateZoom(zooms, selectedZoom.id, { zoom: 1.6 })) : toggleTrack('masks')
+        case 'track:captions': return selectedZoom ? setZooms(updateZoom(zooms, selectedZoom.id, { zoom: 1.8 })) : toggleTrack('captions')
+        case 'generateTranscript':
+        case 'regenerateTranscript': return generateTranscript()
+        case 'toggleHideTranscript': return edit({ ...project, config: { ...project.config, showTranscript: !project.config.showTranscript } })
+        case 'editTranscript': return void (setPanel('captions'), setTranscriptEditing(true))
+        case 'exportTranscript': return exportTranscript('srt')
+        case 'removeFillerWords': {
+          if (!project.transcript) return
+          const ranges = fillerRanges(project.transcript.words, clips)
+          if (ranges.length === 0) return notify('No filler words to remove')
+          setClips(cutRanges(clips, ranges))
+          return notify(`Transcript fillers removed (${ranges.length})`)
+        }
+        case 'tightenPauses': {
+          if (!project.transcript) return
+          const pauses = longPauses(project.transcript.words, clips)
+          if (pauses.length === 0) return notify('No long pauses')
+          setClips([...pauses].sort((a, b) => b.startMs - a.startMs).reduce((c, p) => tightenPause(c, p), clips))
+          return notify(`Transcript pauses tightened (${pauses.length})`)
+        }
         case 'save': return void save()
         case 'saveAs': return void window.recscene.project.saveAs(project)
         case 'openProject': return void window.recscene.project.pick()
@@ -515,6 +563,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
         case 'commandMenu': return setOverlay((o) => (o === 'command' ? null : 'command'))
         case 'shortcutsGuide': return setOverlay((o) => (o === 'guide' ? null : 'guide'))
         default:
+          if (id.startsWith('exportTranscript:')) return exportTranscript(id.slice('exportTranscript:'.length) as SubtitleFormat)
           if (id.startsWith('sidebar:')) {
             setPanel(id.slice('sidebar:'.length))
             // Spec 204: the track shows itself when the Keyboard Shortcuts panel opens.
@@ -523,7 +572,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [durationMs, pb.timeMs, prefs, project, save, closeProject, setPrefs, clips, selectedClip, currentClip, clipboard, sourceDurationMs, setClips, zooms, selectedZoom, zoomClipboard, defaultZoomLevel, setZooms, layouts, selectedLayout, layoutClipboard, hasCamera, setLayouts, addLayout, moveLayoutCamera, masks, selectedMask, maskClipboard, setMasks, addMask, focusMask, shortcuts, setShortcutConfig]
+    [durationMs, pb.timeMs, prefs, project, save, closeProject, setPrefs, clips, selectedClip, currentClip, clipboard, sourceDurationMs, setClips, zooms, selectedZoom, zoomClipboard, defaultZoomLevel, setZooms, layouts, selectedLayout, layoutClipboard, hasCamera, setLayouts, addLayout, moveLayoutCamera, masks, selectedMask, maskClipboard, setMasks, addMask, focusMask, shortcuts, setShortcutConfig, generateTranscript, exportTranscript]
   )
 
   useEffect(() => window.recscene.onEditorAction(run), [run])
@@ -533,6 +582,20 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
       if (overlay) return
       const target = e.target as HTMLElement | null
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+      // Spec 289: in the transcript editor, ⌫ cuts the selected words from the video and ⌘⌫ from the transcript only.
+      if (transcriptEditing && wordSelection && project.transcript && (e.key === 'Backspace' || e.key === 'Delete')) {
+        e.preventDefault()
+        if (e.metaKey) {
+          edit({ ...project, transcript: { ...project.transcript, words: setWordsHidden(project.transcript.words, wordSelection[0], wordSelection[1], true) } })
+          return notify('Transcript words hidden')
+        }
+        const r = wordsRange(selectedWords)
+        if (r) {
+          setClips(cutRanges(clips, [r]))
+          notify('Transcript tokens deleted')
+        }
+        return
+      }
       if (selectedMask && !e.metaKey && !e.altKey && !e.ctrlKey && e.key.startsWith('Arrow')) {
         const step = e.shiftKey ? 10 : 1
         const d: Record<string, [number, number]> = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }
@@ -776,6 +839,59 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
               onConfig={(patch) => edit({ ...project, config: { ...project.config, ...patch } })}
               onAction={run}
             />
+          ) : panel === 'captions' && transcriptEditing && project.transcript ? (
+            <TranscriptEditor
+              transcript={project.transcript}
+              clips={clips}
+              showDeleted={showDeleted}
+              selection={wordSelection}
+              onSelect={setWordSelection}
+              onCutVideo={() => { const r = wordsRange(selectedWords); if (r) { setClips(cutRanges(clips, [r])); notify('Transcript tokens deleted') } }}
+              onCutTranscript={() => { if (wordSelection && project.transcript) { edit({ ...project, transcript: { ...project.transcript, words: setWordsHidden(project.transcript.words, wordSelection[0], wordSelection[1], true) } }); notify('Transcript words hidden') } }}
+              onRestore={() => {
+                if (!wordSelection || !project.transcript) return
+                const r = wordsRange(selectedWords)
+                // Bring the range back into the video (undo the cut by extending the surrounding clips) and unhide the words.
+                const words = setWordsHidden(project.transcript.words, wordSelection[0], wordSelection[1], false)
+                let next = clips
+                if (r) {
+                  const sortedClips = [...clips].sort((a, b) => a.sourceStartMs - b.sourceStartMs)
+                  next = sortedClips.map((c, i) => {
+                    const prev = sortedClips[i - 1]
+                    const after = sortedClips[i + 1]
+                    let { sourceStartMs, sourceEndMs } = c
+                    if (prev && prev.sourceEndMs <= r.startMs && c.sourceStartMs >= r.startMs && c.sourceStartMs <= r.endMs) sourceStartMs = prev.sourceEndMs
+                    if (after && after.sourceStartMs >= r.endMs && c.sourceEndMs <= r.endMs && c.sourceEndMs >= r.startMs) sourceEndMs = after.sourceStartMs
+                    return { ...c, sourceStartMs, sourceEndMs }
+                  })
+                  // Contiguous pieces with the same settings become one clip again.
+                  next = next.reduce<Clip[]>((acc, c) => {
+                    const prev = acc[acc.length - 1]
+                    if (prev && prev.sourceEndMs === c.sourceStartMs && prev.speed === c.speed && prev.volume === c.volume && prev.hideCursor === c.hideCursor) acc[acc.length - 1] = { ...prev, sourceEndMs: c.sourceEndMs }
+                    else acc.push(c)
+                    return acc
+                  }, [])
+                }
+                edit({ ...project, clips: next, transcript: { ...project.transcript, words } })
+                notify('Transcript tokens restored')
+              }}
+              onPlay={() => { const r = wordsRange(selectedWords, 0); const o = r ? sourceToOutput(clips, r.startMs) : null; if (o !== null) setPb((p) => ({ ...seek(p, o, durationMs), playing: true })) }}
+              onEditWord={(i, text) => { if (project.transcript) { edit({ ...project, transcript: { ...project.transcript, words: replaceWordText(project.transcript.words, i, text) } }); notify('Transcript word corrected') } }}
+              onToggleDeleted={() => setShowDeleted((v) => !v)}
+              onRemoveFillers={() => run('removeFillerWords')}
+              onTightenPauses={() => run('tightenPauses')}
+              onClose={() => { setTranscriptEditing(false); setWordSelection(null) }}
+            />
+          ) : panel === 'captions' ? (
+            <CaptionsPanel
+              config={project.config}
+              transcript={project.transcript}
+              cueCount={cues.length}
+              hasMic={!!opened.media.mic}
+              generating={generating}
+              onConfig={(patch) => edit({ ...project, config: { ...project.config, ...patch } })}
+              onAction={run}
+            />
           ) : panel === 'audio' ? (
             <AudioPanel
               config={project.config}
@@ -868,6 +984,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           onHideShortcut={(t, hidden) => setShortcutConfig(setHidden(project.config, t, hidden))}
           onHideShortcutLabel={(label, hidden) => setShortcutConfig(setHiddenForLabel(project.config, shortcuts, label, hidden))}
           onHideAllShortcuts={(hidden) => setShortcutConfig(setAllHidden(project.config, shortcuts, hidden))}
+          onSeekSource={(ms) => { const o = sourceToOutput(clips, ms); if (o !== null) setPb((p) => seek(p, o, durationMs)) }}
           micUrl={opened.media.mic}
           showWaveform={!prefs.hideAudioWaveform}
           smoothWaveform={prefs.enableSmoothWaveform}

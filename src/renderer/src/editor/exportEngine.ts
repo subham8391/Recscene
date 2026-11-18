@@ -20,6 +20,7 @@ import type { Project } from '@core/project'
 import { drawMask } from './maskDraw'
 import { keyWidth, labelAt, labelMetrics, shortcutEvents } from '@core/editor/shortcuts'
 import { masterGain, micGain, musicGain, musicSegments, systemGain } from '@core/editor/audio'
+import { buildCues, captionMetrics, CUE_DEFAULTS, cueAt, ONE_LINE, spokenIndex } from '@core/editor/captions'
 import { buildMicChain, peakOf, toMono } from './micGraph'
 
 export interface ExportInput {
@@ -231,6 +232,7 @@ export async function runExport(
   }
   let camMotion: CameraMotion | null = null
   const shortcuts = shortcutEvents(project.recording.keys, cfg)
+  const cues = project.transcript ? buildCues(project.transcript.words, cfg.captionOneLine ? ONE_LINE : CUE_DEFAULTS) : []
 
   const canvas = new OffscreenCanvas(size.width, size.height)
   const ctx = canvas.getContext('2d', { alpha: false })
@@ -395,6 +397,53 @@ export async function runExport(
         ctx.fillStyle = '#fff'
         ctx.fillText(k, x + w / 2, y0 + m.pad + m.key / 2)
         x += w + m.gap
+      })
+      ctx.restore()
+    }
+    // Captions (208–209): one cue, wrapped to 80 % of the screen box, the spoken word in the accent colour.
+    const cue = cfg.showTranscript ? cueAt(cues, sourceMs) : null
+    if (cue) {
+      const cm = captionMetrics(screen.height, cfg.transcriptSizeRatio)
+      ctx.save()
+      ctx.font = `600 ${cm.font.toFixed(1)}px Inter, -apple-system, system-ui, sans-serif`
+      ctx.textBaseline = 'middle'
+      const maxW = screen.width * cm.maxWidth - cm.pad * 2
+      const lines: { text: string; from: number; to: number }[] = []
+      let line: string[] = []
+      let from = 0
+      cue.words.forEach((w, i) => {
+        const test = [...line, w.text].join(' ')
+        if (line.length > 0 && ctx.measureText(test).width > maxW) {
+          lines.push({ text: line.join(' '), from, to: i - 1 })
+          line = [w.text]
+          from = i
+        } else line.push(w.text)
+      })
+      if (line.length > 0) lines.push({ text: line.join(' '), from, to: cue.words.length - 1 })
+      const lineH = cm.font * 1.3
+      const boxW = Math.max(...lines.map((l) => ctx.measureText(l.text).width)) + cm.pad * 2
+      const boxH = lines.length * lineH + cm.pad * 1.2
+      const cx = screen.x + screen.width / 2
+      const top = cfg.captionPosition === 'top' ? screen.y + cm.margin : cfg.captionPosition === 'under-screen' ? Math.min(size.height - boxH, screen.y + screen.height + cm.margin * 0.3) : screen.y + screen.height - cm.margin - boxH
+      if (cfg.captionBackground) {
+        ctx.fillStyle = 'rgba(0,0,0,0.78)'
+        ctx.beginPath()
+        ctx.roundRect(cx - boxW / 2, top, boxW, boxH, cm.radius)
+        ctx.fill()
+      } else {
+        ctx.shadowColor = 'rgba(0,0,0,0.9)'
+        ctx.shadowBlur = cm.font * 0.15
+      }
+      const spoken = cfg.captionHighlightWord ? spokenIndex(cue, sourceMs) : -1
+      lines.forEach((l, li) => {
+        const y = top + cm.pad * 0.6 + lineH * (li + 0.5)
+        let x = cx - ctx.measureText(l.text).width / 2
+        for (let i = l.from; i <= l.to; i += 1) {
+          const t = cue.words[i]!.text + (i < l.to ? ' ' : '')
+          ctx.fillStyle = i === spoken ? '#45c77f' : '#fff'
+          ctx.fillText(t, x, y)
+          x += ctx.measureText(t).width
+        }
       })
       ctx.restore()
     }

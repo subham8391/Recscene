@@ -8,6 +8,7 @@ import type { OpenedProject } from '@core/projectFile'
 import type { ExportSettings, ExportTarget } from '@core/editor/exportSettings'
 import type { ProjectSummary, UnfinishedRecording } from '@core/projectsHome'
 import type { MusicTrack } from '@core/editor/audio'
+import type { Transcript } from '@core/editor/captions'
 
 export interface ProjectsFolder {
   path: string
@@ -56,6 +57,12 @@ const api = {
     importBackgroundImage: (source: File | ArrayBuffer): Promise<{ file: string; url: string }> =>
       ipcRenderer.invoke('project:importBackgroundImage', source instanceof ArrayBuffer ? source : webUtils.getPathForFile(source)) as Promise<{ file: string; url: string }>,
     mediaUrl: (file: string): Promise<string | null> => ipcRenderer.invoke('project:mediaUrl', file) as Promise<string | null>
+  },
+  /** Captions (specs 205–212): on-device transcription through the helper and subtitle files. */
+  captions: {
+    locales: (): Promise<string[]> => ipcRenderer.invoke('captions:locales') as Promise<string[]>,
+    generate: (locale: string | null): Promise<Transcript> => ipcRenderer.invoke('captions:generate', locale) as Promise<Transcript>,
+    exportFile: (format: 'srt' | 'vtt' | 'txt', content: string, name: string): Promise<string | null> => ipcRenderer.invoke('captions:export', format, content, name) as Promise<string | null>
   },
   /** Background music (specs 218–219). */
   music: {

@@ -42,6 +42,8 @@
 
 **2026-11-18 (audio built).** The mix is built with Web Audio in both preview (MediaElementSource graph) and export (OfflineAudioContext): master gain, microphone through the mode's chain (high-pass, low-pass, compressor, make-up, peak normalisation), system audio decoded from the screen file, background music looping from project start in output time, click sounds. The 17 bundled tracks are synthesized placeholders generated with ffmpeg (`resources/music`), named after the competitor's categories; real royalty-free music can replace the files without code changes. Own tracks are copied into the bundle; the library folder lives under the app's user data and is served by `recscene-media://library/<file>`.
 
+**2026-11-18 (captions built; Q2 settled).** The transcription engine is Apple's SpeechAnalyzer/SpeechTranscriber (macOS 26+), run by the helper on the microphone file with word time ranges; no model download beyond the system's own speech assets, nothing leaves the Mac, and no Speech Recognition permission prompt is needed for file transcription. Whisper is not bundled. The transcript lives in project.json (`project.transcript`, words with hidden and filler flags) so edits are undoable like everything else; cues are built on the fly. Edit-by-transcript cuts are ordinary clip cuts.
+
 ## Open
 - **Q1** Licensing model: one-time with a year of updates versus subscription. Decide before M3.
 - **Q2** Transcription and captions: on-device (whisper.cpp) versus a cloud service. Lean on-device for privacy; decide at M2.
