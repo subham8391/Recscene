@@ -134,10 +134,10 @@ export function selectedCamera(prefs: PickerPrefs, cameras: readonly CameraInfo[
   return { camera: cameras[0] ?? null, missing: prefs.cameraDeviceId !== null && cameras.length > 0 }
 }
 
-/** The camera row's second line: "FaceTime HD Camera · 1080p" or "Don't record camera". */
+/** The camera row's second line: "FaceTime HD Camera · 1080p" or "Not recorded" (short enough for the 190px card). */
 export function cameraLabel(prefs: PickerPrefs, cameras: readonly CameraInfo[]): string {
   const { camera } = selectedCamera(prefs, cameras)
-  if (!prefs.recordCamera) return "Don't record camera"
+  if (!prefs.recordCamera) return 'Not recorded'
   if (!camera) return NO_CAMERA
   return `${camera.name} · ${Math.min(camera.maxHeight, prefs.maximumWebcamHeight)}p`
 }
