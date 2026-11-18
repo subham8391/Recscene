@@ -40,6 +40,8 @@
 
 **2026-11-17 (shortcuts built).** Keystroke labels are drawn from the recorded key events (`recording.keys`, labels like ⇧⌘P from the helper) at the bottom centre of the screen box, outside the zoom, for 1.4 s with a 0.3 s fade; the latest press replaces the previous one. Hidden occurrences follow the competitor's `hiddenShortcuts` map keyed by the press time. The board's "disable by kind" is a Recscene addition (`disabledShortcutKinds`). Spec 199's enable question uses the window confirm until the editor has its own dialog component.
 
+**2026-11-18 (audio built).** The mix is built with Web Audio in both preview (MediaElementSource graph) and export (OfflineAudioContext): master gain, microphone through the mode's chain (high-pass, low-pass, compressor, make-up, peak normalisation), system audio decoded from the screen file, background music looping from project start in output time, click sounds. The 17 bundled tracks are synthesized placeholders generated with ffmpeg (`resources/music`), named after the competitor's categories; real royalty-free music can replace the files without code changes. Own tracks are copied into the bundle; the library folder lives under the app's user data and is served by `recscene-media://library/<file>`.
+
 ## Open
 - **Q1** Licensing model: one-time with a year of updates versus subscription. Decide before M3.
 - **Q2** Transcription and captions: on-device (whisper.cpp) versus a cloud service. Lean on-device for privacy; decide at M2.

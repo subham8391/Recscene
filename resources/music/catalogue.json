@@ -1,0 +1,104 @@
+[
+  {
+    "id": "commercial/focus-mallets",
+    "name": "Focus Mallets",
+    "category": "Commercial",
+    "durationMs": 30000
+  },
+  {
+    "id": "commercial/marimba-bed",
+    "name": "Marimba Bed",
+    "category": "Commercial",
+    "durationMs": 30000
+  },
+  {
+    "id": "commercial/product-uplift",
+    "name": "Product Uplift",
+    "category": "Commercial",
+    "durationMs": 30000
+  },
+  {
+    "id": "commercial/smile-piano",
+    "name": "Smile Piano",
+    "category": "Commercial",
+    "durationMs": 30000
+  },
+  {
+    "id": "electronic/ambient-electronica",
+    "name": "Ambient Electronica",
+    "category": "Electronic",
+    "durationMs": 30000
+  },
+  {
+    "id": "electronic/breezy-house",
+    "name": "Breezy House",
+    "category": "Electronic",
+    "durationMs": 30000
+  },
+  {
+    "id": "electronic/electro-pop",
+    "name": "Electro Pop",
+    "category": "Electronic",
+    "durationMs": 30000
+  },
+  {
+    "id": "electronic/pastel-synthwave",
+    "name": "Pastel Synthwave",
+    "category": "Electronic",
+    "durationMs": 30000
+  },
+  {
+    "id": "instrumental/corporate-smile",
+    "name": "Corporate Smile",
+    "category": "Instrumental",
+    "durationMs": 30000
+  },
+  {
+    "id": "instrumental/friendly-folk",
+    "name": "Friendly Folk",
+    "category": "Instrumental",
+    "durationMs": 30000
+  },
+  {
+    "id": "instrumental/noble-documentary",
+    "name": "Noble Documentary",
+    "category": "Instrumental",
+    "durationMs": 30000
+  },
+  {
+    "id": "instrumental/piano-smile",
+    "name": "Piano Smile",
+    "category": "Instrumental",
+    "durationMs": 30000
+  },
+  {
+    "id": "lofi/bright-lounge",
+    "name": "Bright Lounge",
+    "category": "Lo-fi",
+    "durationMs": 30000
+  },
+  {
+    "id": "lofi/cozy-chillhop",
+    "name": "Cozy Chillhop",
+    "category": "Lo-fi",
+    "durationMs": 30000
+  },
+  {
+    "id": "lofi/lean-groove",
+    "name": "Lean Groove",
+    "category": "Lo-fi",
+    "durationMs": 30000
+  },
+  {
+    "id": "lofi/sunny-lo-fi",
+    "name": "Sunny Lo-Fi",
+    "category": "Lo-fi",
+    "durationMs": 30000
+  },
+  {
+    "id": "lofi/uplifting-sunset",
+    "name": "Uplifting Sunset",
+    "category": "Lo-fi",
+    "durationMs": 30000
+  }
+]

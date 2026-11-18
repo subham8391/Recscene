@@ -8,6 +8,7 @@ import { activeMask, type MaskRegion } from '@core/editor/masks'
 import type { Project } from '@core/project'
 import { CursorLayer } from './CursorLayer'
 import { MaskLayer } from './MaskLayer'
+import { buildMicChain, peakOf } from './micGraph'
 import { ShortcutLayer } from './ShortcutLayer'
 import { shortcutEvents } from '@core/editor/shortcuts'
 import { drawMask } from './maskDraw'
@@ -28,8 +29,14 @@ interface Props {
   playing: boolean
   /** Transport speed × clip speed. */
   rate: number
-  /** Microphone gain for the current clip; 0 mutes (spec 91, 93). */
-  micVolume: number
+  /** Gains for the current moment (specs 213–220): microphone, system audio, background music, master. */
+  audio: { mic: number; system: number; music: number; master: number }
+  /** Spec 217's mode for the microphone chain. */
+  micMode: 'off' | 'standard' | 'loud' | 'noise-reduction'
+  /** Background music url (specs 218–219), looping from project start in output time. */
+  musicUrl: string | null
+  /** Output time, for the music loop. */
+  outputMs: number
   previewMaxHeight: number
   /** Cursor samples for zooms that follow the mouse (spec 106) and the drawn cursor (125–147). */
   cursor: CursorSample[]
@@ -55,7 +62,7 @@ interface Props {
  * The preview canvas (spec 48): the output box in the project's aspect ratio
  * with the (cropped) recording contained inside. Effects arrive with their specs.
  */
-export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, screenUrl, micUrl, cameraUrl, sourceMs, playing, rate, micVolume, previewMaxHeight, cursor, sourceDurationMs, clipState, clickSoundUrl, backgroundImageUrl, assetsUrl, selectedMaskId, onMaskRegionPreview, onMaskRegionCommit, onSelectMask, onDuration, onBox, children }, ref) {
+export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, screenUrl, micUrl, cameraUrl, sourceMs, playing, rate, audio: gains, micMode, musicUrl, outputMs, previewMaxHeight, cursor, sourceDurationMs, clipState, clickSoundUrl, backgroundImageUrl, assetsUrl, selectedMaskId, onMaskRegionPreview, onMaskRegionCommit, onSelectMask, onDuration, onBox, children }, ref) {
   const live = useRef({ sourceMs, playing, rate, clipState, innerWidth: 0 })
   useEffect(() => {
     live.current = { ...live.current, sourceMs, playing, rate, clipState }
@@ -63,6 +70,9 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
   const host = useRef<HTMLDivElement>(null)
   const video = useRef<HTMLVideoElement>(null)
   const audio = useRef<HTMLAudioElement>(null)
+  const music = useRef<HTMLAudioElement>(null)
+  const graph = useRef<{ ctx: AudioContext; source: MediaElementAudioSourceNode; chainOut: AudioNode | null; volume: GainNode } | null>(null)
+  const [micPeak, setMicPeak] = useState<number | null>(null)
   const cameraLayer = useRef<HTMLDivElement>(null)
   const camVideo = useRef<HTMLVideoElement>(null)
   const camLayer = useRef<HTMLDivElement>(null)
@@ -104,9 +114,70 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
         if (Math.abs(el.currentTime - t) > 0.001) el.currentTime = t
       }
     }
-    if (a) a.volume = Math.max(0, Math.min(1, micVolume))
-    v.muted = micVolume <= 0
-  }, [sourceMs, playing, rate, micVolume, project.config])
+    const micLevel = gains.mic * gains.master
+    if (a) {
+      if (graph.current) graph.current.volume.gain.value = micLevel
+      else a.volume = Math.max(0, Math.min(1, micLevel))
+      a.muted = micLevel <= 0
+    }
+    const systemLevel = gains.system * gains.master
+    v.volume = Math.max(0, Math.min(1, systemLevel))
+    v.muted = systemLevel <= 0
+    const m = music.current
+    if (m) {
+      const musicLevel = gains.music * gains.master
+      m.volume = Math.max(0, Math.min(1, musicLevel))
+      m.muted = musicLevel <= 0
+      const dur = Number.isFinite(m.duration) && m.duration > 0 ? m.duration : null
+      const mt = dur ? (outputMs / 1000) % dur : outputMs / 1000
+      if (forward) {
+        m.playbackRate = Math.min(16, Math.max(0.0625, rate))
+        if (Math.abs(m.currentTime - mt) > 0.3) m.currentTime = mt
+        if (m.paused) void m.play().catch(() => undefined)
+      } else {
+        if (!m.paused) m.pause()
+        if (Math.abs(m.currentTime - mt) > 0.05) m.currentTime = mt
+      }
+    }
+  }, [sourceMs, playing, rate, gains, project.config, outputMs])
+
+  // Spec 217: the microphone plays through a clean-up chain built from the mode; its peak drives the normalisation.
+  useEffect(() => {
+    if (!micUrl) return
+    let cancelled = false
+    void (async () => {
+      try {
+        const data = await (await fetch(micUrl)).arrayBuffer()
+        const ctx = new OfflineAudioContext(1, 1, 48_000)
+        const buf = await ctx.decodeAudioData(data)
+        if (!cancelled) setMicPeak(peakOf(buf))
+      } catch {
+        if (!cancelled) setMicPeak(null)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [micUrl])
+  useEffect(() => {
+    const a = audio.current
+    if (!a) return
+    let g = graph.current
+    if (!g) {
+      const ctx = new AudioContext()
+      const source = ctx.createMediaElementSource(a)
+      const volume = ctx.createGain()
+      volume.connect(ctx.destination)
+      g = { ctx, source, chainOut: null, volume }
+      graph.current = g
+    }
+    g.source.disconnect()
+    g.chainOut?.disconnect()
+    const chain = buildMicChain(g.ctx, micMode, micPeak)
+    g.source.connect(chain.input)
+    chain.output.connect(g.volume)
+    g.chainOut = chain.output
+  }, [micMode, micPeak, micUrl])
 
   // The camera (specs 106, 112, 115, 123–124): every frame, spring towards the zoom target and apply the transform.
   useEffect(() => {
@@ -341,7 +412,8 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
             <video ref={camVideo} className={`stage__cam__video${project.config.mirrorCamera ? ' stage__cam__video--mirror' : ''}`} src={cameraUrl} crossOrigin="anonymous" muted playsInline preload="auto" />
           </div>
         )}
-        {micUrl && <audio ref={audio} src={micUrl} preload="auto" />}
+        {micUrl && <audio ref={audio} src={micUrl} preload="auto" crossOrigin="anonymous" />}
+        {musicUrl && <audio ref={music} src={musicUrl} preload="auto" loop />}
       </div>
       {children}
     </div>

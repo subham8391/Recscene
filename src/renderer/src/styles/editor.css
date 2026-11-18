@@ -1385,3 +1385,120 @@ input[type='color'] {
   position: fixed;
   z-index: 30;
 }
+
+/* Audio panel (specs 213–220) */
+.toggle--inline {
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.modes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mode {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel2);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+}
+
+.mode--on {
+  border-color: var(--accent);
+}
+
+.mode small {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.mode:disabled {
+  opacity: 0.5;
+}
+
+.seg--wrap {
+  flex-wrap: wrap;
+}
+
+.tracks {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.track {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+
+.track--on {
+  background: var(--accentSoft);
+}
+
+.track__play {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line2);
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 10px;
+}
+
+.track__text {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  padding: 0;
+}
+
+.track__name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track__text .muted {
+  font-size: 11px;
+}
+
+.chip {
+  height: 18px;
+  padding: 0 7px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--onAccent);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.sec--drop {
+  outline: 2px dashed var(--accent);
+  outline-offset: 4px;
+  border-radius: 8px;
+}

@@ -7,7 +7,6 @@ import {
   clipAtOutput,
   clipAtSource,
   clipSettings,
-  isAudioMuted,
   joinClips,
   mergeWith,
   outputDurationMs,
@@ -55,6 +54,8 @@ import { BackgroundPanel } from './BackgroundPanel'
 import { CameraPanel, LayoutPanel } from './CameraPanel'
 import { MaskPanel } from './MaskPanel'
 import { ShortcutsPanel } from './ShortcutsPanel'
+import { AudioPanel } from './AudioPanel'
+import { backgroundSource, masterGain, micGain, musicGain, systemGain } from '@core/editor/audio'
 import { ENABLE_QUESTION, setAllHidden, setHidden, setHiddenForLabel, setKindDisabled, shortcutEvents } from '@core/editor/shortcuts'
 import { ClipPanel } from './ClipPanel'
 import { CommandMenu } from './CommandMenu'
@@ -146,6 +147,28 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   useEffect(() => {
     void window.recscene.prefs.get().then((raw) => setDefaultZoomLevel(appPrefsFrom(raw).defaultZoomLevel ?? 2))
   }, [])
+
+  // Specs 218–219: the background track's url, from the bundle, the library folder or the project (that one needs main).
+  const backgroundAudio = project.config.backgroundAudioFileName
+  const [projectMusic, setProjectMusic] = useState<{ file: string; url: string } | null>(null)
+  useEffect(() => {
+    const src = backgroundSource(backgroundAudio)
+    if (src?.kind !== 'project') return
+    let cancelled = false
+    void window.recscene.project.mediaUrl(src.file).then((url) => {
+      if (!cancelled && url) setProjectMusic({ file: src.file, url })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [backgroundAudio])
+  const musicUrl = useMemo(() => {
+    const src = backgroundSource(backgroundAudio)
+    if (!src) return null
+    if (src.kind === 'bundled') return `${opened.media.assets}/music/${src.id}.m4a`
+    if (src.kind === 'library') return `${opened.media.library}/${encodeURIComponent(src.file)}`
+    return projectMusic?.file === src.file ? projectMusic.url : null
+  }, [backgroundAudio, opened.media.assets, opened.media.library, projectMusic])
 
   const backgroundImage = project.config.backgroundImage
   useEffect(() => {
@@ -336,6 +359,11 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
         case 'focusTimelineOnMask': return selectedMask ? focusMask(selectedMask, true) : undefined
         case 'focusTimelineOnMaskStart': return selectedMask ? focusMask(selectedMask, true) : undefined
         case 'removeAllMasks': return void (setSelectedMaskId(null), setMasks([]))
+        case 'muteMicrophone': return edit({ ...project, config: { ...project.config, muteMicrophone: !project.config.muteMicrophone } })
+        case 'muteSystemAudio': return edit({ ...project, config: { ...project.config, muteSystemAudio: !project.config.muteSystemAudio } })
+        case 'muteBackgroundAudio': return edit({ ...project, config: { ...project.config, muteBackgroundAudio: !project.config.muteBackgroundAudio } })
+        case 'removeBackgroundAudio': return edit({ ...project, config: { ...project.config, backgroundAudioFileName: null } })
+        case 'openAudioLibraryFolder': return void window.recscene.music.openLibraryFolder()
         case 'toggleShowShortcuts': return edit({ ...project, config: { ...project.config, showShortcuts: !project.config.showShortcuts } })
         case 'hideAllShortcuts': return setShortcutConfig(setAllHidden(project.config, shortcuts, true))
         case 'showAllShortcuts': return setShortcutConfig(setAllHidden(project.config, shortcuts, false))
@@ -609,7 +637,10 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           sourceMs={sourceMs}
           playing={pb.playing && preview === null && !cropping}
           rate={pb.speed * (currentClip?.speed ?? 1)}
-          micVolume={currentClip && !isAudioMuted(currentClip) ? currentClip.volume : 0}
+          audio={{ mic: currentClip ? micGain(currentClip, project.config) : 0, system: currentClip ? systemGain(currentClip, project.config) : 0, music: musicGain(project.config), master: masterGain(project.config) }}
+          micMode={project.config.microphoneMode}
+          musicUrl={musicUrl}
+          outputMs={preview ?? pb.timeMs}
           previewMaxHeight={prefs.playbackPreviewMaxHeight}
           onDuration={(ms) => {
             if (ms > 0 && Math.abs(ms - sourceDurationMs) > 50) {
@@ -745,6 +776,16 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
               onConfig={(patch) => edit({ ...project, config: { ...project.config, ...patch } })}
               onAction={run}
             />
+          ) : panel === 'audio' ? (
+            <AudioPanel
+              config={project.config}
+              hasMic={!!opened.media.mic}
+              assetsUrl={opened.media.assets}
+              libraryUrl={opened.media.library}
+              projectUrl={(file) => window.recscene.project.mediaUrl(file)}
+              onConfig={(patch) => edit({ ...project, config: { ...project.config, ...patch } })}
+              onAction={run}
+            />
           ) : panel === 'shortcuts' ? (
             <ShortcutsPanel
               config={project.config}
@@ -839,7 +880,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
       {overlay && <CommandMenu mode={overlay} onRun={(id) => { setOverlay(null); run(id) }} onClose={() => setOverlay(null)} />}
       {exporting && (
         <ExportDialog
-          input={{ project, clips, sourceDurationMs, screenUrl: opened.media.screen, micUrl: opened.media.mic, cameraUrl: opened.media.camera, backgroundImageUrl: backgroundImage ? backgroundImageUrl : null, assetsUrl: opened.media.assets, cursor: opened.cursor, projectName: project.name }}
+          input={{ project, clips, sourceDurationMs, screenUrl: opened.media.screen, micUrl: opened.media.mic, cameraUrl: opened.media.camera, musicUrl, backgroundImageUrl: backgroundImage ? backgroundImageUrl : null, assetsUrl: opened.media.assets, cursor: opened.cursor, projectName: project.name }}
           durationMs={durationMs}
           onClose={() => setExporting(false)}
           onNotice={notify}

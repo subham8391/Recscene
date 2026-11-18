@@ -19,6 +19,8 @@ import { activeMask } from '@core/editor/masks'
 import type { Project } from '@core/project'
 import { drawMask } from './maskDraw'
 import { keyWidth, labelAt, labelMetrics, shortcutEvents } from '@core/editor/shortcuts'
+import { masterGain, micGain, musicGain, musicSegments, systemGain } from '@core/editor/audio'
+import { buildMicChain, peakOf, toMono } from './micGraph'
 
 export interface ExportInput {
   project: Project
@@ -28,6 +30,8 @@ export interface ExportInput {
   micUrl?: string
   /** Spec 8: the webcam track, composited per the camera layouts (148–164). */
   cameraUrl?: string
+  /** Specs 218–219: background music, looping from the start. */
+  musicUrl?: string | null
   backgroundImageUrl: string | null
   assetsUrl: string
   cursor: CursorSample[]
@@ -90,9 +94,13 @@ function toWav(buffer: AudioBuffer): ArrayBuffer {
 
 /** Mixes microphone (per clip volume and speed, muted above 2×) and click sounds into one stereo buffer of the output length. */
 async function mixAudio(input: ExportInput, totalMs: number): Promise<AudioBuffer | null> {
+  const cfg = input.project.config
   const rate = 48_000
   const length = Math.max(1, Math.ceil((totalMs / 1000) * rate))
   const ctx = new OfflineAudioContext(2, length, rate)
+  const master = ctx.createGain()
+  master.gain.value = masterGain(cfg)
+  master.connect(ctx.destination)
   let any = false
   const decode = async (url: string): Promise<AudioBuffer | null> => {
     try {
@@ -102,26 +110,57 @@ async function mixAudio(input: ExportInput, totalMs: number): Promise<AudioBuffe
       return null
     }
   }
-  const mic = input.micUrl ? await decode(input.micUrl) : null
-  if (mic) {
+  /** Plays `buffer` for every clip at its speed through `gainOf`, into `into` (specs 213–215, 91, 93). */
+  const playClips = (buffer: AudioBuffer, gainOf: (clip: Clip) => number, into: AudioNode): void => {
     let at = 0
     for (const clip of input.clips) {
-      const length = (clip.sourceEndMs - clip.sourceStartMs) / 1000
-      if (!isAudioMuted(clip) && clip.volume > 0) {
+      const len = (clip.sourceEndMs - clip.sourceStartMs) / 1000
+      const g = gainOf(clip)
+      if (g > 0) {
         const src = ctx.createBufferSource()
-        src.buffer = mic
+        src.buffer = buffer
         src.playbackRate.value = clip.speed
         const gain = ctx.createGain()
-        gain.gain.value = clip.volume
-        src.connect(gain).connect(ctx.destination)
-        src.start(at / 1000, clip.sourceStartMs / 1000, length)
+        gain.gain.value = g
+        src.connect(gain).connect(into)
+        src.start(at / 1000, clip.sourceStartMs / 1000, len)
         any = true
       }
-      at += (length * 1000) / clip.speed
+      at += (len * 1000) / clip.speed
     }
   }
-  const sound = input.project.config.clickSoundEffect
-  if (sound && !input.project.config.hideCursor) {
+  // Microphone (214, 217, 14): cleaned up by the mode's chain, folded to mono unless stereo mode is on.
+  const micRaw = input.micUrl && !cfg.muteMicrophone ? await decode(input.micUrl) : null
+  if (micRaw) {
+    const mic = cfg.microphoneInStereoMode ? micRaw : toMono(ctx, micRaw)
+    const chain = buildMicChain(ctx, cfg.microphoneMode, peakOf(mic))
+    chain.output.connect(master)
+    playClips(mic, (clip) => micGain(clip, cfg), chain.input)
+  }
+  // System audio (215): the screen file's audio track, when the recording captured one.
+  if (!cfg.muteSystemAudio && cfg.systemAudioVolume > 0) {
+    const sys = await decode(input.screenUrl)
+    if (sys) playClips(sys, (clip) => systemGain(clip, cfg), master)
+  }
+  // Background music (218–220): loops from the start in output time.
+  const musicLevel = musicGain(cfg)
+  if (input.musicUrl && musicLevel > 0) {
+    const track = await decode(input.musicUrl)
+    if (track) {
+      const gain = ctx.createGain()
+      gain.gain.value = musicLevel
+      gain.connect(master)
+      for (const seg of musicSegments(totalMs, track.duration * 1000)) {
+        const src = ctx.createBufferSource()
+        src.buffer = track
+        src.connect(gain)
+        src.start(seg.atMs / 1000, 0, seg.lengthMs / 1000)
+        any = true
+      }
+    }
+  }
+  const sound = cfg.clickSoundEffect
+  if (sound && !cfg.hideCursor) {
     const down = await decode(`${input.assetsUrl}/sounds/clicks/${sound}/down.wav`)
     if (down) {
       for (const click of input.project.recording.clicks) {
@@ -131,8 +170,8 @@ async function mixAudio(input: ExportInput, totalMs: number): Promise<AudioBuffe
         const src = ctx.createBufferSource()
         src.buffer = down
         const gain = ctx.createGain()
-        gain.gain.value = input.project.config.clickSoundEffectVolume
-        src.connect(gain).connect(ctx.destination)
+        gain.gain.value = cfg.clickSoundEffectVolume
+        src.connect(gain).connect(master)
         src.start(outMs / 1000)
         any = true
       }

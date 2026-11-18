@@ -11,6 +11,7 @@ import { Preferences } from './preferences'
 import { projectsRoot, RecordingService, setProjectsFolderSource } from './recording'
 import { offerRecovery } from './recovery'
 import { LibraryService } from './library'
+import { MusicService } from './music'
 import { Widget } from './widget'
 import { CameraPreview } from './cameraPreview'
 import { loadRoute, preloadPath } from './windows'
@@ -33,6 +34,7 @@ let projects: ProjectService | null = null
 let prefsStore: Preferences | null = null
 let exporter: ExportService | null = null
 let library: LibraryService | null = null
+let music: MusicService | null = null
 
 registerMediaScheme()
 let stopping: Promise<void> | null = null
@@ -186,9 +188,11 @@ void app.whenReady().then(() => {
   projects = new ProjectService(prefs, () => mainWindow)
   exporter = new ExportService(prefs, () => recording!.helper, () => mainWindow)
   library = new LibraryService(prefs, recording, { showResult, importVideo, mainWindow: () => mainWindow, refreshMenu })
+  music = new MusicService(() => projects?.currentDir ?? null)
   app.on('will-quit', () => {
     exporter?.dispose()
     void library
+    void music
   })
   refreshMenu()
   mainWindow = createMainWindow()

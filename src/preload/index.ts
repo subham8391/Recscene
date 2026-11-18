@@ -7,6 +7,7 @@ import type { SpeakerNotesPrefs } from '@core/speakerNotes'
 import type { OpenedProject } from '@core/projectFile'
 import type { ExportSettings, ExportTarget } from '@core/editor/exportSettings'
 import type { ProjectSummary, UnfinishedRecording } from '@core/projectsHome'
+import type { MusicTrack } from '@core/editor/audio'
 
 export interface ProjectsFolder {
   path: string
@@ -55,6 +56,14 @@ const api = {
     importBackgroundImage: (source: File | ArrayBuffer): Promise<{ file: string; url: string }> =>
       ipcRenderer.invoke('project:importBackgroundImage', source instanceof ArrayBuffer ? source : webUtils.getPathForFile(source)) as Promise<{ file: string; url: string }>,
     mediaUrl: (file: string): Promise<string | null> => ipcRenderer.invoke('project:mediaUrl', file) as Promise<string | null>
+  },
+  /** Background music (specs 218–219). */
+  music: {
+    catalogue: (): Promise<MusicTrack[]> => ipcRenderer.invoke('music:catalogue') as Promise<MusicTrack[]>,
+    library: (): Promise<string[]> => ipcRenderer.invoke('music:library') as Promise<string[]>,
+    openLibraryFolder: (): Promise<void> => ipcRenderer.invoke('music:openLibraryFolder') as Promise<void>,
+    pickFile: (): Promise<{ file: string; url: string } | null> => ipcRenderer.invoke('music:pickFile') as Promise<{ file: string; url: string } | null>,
+    importFile: (file: File): Promise<{ file: string; url: string }> => ipcRenderer.invoke('music:importFile', webUtils.getPathForFile(file)) as Promise<{ file: string; url: string }>
   },
   /** The projects home (Projects board; specs 7, 40, 75, 255). */
   library: {
