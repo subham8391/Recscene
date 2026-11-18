@@ -1,4 +1,4 @@
-import { dialog, Menu, shell, type BrowserWindow } from 'electron'
+import { app, dialog, Menu, shell, type BrowserWindow } from 'electron'
 import { IMPORTABLE_EXTENSIONS } from '@core/recovery'
 
 export interface MenuActions {
@@ -12,6 +12,8 @@ export interface MenuActions {
   recent: { projectDir: string; name: string }[]
   /** Spec 255: the current projects folder. */
   projectsRoot: () => string
+  /** The Settings window (⌘,), optionally at a tab. */
+  openSettings: (tab?: 'general' | 'recording' | 'editing' | 'shortcuts' | 'advanced' | 'experimental' | 'account') => void
   /** Sends an editor action id to the renderer (save, undo, toggles…). */
   editorAction: (id: string) => void
 }
@@ -29,7 +31,23 @@ export function installMenu(actions: MenuActions): void {
     if (!result.canceled && file) await actions.importVideo(file)
   }
   const menu = Menu.buildFromTemplate([
-    { role: 'appMenu' },
+    {
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { label: 'Settings…', accelerator: 'CommandOrControl+,', click: () => actions.openSettings() },
+        { label: 'Check for Updates…', click: () => actions.editorAction('checkForUpdates') },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    },
     {
       label: 'File',
       submenu: [

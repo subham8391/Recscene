@@ -11,6 +11,9 @@ import type { MusicTrack } from '@core/editor/audio'
 import type { Transcript } from '@core/editor/captions'
 import type { Preset } from '@core/editor/presets'
 import type { ProjectConfig } from '@core/project'
+import type { AppSettings, SettingsTab } from '@core/settings'
+
+export type SettingsSnapshot = AppSettings & { projectsFolder: string; presetsFolder: string; appVersion: string; appData: string; permissions: Record<string, string | boolean> }
 
 export interface ProjectsFolder {
   path: string
@@ -39,7 +42,23 @@ const api = {
   /** App-wide preferences the editor reads and writes (specs 57, 60–62, 67, 73). */
   prefs: {
     get: (): Promise<Record<string, unknown>> => ipcRenderer.invoke('prefs:get') as Promise<Record<string, unknown>>,
-    set: (values: Record<string, unknown>): Promise<void> => ipcRenderer.invoke('prefs:set', values) as Promise<void>
+    set: (values: Record<string, unknown>): Promise<void> => ipcRenderer.invoke('prefs:set', values) as Promise<void>,
+    /** Fired by the Settings window (and resets) so open editors follow along. */
+    onChanged: (listener: (settings: AppSettings) => void): (() => void) => on('prefs:changed', listener)
+  },
+  /** The Settings window (specs 252–272, 66, 68–70). */
+  settings: {
+    get: (): Promise<SettingsSnapshot> => ipcRenderer.invoke('settings:get') as Promise<SettingsSnapshot>,
+    set: (values: Partial<AppSettings>): Promise<AppSettings> => ipcRenderer.invoke('settings:set', values) as Promise<AppSettings>,
+    tab: (): Promise<SettingsTab> => ipcRenderer.invoke('settings:tab') as Promise<SettingsTab>,
+    onShowTab: (listener: (tab: SettingsTab) => void): (() => void) => on('settings:showTab', listener),
+    open: (tab?: SettingsTab): Promise<void> => ipcRenderer.invoke('settings:open', tab) as Promise<void>,
+    openPane: (pane: string): Promise<void> => ipcRenderer.invoke('settings:openPane', pane) as Promise<void>,
+    openAppData: (): Promise<void> => ipcRenderer.invoke('settings:openAppData') as Promise<void>,
+    openChangelog: (): Promise<void> => ipcRenderer.invoke('settings:openChangelog') as Promise<void>,
+    reset: (): Promise<AppSettings> => ipcRenderer.invoke('settings:reset') as Promise<AppSettings>,
+    copyDiagnostics: (): Promise<string> => ipcRenderer.invoke('settings:copyDiagnostics') as Promise<string>,
+    checkForUpdates: (): Promise<string> => ipcRenderer.invoke('settings:checkForUpdates') as Promise<string>
   },
   project: {
     current: (): Promise<OpenedProject | null> => ipcRenderer.invoke('project:current') as Promise<OpenedProject | null>,

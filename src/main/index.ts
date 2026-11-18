@@ -14,12 +14,12 @@ import { LibraryService } from './library'
 import { MusicService } from './music'
 import { CaptionsService } from './captions'
 import { PresetsService } from './presets'
+import { SettingsService } from './settings'
 import { Widget } from './widget'
 import { CameraPreview } from './cameraPreview'
 import { loadRoute, preloadPath } from './windows'
 
 /** Spec 33: opens the picker when idle, finishes the recording while one runs. */
-const RECORD_SHORTCUT = 'Shift+CommandOrControl+R'
 /** Spec 26: flags a moment while recording. */
 const FLAG_SHORTCUT = 'CommandOrControl+Alt+Control+F'
 /** Spec 28: starts or stops the teleprompter in the speaker notes window. */
@@ -39,6 +39,7 @@ let library: LibraryService | null = null
 let music: MusicService | null = null
 let captions: CaptionsService | null = null
 let presets: PresetsService | null = null
+let settings: SettingsService | null = null
 
 registerMediaScheme()
 let stopping: Promise<void> | null = null
@@ -58,7 +59,9 @@ function createMainWindow(): BrowserWindow {
   window.on('ready-to-show', () => window.show())
   window.on('closed', () => {
     if (mainWindow === window) mainWindow = null
+    settings?.applyDock()
   })
+  window.on('show', () => settings?.applyDock())
   window.webContents.setWindowOpenHandler(({ url }) => {
     void shell.openExternal(url)
     return { action: 'deny' }
@@ -124,6 +127,7 @@ function refreshMenu(): void {
       openRecent: (dir) => projects?.open(dir).then(() => refreshMenu()) ?? Promise.resolve(),
       recent,
       projectsRoot,
+      openSettings: (tab) => settings?.open(tab),
       editorAction: (id) => mainWindow?.webContents.send('editor:action', id)
     })
   })
@@ -187,8 +191,7 @@ void app.whenReady().then(() => {
       onLowDisk: (message) => void stopRecording(message)
     })
   })
-  globalShortcut.register(RECORD_SHORTCUT, onRecordShortcut)
-  for (const s of optionalShortcuts()) globalShortcut.register(s.accelerator, s.handler)
+  // Global shortcuts are registered by the settings service from the (remappable) preferences (spec 66).
   projects = new ProjectService(prefs, () => mainWindow)
   exporter = new ExportService(prefs, () => recording!.helper, () => mainWindow)
   library = new LibraryService(prefs, recording, { showResult, importVideo, mainWindow: () => mainWindow, refreshMenu })
@@ -197,6 +200,15 @@ void app.whenReady().then(() => {
   presets = new PresetsService(prefs)
   recording.configSeed = () => presets!.seed()
   projects.onSaved = (p) => presets?.rememberLast(p.config)
+  settings = new SettingsService(prefs, {
+    recording,
+    globalHandlers: { 'global:record': onRecordShortcut, 'global:flag': optionalShortcuts()[0]!.handler, 'global:prompter': optionalShortcuts()[1]!.handler },
+    mainWindows: () => (mainWindow && !mainWindow.isDestroyed() ? [mainWindow] : []),
+    projectsFolder: projectsRoot,
+    presetsFolder: () => presets!.folder()
+  })
+  recording.on('stopped', () => settings?.applyDock())
+  recording.on('cancelled', () => settings?.applyDock())
   app.on('will-quit', () => {
     exporter?.dispose()
     void library
@@ -206,6 +218,14 @@ void app.whenReady().then(() => {
   })
   refreshMenu()
   mainWindow = createMainWindow()
+  // Spec 272: the first launch opens Settings › General with the permission cards when something is missing.
+  mainWindow.once('show', () => {
+    if (settings?.current().onboardingDone) return
+    void recording?.permissions(false).then((p) => {
+      if (!p.screen || p.microphone === 'notDetermined') settings?.open('general')
+      prefs.set({ onboardingDone: true })
+    })
+  })
   // Spec 40 on launch: the projects home shows unfinished recordings in its banner; File › Recover asks with a dialog.
   // Development aid: RECSCENE_OPEN_PICKER=1 opens the picker as soon as the app is ready.
   if (!app.isPackaged && process.env['RECSCENE_OPEN_PICKER']) setTimeout(() => picker?.open(), 800)
