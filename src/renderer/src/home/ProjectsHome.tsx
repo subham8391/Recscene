@@ -1,3 +1,4 @@
+import { Icon } from '../editor/railIcons'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { formatDuration } from '@core/time'
 import {
@@ -235,17 +236,13 @@ export function ProjectsHome({ version, notice, onDismissNotice }: Props): React
 
   return (
     <div className="home">
-      <header className="titlebar">
-        <span className="titlebar__name">Recscene</span>
-        <span className="titlebar__version">{version && `v${version}`}</span>
-      </header>
-
       <nav className="home__nav" aria-label="Library">
+        <div className="home__drag" aria-hidden="true" />
         <button type="button" className={`home__navitem${section === 'recent' ? ' home__navitem--on' : ''}`} aria-current={section === 'recent'} onClick={() => setSection('recent')}>
-          <span>Recent</span><span className="home__count">{lib ? sectionProjects('recent', all, lib.recentDirs).length : ''}</span>
+          <span className="home__navlabel"><Icon name="recent" size={16} />Recent</span><span className="home__count">{lib ? sectionProjects('recent', all, lib.recentDirs).length : ''}</span>
         </button>
         <button type="button" className={`home__navitem${section === 'all' ? ' home__navitem--on' : ''}`} aria-current={section === 'all'} onClick={() => setSection('all')}>
-          <span>All projects</span><span className="home__count">{lib ? all.length : ''}</span>
+          <span className="home__navlabel"><Icon name="all" size={16} />All projects</span><span className="home__count">{lib ? all.length : ''}</span>
         </button>
         <div className="home__spacer" />
         <section className="home__storage" aria-label="Storage">
@@ -259,6 +256,7 @@ export function ProjectsHome({ version, notice, onDismissNotice }: Props): React
             {lib && !lib.folder.isDefault && <button type="button" className="home__link" onClick={() => void resetFolder()}>Use default</button>}
           </span>
         </section>
+        <span className="home__version">{version && `Recscene v${version}`}</span>
       </nav>
 
       <main className="home__main">

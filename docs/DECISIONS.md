@@ -60,6 +60,8 @@
 
 **2026-11-18 (shareable links parked).** Shareable links with comments (specs 242–248) need cloud storage for the exported video, a links and comments table, and a public viewer page; they are the only feature that cannot stay on the Mac. Decision: not now. When Recscene grows they ship for premium users only, on Supabase Storage first (same project as sign-in) and Cloudflare R2 if download bandwidth becomes the cost. The local parts (249–251: copy and zip project, open shared bundles, extract raw files) stay as built.
 
+**2026-11-18 (design parity pass).** The app was compared screen by screen with the canvas boards and brought in line: the editor rail has the boards' ten sections with their icons (Zooms, Clips and Masks are list sections that select items; Animation holds the movement spring and motion blur; the old Device section is gone, its frames live in Background), the title bar buttons carry the boards' icons and the Crop key, the timeline toolbar has the coloured + Zoom / + Layout / + Mask buttons with Zooms as the first track, the export dialog is the two-column Export board (summary with a live thumbnail on the left), and the home and Settings windows drop their title bar rows for the boards' sidebar layout with the traffic lights inside the sidebar and coloured section dots. The boards stay the source of truth; a screen that differs from its board is a bug.
+
 ## Open
 - **Q1** Licensing model: one-time with a year of updates versus subscription. Sign-in is decided (Google through Supabase, 2026-11-18); what a signed-in account entitles, trial limits and prices are still to decide before M3.
 - **Q2** Transcription and captions: on-device (whisper.cpp) versus a cloud service. Lean on-device for privacy; decide at M2.

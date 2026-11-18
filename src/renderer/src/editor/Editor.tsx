@@ -30,6 +30,9 @@ import { addMaskAt, applyOpacityToAll, disableAllMasks, maskAt, maskSettings, nu
 import { addLayoutAt, applyCameraSizeToAll, layoutAt, layoutSettings, pasteLayoutSettings, removeLayout, splitLayout, stepPosition, updateLayout, type CameraLayout, type LayoutSettings, type LayoutType, type MoveDirection } from '@core/editor/cameraLayout'
 import { appPrefsFrom } from '@core/appPrefs'
 import { canRedo, canUndo, createHistory, record, redo, undo } from '@core/editor/history'
+import { AnimationPanel } from './AnimationPanel'
+import { ItemsPanel } from './ItemsPanel'
+import { Icon } from './railIcons'
 import { showsSidebar, showsTimeline, togglePreview, toggleSidebar, toggleTimeline, type LayoutState } from '@core/editor/layout'
 import {
   goToFirstFrame,
@@ -76,15 +79,17 @@ import { Timeline, type TrackId, type TrackVisibility } from './Timeline'
 import { ZoomPanel } from './ZoomPanel'
 import { useEditorPrefs } from './useEditorPrefs'
 
-const PANELS: { id: string; label: string; key: string }[] = [
-  { id: 'background', label: 'Background', key: '⌘1' },
+const PANELS: { id: string; label: string; key: string; color?: string }[] = [
+  { id: 'zooms', label: 'Zooms', key: '', color: 'var(--zoom)' },
+  { id: 'clips', label: 'Clips', key: '', color: 'var(--clip)' },
   { id: 'cursor', label: 'Cursor', key: '⌘2' },
-  { id: 'camera', label: 'Camera', key: '⌘3' },
-  { id: 'captions', label: 'Captions', key: '⌘4' },
+  { id: 'camera', label: 'Camera', key: '⌘3', color: 'var(--layout)' },
+  { id: 'background', label: 'Background', key: '⌘1' },
+  { id: 'masks', label: 'Masks', key: '', color: 'var(--mask)' },
+  { id: 'shortcuts', label: 'Shortcuts', key: '⌘6', color: 'var(--shortcut)' },
+  { id: 'captions', label: 'Captions', key: '⌘4', color: 'var(--caption)' },
   { id: 'audio', label: 'Audio', key: '⌘5' },
-  { id: 'shortcuts', label: 'Shortcuts', key: '⌘6' },
-  { id: 'animations', label: 'Animations', key: '⌘7' },
-  { id: 'device', label: 'Device', key: '⌘8' }
+  { id: 'animations', label: 'Animation', key: '⌘7' }
 ]
 
 interface Props {
@@ -720,6 +725,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
 
   const shownTime = preview ?? pb.timeMs
   const aspect = aspectLabel(project.config.defaultOutputAspectRatio, project.recording.screen)
+  const panelDef = PANELS.find((p) => p.id === panel)
   const savedLabel = saved.toast ?? (saved.dirty ? 'unsaved changes' : saved.at ? `saved ${agoLabel(saved.at)}` : 'not saved yet')
   const sidebar = showsSidebar(layout)
   const timeline = showsTimeline(layout)
@@ -732,7 +738,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
         <span className="titlebar__project">· {savedLabel}</span>
         <div className="titlebar__center">
           <div className="menu-anchor">
-            <button type="button" className="btn btn--ghost" aria-haspopup="listbox" aria-expanded={aspectOpen} title="Output aspect ratio" onClick={() => setAspectOpen((o) => !o)}>{aspect} ▾</button>
+            <button type="button" className="btn btn--ghost" aria-haspopup="listbox" aria-expanded={aspectOpen} title="Output aspect ratio" onClick={() => setAspectOpen((o) => !o)}><Icon name="aspect" size={15} />{aspect} <span className="muted">▾</span></button>
             {aspectOpen && (
               <div role="listbox" className="menu">
                 {ASPECT_OPTIONS.map((o) => (
@@ -743,18 +749,17 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
               </div>
             )}
           </div>
-          <button type="button" className={`btn btn--ghost${cropping ? ' btn--on' : ''}`} aria-pressed={cropping} title="Crop the recording (specs 100–101)" onClick={() => run('crop')}>Crop</button>
-          <button type="button" className={`btn btn--ghost${presetsOpen ? ' btn--on' : ''}`} title="Presets (specs 224–231)" onClick={() => setPresetsOpen(true)}>Presets</button>
-          <button type="button" className={`btn btn--ghost${selectedMask ? ' btn--on' : ''}`} title="Add a sensitive data mask at the playhead (specs 189–198)" onClick={() => run('addSensitiveDataMask')}>Mask</button>
+          <button type="button" className={`btn btn--ghost${cropping ? ' btn--on' : ''}`} aria-pressed={cropping} title="Crop the recording (specs 100–101)" onClick={() => run('crop')}><Icon name="crop" size={15} />Crop <kbd>C</kbd></button>
+          <button type="button" className={`btn btn--ghost${presetsOpen ? ' btn--on' : ''}`} title="Presets (specs 224–231)" onClick={() => setPresetsOpen(true)}><Icon name="presets" size={15} />Presets</button>
         </div>
-        <button type="button" className="btn btn--ghost" disabled title="Shareable links arrive with specs 236–245">Share link</button>
+        <button type="button" className="btn btn--ghost" disabled title="Shareable links come later, for premium accounts"><Icon name="link" size={15} />Share link</button>
         <button type="button" className="btn btn--accent" title="Export ⌘E" onClick={() => run('export')}>Export</button>
       </header>
 
       {sidebar && (
         <nav className="rail" aria-label="Editor panels">
           {PANELS.map((p) => (
-            <button key={p.id} type="button" className={`rail__item${panel === p.id ? ' rail__item--on' : ''}`} aria-pressed={panel === p.id} title={`${p.label} ${p.key}`} onClick={() => setPanel(p.id)}>{p.label}</button>
+            <button key={p.id} type="button" className={`rail__item${panel === p.id ? ' rail__item--on' : ''}`} aria-pressed={panel === p.id} title={`${p.label}${p.key ? ` ${p.key}` : ''}`} onClick={() => setPanel(p.id)}><Icon name={p.id} /><span>{p.label}</span></button>
           ))}
         </nav>
       )}
@@ -825,6 +830,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           <button type="button" className="transport__play" aria-label={pb.playing ? 'Pause (Space)' : 'Play (Space)'} onClick={() => run('togglePlay')}>{pb.playing ? '❚❚' : '▶'}</button>
           <button type="button" className="transport__btn" aria-label="Go to last frame (⌘→)" onClick={() => run('goToLastFrame')}>⏭</button>
           <span className="transport__spacer" />
+          <span className="transport__hint">J K L transport · ⌘K command menu · ⌘/ shortcuts</span>
           <div className="menu-anchor">
             <button type="button" className="btn btn--ghost" aria-haspopup="listbox" aria-expanded={speedOpen} title="Playback speed · L faster, J backward, K reset" onClick={() => setSpeedOpen((o) => !o)}>{speedLabel(pb.speed)}</button>
             {speedOpen && (
@@ -839,7 +845,6 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           <select className="input" aria-label="Preview size" value={prefs.playbackPreviewMaxHeight} onChange={(e) => setPrefs({ playbackPreviewMaxHeight: Number(e.target.value) as 480 })}>
             {[480, 720, 1080, 1440, 2160].map((h) => <option key={h} value={h}>{h}p</option>)}
           </select>
-          <button type="button" className="btn btn--ghost" title="Add a 3 s zoom at the playhead" onClick={() => run('addZoom')}>+ Zoom</button>
           <button type="button" className="btn btn--ghost" title="Show command menu… ⌘K" onClick={() => run('commandMenu')}>⌘K</button>
         </div>
       </main>
@@ -923,8 +928,27 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
             </>
           ) : (
             <>
-          <h2>{PANELS.find((p) => p.id === panel)?.label}</h2>
-          {panel === 'background' ? (
+          <div className="inspector__head"><span className="tl__dot" style={{ background: panelDef?.color ?? 'var(--text3)' }} /><h2>{panelDef?.label ?? 'Panel'}</h2></div>
+          {panel === 'zooms' || panel === 'clips' || panel === 'masks' ? (
+            <ItemsPanel
+              kind={panel}
+              zooms={zooms}
+              clips={clips}
+              masks={masks}
+              timeMs={pb.timeMs}
+              onSelectZoom={(id) => { setSelectedZoomId(id); setSelectedClipId(null); setSelectedLayoutId(null); setSelectedMaskId(null) }}
+              onSelectClip={(id) => { setSelectedClipId(id); setSelectedZoomId(null) }}
+              onSelectMask={selectMask}
+              onAdd={() => run(panel === 'zooms' ? 'addZoom' : 'addSensitiveDataMask')}
+            />
+          ) : panel === 'animations' ? (
+            <AnimationPanel
+              config={project.config}
+              motionBlur={prefs.playbackQualityMode !== 'high-speed'}
+              onConfig={(patch) => edit({ ...project, config: { ...project.config, ...patch } })}
+              onMotionBlur={(on) => setPrefs({ playbackQualityMode: on ? 'high-quality' : 'high-speed' })}
+            />
+          ) : panel === 'background' ? (
             <BackgroundPanel
               project={project}
               assetsUrl={opened.media.assets}
@@ -1038,16 +1062,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
                 void a.play().catch(() => undefined)
               }}
             />
-          ) : (
-          <p className="muted">This panel's controls arrive with its own specs. The shell, playback, timeline, undo and saving are in place.</p>
-          )}
-          <dl className="recorder__result">
-            <dt>Recording</dt><dd>{project.recording.screen.width}×{project.recording.screen.height} · {formatTimecode(durationMs)}</dd>
-            <dt>Captured</dt><dd>{project.recording.clicks.length} clicks · {project.recording.keys.length} keystrokes · {project.meta.recordingFlags.length} flags · {opened.markers.length} markers</dd>
-            <dt>History</dt><dd>{history.past.length} undo · {history.future.length} redo</dd>
-            <dt>Clips</dt><dd>{clips.length} · click a clip on the timeline to edit it</dd>
-            <dt>Zooms</dt><dd>{zooms.length} · click the Zooms track to add one</dd>
-          </dl>
+          ) : null}
             </>
           )}
         </aside>
@@ -1055,6 +1070,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
 
       {timeline && (
         <Timeline
+          onAction={run}
           project={shownProject}
           clips={clips}
           sourceDurationMs={sourceDurationMs}
@@ -1147,6 +1163,9 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
         <ExportDialog
           input={{ project, clips, sourceDurationMs, screenUrl: opened.media.screen, micUrl: opened.media.mic, cameraUrl: opened.media.camera, musicUrl, backgroundImageUrl: backgroundImage ? backgroundImageUrl : null, assetsUrl: opened.media.assets, cursor: opened.cursor, cursorTypes: opened.cursorTypes, silenceGaps, voiceUrl, projectName: project.name }}
           durationMs={durationMs}
+          aspect={aspect}
+          counts={{ zooms: zooms.length, masks: masks.length, layouts: layouts.length }}
+          thumbnail={() => stage.current?.frameAsPng(270) ?? Promise.reject(new Error('No frame'))}
           onClose={() => setExporting(false)}
           onNotice={notify}
         />
