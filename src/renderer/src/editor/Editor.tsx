@@ -30,6 +30,9 @@ import { addMaskAt, applyOpacityToAll, disableAllMasks, maskAt, maskSettings, nu
 import { addLayoutAt, applyCameraSizeToAll, layoutAt, layoutSettings, pasteLayoutSettings, removeLayout, splitLayout, stepPosition, updateLayout, type CameraLayout, type LayoutSettings, type LayoutType, type MoveDirection } from '@core/editor/cameraLayout'
 import { appPrefsFrom } from '@core/appPrefs'
 import { canRedo, canUndo, createHistory, record, redo, undo } from '@core/editor/history'
+import { isAutoType } from '@core/editor/zooms'
+import { LAYOUT_NAMES } from '@core/editor/cameraLayout'
+import { maskLabel } from '@core/editor/masks'
 import { AnimationPanel } from './AnimationPanel'
 import { ItemsPanel } from './ItemsPanel'
 import { Icon } from './railIcons'
@@ -726,6 +729,20 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   const shownTime = preview ?? pb.timeMs
   const aspect = aspectLabel(project.config.defaultOutputAspectRatio, project.recording.screen)
   const panelDef = PANELS.find((p) => p.id === panel)
+  // The stage badge (Main board): what the inspector is editing, in one line over the preview.
+  const badge: { color: string; text: string } | null = selectedZoom
+    ? { color: 'var(--zoom)', text: `Zoom ${selectedZoomIndex + 1} · ${isAutoType(selectedZoom.type) ? 'Auto' : 'Manual'} · ${Math.round(selectedZoom.zoom * 100)}%` }
+    : selectedLayout
+      ? { color: 'var(--layout)', text: `Layout ${selectedLayoutIndex + 1} · ${LAYOUT_NAMES[selectedLayout.type]}` }
+      : selectedMask
+        ? { color: 'var(--mask)', text: `Mask ${selectedMaskIndex + 1} · ${maskLabel(selectedMask)}` }
+        : selectedClip
+          ? { color: 'var(--clip)', text: `Clip ${selectedIndex + 1} · ${speedLabel(selectedClip.speed)}` }
+          : panel === 'camera'
+            ? { color: 'var(--layout)', text: `Default layout · ${LAYOUT_NAMES[project.config.defaultLayout.type]}` }
+            : panel === 'background'
+              ? { color: 'var(--text3)', text: `${project.config.backgroundType === 'image' ? 'Image' : project.config.backgroundType === 'color' ? 'Colour' : project.config.backgroundType === 'gradient' ? 'Gradient' : project.config.backgroundType === 'system' ? 'macOS wallpaper' : 'Wallpaper'} · padding ${project.config.backgroundPaddingRatio}% · corners ${project.config.windowBorderRadius} px` }
+              : null
   const savedLabel = saved.toast ?? (saved.dirty ? 'unsaved changes' : saved.at ? `saved ${agoLabel(saved.at)}` : 'not saved yet')
   const sidebar = showsSidebar(layout)
   const timeline = showsTimeline(layout)
@@ -765,6 +782,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
       )}
 
       <main className="stage">
+        {badge && !cropping && <div className="stage__badge" aria-hidden="true"><span className="tl__dot" style={{ background: badge.color }} />{badge.text}</div>}
         {notice && (
           <p className="notice stage__notice" role="alert">
             {notice} <button type="button" className="btn btn--ghost" onClick={onDismissNotice}>Dismiss</button>
@@ -853,7 +871,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
         <aside className="inspector" aria-label="Inspector">
           {selectedVoiceOver ? (
             <>
-              <div className="inspector__head"><span className="tl__dot" style={{ background: 'var(--voice)' }} /><h2>Voiceover</h2><span className="muted">{selectedVoiceOverIndex + 1} of {voiceOvers.length}</span><span className="tl__spacer" /><button type="button" className="btn btn--ghost btn--sm" onClick={() => setSelectedVoiceOverId(null)}>Close <kbd>⎋</kbd></button></div>
+              <div className="inspector__head"><span className="tl__dot" style={{ background: 'var(--voice)' }} /><h2>Voiceover</h2><span className="muted">{selectedVoiceOverIndex + 1} of {voiceOvers.length}</span><span className="tl__spacer" /><button type="button" className="inspector__close" aria-label="Close" title="Close ⎋" onClick={() => setSelectedVoiceOverId(null)}><Icon name="close" size={14} /></button></div>
               <VoiceOverPanel
                 list={voiceOvers}
                 voiceOver={selectedVoiceOver}
@@ -865,7 +883,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
             </>
           ) : selectedMask ? (
             <>
-              <div className="inspector__head"><span className="tl__dot" style={{ background: 'var(--mask)' }} /><h2>Mask</h2><span className="muted">{selectedMaskIndex + 1} of {masks.length}</span><span className="tl__spacer" /><button type="button" className="btn btn--ghost btn--sm" onClick={() => setSelectedMaskId(null)}>Close <kbd>⎋</kbd></button></div>
+              <div className="inspector__head"><span className="tl__dot" style={{ background: 'var(--mask)' }} /><h2>Mask</h2><span className="muted">{selectedMaskIndex + 1} of {masks.length}</span><span className="tl__spacer" /><button type="button" className="inspector__close" aria-label="Close" title="Close ⎋" onClick={() => setSelectedMaskId(null)}><Icon name="close" size={14} /></button></div>
               <MaskPanel
                 masks={masks}
                 mask={selectedMask}
@@ -879,7 +897,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
             </>
           ) : selectedLayout ? (
             <>
-              <div className="inspector__head"><span className="tl__dot" style={{ background: 'var(--layout)' }} /><h2>Camera layout</h2><span className="muted">{selectedLayoutIndex + 1} of {layouts.length}</span><span className="tl__spacer" /><button type="button" className="btn btn--ghost btn--sm" onClick={() => setSelectedLayoutId(null)}>Close <kbd>⎋</kbd></button></div>
+              <div className="inspector__head"><span className="tl__dot" style={{ background: 'var(--layout)' }} /><h2>Camera layout</h2><span className="muted">{selectedLayoutIndex + 1} of {layouts.length}</span><span className="tl__spacer" /><button type="button" className="inspector__close" aria-label="Close" title="Close ⎋" onClick={() => setSelectedLayoutId(null)}><Icon name="close" size={14} /></button></div>
               <LayoutPanel
                 config={project.config}
                 layouts={layouts}
@@ -892,7 +910,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
             </>
           ) : selectedZoom ? (
             <>
-              <div className="inspector__head"><span className="tl__dot" style={{ background: 'var(--zoom)' }} /><h2>Zoom</h2><span className="muted">{selectedZoomIndex + 1} of {zooms.length}</span><span className="tl__spacer" /><button type="button" className="btn btn--ghost btn--sm" onClick={() => setSelectedZoomId(null)}>Close <kbd>⎋</kbd></button></div>
+              <div className="inspector__head"><span className="tl__dot" style={{ background: 'var(--zoom)' }} /><h2>Zoom</h2><span className="muted">{selectedZoomIndex + 1} of {zooms.length}</span><span className="tl__spacer" /><button type="button" className="inspector__close" aria-label="Close" title="Close ⎋" onClick={() => setSelectedZoomId(null)}><Icon name="close" size={14} /></button></div>
               <ZoomPanel
                 project={project}
                 zooms={zooms}
@@ -909,7 +927,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
             </>
           ) : selectedClip ? (
             <>
-              <div className="inspector__head"><span className="tl__dot" style={{ background: 'var(--clip)' }} /><h2>Clip</h2><span className="muted">{selectedIndex + 1} of {clips.length}</span><span className="tl__spacer" /><button type="button" className="btn btn--ghost btn--sm" onClick={() => setSelectedClipId(null)}>Close <kbd>⎋</kbd></button></div>
+              <div className="inspector__head"><span className="tl__dot" style={{ background: 'var(--clip)' }} /><h2>Clip</h2><span className="muted">{selectedIndex + 1} of {clips.length}</span><span className="tl__spacer" /><button type="button" className="inspector__close" aria-label="Close" title="Close ⎋" onClick={() => setSelectedClipId(null)}><Icon name="close" size={14} /></button></div>
               <ClipPanel
                 clips={clips}
                 clip={selectedClip}
