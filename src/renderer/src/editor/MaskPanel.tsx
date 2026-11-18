@@ -1,4 +1,4 @@
-import { BLUR_MAX, BLUR_MIN, COVER_NOTE, DISABLED_HELP, MASK_TYPES, OFF_RANGE_NOTE, OPACITY_MAX, OPACITY_MIN, regionFromPx, regionToPx, type Mask, type MaskRegion } from '@core/editor/masks'
+import { BLUR_MAX, BLUR_MIN, DISABLED_HELP, MASK_TYPES, OFF_RANGE_NOTE, OPACITY_MAX, OPACITY_MIN, regionFromPx, regionToPx, type Mask, type MaskRegion } from '@core/editor/masks'
 import { formatTimecode } from '@core/time'
 
 interface Props {
@@ -21,7 +21,7 @@ export function MaskPanel({ masks, mask, index, recording, offRange, hasClipboar
     onMask({ region: regionFromPx({ ...px, [key]: value }, recording) })
   }
   const field = (key: keyof MaskRegion, label: string): React.JSX.Element => (
-    <label className="field--inline"><span>{label}</span><input className="input input--num" type="number" value={Math.round(px[key])} onChange={(e) => setPx(key, Number(e.target.value))} /></label>
+    <label className="field--stack"><span>{label}</span><input className="input input--num" type="number" value={Math.round(px[key])} onChange={(e) => setPx(key, Number(e.target.value))} /></label>
   )
   return (
     <div className="panel-body">
@@ -29,8 +29,8 @@ export function MaskPanel({ masks, mask, index, recording, offRange, hasClipboar
         <section className="card card--warn">
           <p className="note">{OFF_RANGE_NOTE}</p>
           <div className="grid2">
-            <button type="button" className="btn btn--ghost" onClick={() => onAction('focusTimelineOnMask')}>Focus the timeline on the mask</button>
-            <button type="button" className="btn btn--ghost" onClick={() => onAction('focusTimelineOnMaskStart')}>Go to the mask start</button>
+            <button type="button" className="btn btn--ghost" onClick={() => onAction('focusTimelineOnMask')}>Focus timeline</button>
+            <button type="button" className="btn btn--ghost" onClick={() => onAction('focusTimelineOnMaskStart')}>Go to start</button>
           </div>
         </section>
       )}
@@ -46,7 +46,7 @@ export function MaskPanel({ masks, mask, index, recording, offRange, hasClipboar
         <section className="sec">
           <div className="hd"><h3>Blur strength</h3><span>{mask.blurStrength} px</span></div>
           <input type="range" min={BLUR_MIN} max={BLUR_MAX} step={1} value={mask.blurStrength} aria-label="Blur strength" onChange={(e) => onMask({ blurStrength: Number(e.target.value) })} />
-          <p className="note">Blur permanently removes what is under it in the export. {COVER_NOTE}</p>
+          <p className="note">Blur permanently removes the pixels in the export. The original stays inside the .recscene project.</p>
         </section>
       ) : (
         <section className="sec">
@@ -57,15 +57,15 @@ export function MaskPanel({ masks, mask, index, recording, offRange, hasClipboar
       )}
       <section className="sec">
         <h3>Size and position</h3>
-        <div className="grid2">
+        <div className="fields4">
           {field('x', 'X')}{field('y', 'Y')}{field('width', 'W')}{field('height', 'H')}
         </div>
-        <p className="note">Recording pixels. Drag the rectangle on the preview, or nudge with the arrow keys: 1 px, ⇧ 10 px. A mask covers its whole time range at one position; masks do not follow scrolling.</p>
+        <p className="note">Arrow keys nudge 1 px, ⇧ 10 px. A mask covers its whole time range at one position.</p>
       </section>
       <section className="card">
         <label className="toggle"><span><b>Feather edge</b><small>Soft {6} px edge so the blur does not look cut out.</small></span><input type="checkbox" checked={mask.featherEdge} onChange={(e) => onMask({ featherEdge: e.target.checked })} /></label>
         <label className="toggle"><span><b>Enabled</b><small>{DISABLED_HELP}</small></span><input type="checkbox" checked={!mask.isDisabled} onChange={(e) => onMask({ isDisabled: !e.target.checked })} /></label>
-        <label className="toggle"><span><b>Detect masked content shift</b><small>Experimental in the competitor; not built yet.</small></span><input type="checkbox" disabled /></label>
+        <label className="toggle"><span><b>Detect masked content shift</b><small>Experimental: moves the mask if the page scrolls. Not built yet.</small></span><input type="checkbox" disabled /></label>
       </section>
       <section className="grid2">
         <button type="button" className="btn btn--ghost" onClick={() => onAction('copyMask')}>Copy mask</button>

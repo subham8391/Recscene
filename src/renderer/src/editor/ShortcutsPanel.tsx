@@ -1,5 +1,5 @@
-import { countOf, ENABLE_BUTTON, ENABLE_QUESTION, isShown, KIND_LABELS, NO_KEYS, SIZE_MAX, SIZE_MIN, SIZE_PRESETS, summary, type ShortcutConfig, type ShortcutEvent, type ShortcutKind } from '@core/editor/shortcuts'
-import { formatTimecode } from '@core/time'
+import { countOf, ENABLE_BUTTON, ENABLE_QUESTION, isShown, KIND_LABELS, NO_KEYS, SIZE_MAX, SIZE_MIN, SIZE_PRESETS, type ShortcutConfig, type ShortcutEvent, type ShortcutKind } from '@core/editor/shortcuts'
+import { formatTransport } from '@core/time'
 
 interface Props {
   config: ShortcutConfig
@@ -22,7 +22,6 @@ export function ShortcutsPanel({ config, events, hasKeys, trackVisible, onConfig
   const kinds = Object.keys(KIND_LABELS) as (keyof typeof KIND_LABELS)[]
   return (
     <div className="panel-body">
-      <p className="note">{summary(events)}</p>
       {!config.showShortcuts && (
         <section className="card card--warn">
           <p className="note">{ENABLE_QUESTION}</p>
@@ -31,7 +30,7 @@ export function ShortcutsPanel({ config, events, hasKeys, trackVisible, onConfig
       )}
       <section className="card">
         <label className="toggle"><span><b>Show pressed shortcuts</b><small>Key combinations with a modifier, e.g. ⌘C, ⌘⇧P.</small></span><input type="checkbox" checked={config.showShortcuts} onChange={(e) => onConfig({ showShortcuts: e.target.checked })} /></label>
-        <label className="toggle"><span><b>Show single-key presses</b><small>By default, only 2+ keys shortcuts are shown. Enable this option to show single letter shortcuts as well.</small></span><input type="checkbox" checked={config.showShortcutsWithSingleLetters} onChange={(e) => onConfig({ showShortcutsWithSingleLetters: e.target.checked })} /></label>
+        <label className="toggle"><span><b>Show single-key presses</b><small>Letters, digits and arrows pressed on their own. Off by default so typing stays private.</small></span><input type="checkbox" checked={config.showShortcutsWithSingleLetters} onChange={(e) => onConfig({ showShortcutsWithSingleLetters: e.target.checked })} /></label>
       </section>
       {config.showShortcuts && (
         <section className="sec">
@@ -43,11 +42,11 @@ export function ShortcutsPanel({ config, events, hasKeys, trackVisible, onConfig
         </section>
       )}
       <section className="sec">
-        <div className="hd"><h3>Shortcuts in this recording</h3><span>{events.length}</span></div>
+        <div className="hd"><h3>Shortcuts in this recording <span className="chip chip--count">{events.length}</span></h3></div>
         <div className="keylist">
           {events.map((e) => (
             <div key={e.timeMs} className={`keylist__row${isShown(e) ? '' : ' keylist__row--off'}`}>
-              <button type="button" className="keylist__time" onClick={() => onSeek(e.timeMs)} title="Go to this press">{formatTimecode(e.timeMs)}</button>
+              <button type="button" className="keylist__time" onClick={() => onSeek(e.timeMs)} title="Go to this press">{formatTransport(e.timeMs).slice(0, -1)}</button>
               <span className="keylist__label">{e.label}</span>
               <span className="muted keylist__kind">{e.kindDisabled ? 'kind off' : ''}</span>
               <button type="button" className="btn btn--ghost btn--sm" onClick={() => onHide(e.timeMs, !e.hidden)}>{e.hidden ? 'Show' : 'Hide'}</button>

@@ -33,6 +33,7 @@ import { canRedo, canUndo, createHistory, record, redo, undo } from '@core/edito
 import { isAutoType } from '@core/editor/zooms'
 import { LAYOUT_NAMES } from '@core/editor/cameraLayout'
 import { maskLabel } from '@core/editor/masks'
+import { languageName } from '@core/editor/captions'
 import { AnimationPanel } from './AnimationPanel'
 import { ItemsPanel } from './ItemsPanel'
 import { Icon } from './railIcons'
@@ -55,7 +56,7 @@ import {
 } from '@core/editor/playback'
 import { initialView, keepVisible, zoomView, type TimelineView } from '@core/editor/timelineView'
 import type { Project } from '@core/project'
-import { formatTimecode } from '@core/time'
+import { agoLabel, formatTransport } from '@core/time'
 import type { OpenedProject } from '@core/projectFile'
 import { BackgroundPanel } from './BackgroundPanel'
 import { CameraPanel, LayoutPanel } from './CameraPanel'
@@ -85,13 +86,13 @@ import { useEditorPrefs } from './useEditorPrefs'
 const PANELS: { id: string; label: string; key: string; color?: string }[] = [
   { id: 'zooms', label: 'Zooms', key: '', color: 'var(--zoom)' },
   { id: 'clips', label: 'Clips', key: '', color: 'var(--clip)' },
-  { id: 'cursor', label: 'Cursor', key: '⌘2' },
+  { id: 'cursor', label: 'Cursor', key: '⌘2', color: 'var(--text2)' },
   { id: 'camera', label: 'Camera', key: '⌘3', color: 'var(--layout)' },
-  { id: 'background', label: 'Background', key: '⌘1' },
+  { id: 'background', label: 'Background', key: '⌘1', color: 'linear-gradient(135deg, #5a3a8a, #c9608a)' },
   { id: 'masks', label: 'Masks', key: '', color: 'var(--mask)' },
   { id: 'shortcuts', label: 'Shortcuts', key: '⌘6', color: 'var(--shortcut)' },
   { id: 'captions', label: 'Captions', key: '⌘4', color: 'var(--caption)' },
-  { id: 'audio', label: 'Audio', key: '⌘5' },
+  { id: 'audio', label: 'Audio', key: '⌘5', color: 'var(--voice)' },
   { id: 'animations', label: 'Animation', key: '⌘7' }
 ]
 
@@ -729,6 +730,10 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   const shownTime = preview ?? pb.timeMs
   const aspect = aspectLabel(project.config.defaultOutputAspectRatio, project.recording.screen)
   const panelDef = PANELS.find((p) => p.id === panel)
+  // The rail lights the section of the selected item (Main board: Zooms while a zoom is selected).
+  const activeRail = selectedZoom ? 'zooms' : selectedClip ? 'clips' : selectedMask ? 'masks' : selectedLayout ? 'camera' : selectedVoiceOver ? 'audio' : panel
+  const hiddenShortcutCount = Object.keys(project.config.hiddenShortcuts ?? {}).length
+  const panelSubtitle = panel === 'cursor' ? 'whole project' : panel === 'camera' ? (hasCamera ? 'default layout' : 'no camera recorded') : panel === 'shortcuts' ? `${project.recording.keys.length} pressed${hiddenShortcutCount ? ` · ${hiddenShortcutCount} hidden` : ''}` : panel === 'captions' && project.transcript ? `${languageName(project.transcript.language)} · ${cues.length} cues` : null
   // The stage badge (Main board): what the inspector is editing, in one line over the preview.
   const badge: { color: string; text: string } | null = selectedZoom
     ? { color: 'var(--zoom)', text: `Zoom ${selectedZoomIndex + 1} · ${isAutoType(selectedZoom.type) ? 'Auto' : 'Manual'} · ${Math.round(selectedZoom.zoom * 100)}%` }
@@ -748,9 +753,9 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   const timeline = showsTimeline(layout)
 
   return (
-    <div className={`app app--${layout}`}>
+    <div className={`app app--${layout}${panel === 'masks' || selectedMask ? ' app--masks' : ''}`}>
       <header className="titlebar">
-        <button type="button" className="btn btn--ghost titlebar__back" title="Back to projects ⌘⇧W" onClick={() => run('closeProject')}>‹ Projects</button>
+        <button type="button" className="btn btn--ghost titlebar__back" title="Projects ⌘⇧W" aria-label="Back to projects" onClick={() => run('closeProject')}>‹</button>
         <span className="titlebar__name">{project.name}</span>
         <span className="titlebar__project">· {savedLabel}</span>
         <div className="titlebar__center">
@@ -776,7 +781,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
       {sidebar && (
         <nav className="rail" aria-label="Editor panels">
           {PANELS.map((p) => (
-            <button key={p.id} type="button" className={`rail__item${panel === p.id ? ' rail__item--on' : ''}`} aria-pressed={panel === p.id} title={`${p.label}${p.key ? ` ${p.key}` : ''}`} onClick={() => setPanel(p.id)}><Icon name={p.id} /><span>{p.label}</span></button>
+            <button key={p.id} type="button" className={`rail__item${activeRail === p.id ? ' rail__item--on' : ''}`} aria-pressed={activeRail === p.id} title={`${p.label}${p.key ? ` ${p.key}` : ''}`} onClick={() => { setPanel(p.id); run('closeSidebarItem') }}><Icon name={p.id} /><span>{p.label}</span></button>
           ))}
         </nav>
       )}
@@ -841,8 +846,8 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           )}
         </Stage>
         <div className="transport">
-          <span className="transport__time">{formatTimecode(shownTime)}</span>
-          <span className="muted">/ {formatTimecode(durationMs)}</span>
+          <span className="transport__time">{formatTransport(shownTime)}</span>
+          <span className="transport__total">/ {formatTransport(durationMs)}</span>
           <span className="transport__spacer" />
           <button type="button" className="transport__btn" aria-label="Go to first frame (⌘←)" onClick={() => run('goToFirstFrame')}>⏮</button>
           <button type="button" className="transport__play" aria-label={pb.playing ? 'Pause (Space)' : 'Play (Space)'} onClick={() => run('togglePlay')}>{pb.playing ? '❚❚' : '▶'}</button>
@@ -910,7 +915,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
             </>
           ) : selectedZoom ? (
             <>
-              <div className="inspector__head"><span className="tl__dot" style={{ background: 'var(--zoom)' }} /><h2>Zoom</h2><span className="muted">{selectedZoomIndex + 1} of {zooms.length}</span><span className="tl__spacer" /><button type="button" className="inspector__close" aria-label="Close" title="Close ⎋" onClick={() => setSelectedZoomId(null)}><Icon name="close" size={14} /></button></div>
+              <div className="inspector__head"><span className="tl__dot" style={{ background: 'var(--zoom)' }} /><h2>Zoom</h2><span className="muted">{selectedZoomIndex + 1} of {zooms.length} · {formatTransport(selectedZoom.startMs).slice(0, -1)} – {formatTransport(selectedZoom.endMs).slice(0, -1)}</span><span className="tl__spacer" /><button type="button" className="inspector__close" aria-label="Close" title="Close ⎋" onClick={() => setSelectedZoomId(null)}><Icon name="close" size={14} /></button></div>
               <ZoomPanel
                 project={project}
                 zooms={zooms}
@@ -946,7 +951,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
             </>
           ) : (
             <>
-          <div className="inspector__head"><span className="tl__dot" style={{ background: panelDef?.color ?? 'var(--text3)' }} /><h2>{panelDef?.label ?? 'Panel'}</h2></div>
+          <div className="inspector__head"><span className="tl__dot" style={{ background: panelDef?.color ?? 'var(--text3)' }} /><h2>{panel === 'background' ? 'Background & Screen' : panelDef?.label ?? 'Panel'}</h2>{panelSubtitle && <span className="muted">{panelSubtitle}</span>}</div>
           {panel === 'zooms' || panel === 'clips' || panel === 'masks' ? (
             <ItemsPanel
               kind={panel}
@@ -1192,10 +1197,4 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   )
 }
 
-function agoLabel(iso: string): string {
-  const s = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 1000))
-  if (s < 60) return `${s} s ago`
-  if (s < 3600) return `${Math.round(s / 60)} min ago`
-  return new Date(iso).toLocaleTimeString()
-}
 

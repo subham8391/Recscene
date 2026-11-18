@@ -388,6 +388,7 @@ export function Timeline(props: Props): React.JSX.Element {
                   </div>
                 )
               })}
+              {t.id === 'layouts' && hasCamera && <><span className="tl__band" aria-hidden="true" /><span className="tl__band__label">Default · {LAYOUT_NAMES[project.config.defaultLayout.type].toLowerCase()}</span></>}
               {t.id === 'layouts' && project.layouts.map((l) => {
                 const a = atOutput(l.sourceStartMs)
                 const b = atOutput(l.sourceEndMs)

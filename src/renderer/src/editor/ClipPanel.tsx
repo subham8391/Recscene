@@ -3,12 +3,10 @@ import {
   applySpeedToAll,
   canApplySpeedToAll,
   canResetAll,
-  clipSettings,
   hasTrim,
   isAudioMuted,
   mergeWith,
   removeTrim,
-  SPEED_GROUPS,
   TYPING_SPEED_DEFAULT,
   TYPING_SPEED_MAX,
   TYPING_SPEED_MIN,
@@ -19,7 +17,10 @@ import {
   VOLUME_OPTIONS
 } from '@core/editor/clips'
 import { CROP_ASPECTS } from '@core/editor/crop'
-import { formatTimecode } from '@core/time'
+import { formatTimecode, formatTransport } from '@core/time'
+
+/** The Clips board's preset row; the slider reaches the rest (0.25–24×). */
+const SPEED_PRESETS = [1, 1.5, 2, 3, 4]
 
 interface Props {
   clips: Clip[]
@@ -50,8 +51,8 @@ export function ClipPanel({ clips, clip, index, sourceDurationMs, hasMic, typing
       <section className="sec">
         <h3>Trim</h3>
         <div className="grid2">
-          <label className="field--inline">Start<input className="input input--num" value={formatTimecode(clip.sourceStartMs)} readOnly /></label>
-          <label className="field--inline">End<input className="input input--num" value={formatTimecode(clip.sourceEndMs)} readOnly /></label>
+          <label className="field--stack"><span>Start</span><input className="input input--num" value={formatTransport(clip.sourceStartMs)} readOnly /></label>
+          <label className="field--stack"><span>End</span><input className="input input--num" value={formatTransport(clip.sourceEndMs)} readOnly /></label>
         </div>
         <div className="grid2">
           <button type="button" className="btn btn--ghost" disabled={!trimmed} onClick={() => onClips(removeTrim(clips, clip.id, 'both', sourceDurationMs))}>Reset trim</button>
@@ -63,15 +64,13 @@ export function ClipPanel({ clips, clip, index, sourceDurationMs, hasMic, typing
       <section className="sec">
         <div className="hd"><h3>Playback speed</h3><span>{clip.speed}×</span></div>
         <input type="range" min={0.25} max={24} step={0.05} value={clip.speed} onChange={(e) => set({ speed: Number(e.target.value) })} />
-        {SPEED_GROUPS.map((g) => (
-          <div key={g.label} className="seg" role="group" aria-label={`${g.label} speeds`}>
-            {g.speeds.map((s) => (
-              <button key={s} type="button" aria-pressed={clip.speed === s} onClick={() => set({ speed: s })}>{s}×</button>
-            ))}
-          </div>
-        ))}
+        <div className="seg" role="group" aria-label="Speed presets">
+          {SPEED_PRESETS.map((s) => (
+            <button key={s} type="button" aria-pressed={clip.speed === s} onClick={() => set({ speed: s })}>{s}×</button>
+          ))}
+        </div>
         <button type="button" className="btn btn--ghost" disabled={!canApplySpeedToAll(clips, clip.id)} onClick={() => onClips(applySpeedToAll(clips, clip.id))}>Apply speed to all clips</button>
-        <p className="note">{isAudioMuted(clip) ? 'Above 2× the clip’s audio is muted automatically.' : 'Audio is muted automatically above 2×.'}</p>
+        <p className="note">{isAudioMuted(clip) ? 'Above 2× the clip’s audio is muted automatically; the audio track shows it hatched.' : 'Above 2× the clip’s audio is muted automatically; the audio track shows it hatched.'}</p>
       </section>
 
       {typing.length > 0 && (
@@ -121,13 +120,13 @@ export function ClipPanel({ clips, clip, index, sourceDurationMs, hasMic, typing
         <button type="button" className="btn btn--ghost" onClick={() => onAction('splitSliceAtCurrentTime')}>Split at playhead <kbd>C</kbd></button>
         <button type="button" className="btn btn--ghost" disabled={!next} onClick={() => onClips(mergeWith(clips, clip.id, 'next'))}>Merge with next</button>
         <button type="button" className="btn btn--ghost" disabled={!prev} onClick={() => onClips(mergeWith(clips, clip.id, 'previous'))}>Merge with previous</button>
-        <button type="button" className="btn btn--ghost" onClick={() => onAction('rippleRemoveSlice')}>Remove till previous cut <kbd>X</kbd></button>
+        <button type="button" className="btn btn--ghost" onClick={() => onAction('rippleRemoveSlice')}>Remove to last cut <kbd>X</kbd></button>
         <button type="button" className="btn btn--ghost" onClick={() => onAction('copyFrame')}>Copy clip settings</button>
         <button type="button" className="btn btn--ghost" disabled={!clipboard} onClick={() => onAction('paste')}>Paste settings</button>
         <button type="button" className="btn btn--ghost" disabled={clips.length <= 1} onClick={() => onAction('resetAllClips')}>Remove all clips</button>
         <button type="button" className="btn btn--ghost btn--danger" disabled={clips.length <= 1} onClick={() => onAction('removeSlice')}>Remove clip <kbd>⌫</kbd></button>
       </section>
-      <p className="note">Clip {index + 1} of {clips.length} · settings: {JSON.stringify(clipSettings(clip)).length > 0 ? 'speed, volume, cursor' : ''}</p>
+      <p className="note">Clip {index + 1} of {clips.length} · {formatTimecode(clip.sourceStartMs)} – {formatTimecode(clip.sourceEndMs)}</p>
     </div>
   )
 }

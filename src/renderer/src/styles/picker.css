@@ -446,7 +446,8 @@ html[data-route='notes'] {
 .menu__row--res {
   justify-content: space-between;
   gap: 10px;
-  height: 32px;
+  min-height: 32px;
+  white-space: nowrap;
   padding: 0 8px;
   font-size: 12px;
 }
