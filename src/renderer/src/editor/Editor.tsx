@@ -56,6 +56,8 @@ import { MaskPanel } from './MaskPanel'
 import { ShortcutsPanel } from './ShortcutsPanel'
 import { AudioPanel } from './AudioPanel'
 import { CaptionsPanel, TranscriptEditor } from './CaptionsPanel'
+import { PresetsPopover } from './PresetsPopover'
+import { applyPreset, type Preset } from '@core/editor/presets'
 import { buildCues, CUE_DEFAULTS, cutRanges, detectFillers, fillerRanges, GENERATING_TOAST, longPauses, ONE_LINE, REGENERATE_WARNING, replaceWordText, setWordsHidden, subtitleFile, tightenPause, timedCues, wordsRange, type SubtitleFormat } from '@core/editor/captions'
 import { backgroundSource, masterGain, micGain, musicGain, systemGain } from '@core/editor/audio'
 import { ENABLE_QUESTION, setAllHidden, setHidden, setHiddenForLabel, setKindDisabled, shortcutEvents } from '@core/editor/shortcuts'
@@ -96,6 +98,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   const [view, setView] = useState<TimelineView>(() => initialView(opened.project.recording.durationMs))
   const [visible, setVisible] = useState<TrackVisibility>({ zooms: true, layouts: !!opened.media.camera, masks: opened.project.masks.length > 0, shortcuts: opened.project.recording.keys.length > 0, captions: opened.project.transcript !== null })
   const [generating, setGenerating] = useState(false)
+  const [presetsOpen, setPresetsOpen] = useState(false)
   const [transcriptEditing, setTranscriptEditing] = useState(false)
   const [wordSelection, setWordSelection] = useState<[number, number] | null>(null)
   const [showDeleted, setShowDeleted] = useState(true)
@@ -522,6 +525,9 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
         case 'track:shortcuts': return selectedZoom ? setZooms(updateZoom(zooms, selectedZoom.id, { zoom: 1.4 })) : toggleTrack('shortcuts')
         case 'track:masks': return selectedZoom ? setZooms(updateZoom(zooms, selectedZoom.id, { zoom: 1.6 })) : toggleTrack('masks')
         case 'track:captions': return selectedZoom ? setZooms(updateZoom(zooms, selectedZoom.id, { zoom: 1.8 })) : toggleTrack('captions')
+        case 'presets':
+        case 'createPreset': return setPresetsOpen(true)
+        case 'importPreset': return void window.recscene.presets.importFile().then((p) => p && notify('Preset imported')).catch(() => notify('Not a Recscene preset file'))
         case 'generateTranscript':
         case 'regenerateTranscript': return generateTranscript()
         case 'toggleHideTranscript': return edit({ ...project, config: { ...project.config, showTranscript: !project.config.showTranscript } })
@@ -661,6 +667,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
             )}
           </div>
           <button type="button" className={`btn btn--ghost${cropping ? ' btn--on' : ''}`} aria-pressed={cropping} title="Crop the recording (specs 100–101)" onClick={() => run('crop')}>Crop</button>
+          <button type="button" className={`btn btn--ghost${presetsOpen ? ' btn--on' : ''}`} title="Presets (specs 224–231)" onClick={() => setPresetsOpen(true)}>Presets</button>
           <button type="button" className={`btn btn--ghost${selectedMask ? ' btn--on' : ''}`} title="Add a sensitive data mask at the playhead (specs 189–198)" onClick={() => run('addSensitiveDataMask')}>Mask</button>
         </div>
         <button type="button" className="btn btn--ghost" disabled title="Shareable links arrive with specs 236–245">Share link</button>
@@ -994,6 +1001,15 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
         />
       )}
 
+      {presetsOpen && (
+        <PresetsPopover
+          config={project.config}
+          currentProjectDir={opened.projectDir}
+          onApply={(p: Preset) => { edit({ ...project, config: applyPreset(project.config, p.config) }); notify('Preset used'); setPresetsOpen(false) }}
+          onNotice={notify}
+          onClose={() => setPresetsOpen(false)}
+        />
+      )}
       {overlay && <CommandMenu mode={overlay} onRun={(id) => { setOverlay(null); run(id) }} onClose={() => setOverlay(null)} />}
       {exporting && (
         <ExportDialog

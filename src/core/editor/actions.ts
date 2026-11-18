@@ -2,7 +2,7 @@
  * The editor's action registry (specs 49, 52–58, 63–65, 72–78): one list
  * that drives keyboard handling, the ⌘K command menu and the shortcuts guide.
  */
-export type ActionGroup = 'Playback' | 'Slice' | 'Zoom' | 'Camera' | 'Mask' | 'Shortcuts' | 'Audio' | 'Captions' | 'View' | 'Editor' | 'Project' | 'Sidebar' | 'Export' | 'Clipboard' | 'Help'
+export type ActionGroup = 'Playback' | 'Slice' | 'Zoom' | 'Camera' | 'Mask' | 'Shortcuts' | 'Audio' | 'Captions' | 'Presets' | 'View' | 'Editor' | 'Project' | 'Sidebar' | 'Export' | 'Clipboard' | 'Help'
 
 export interface ActionDef {
   id: string
@@ -87,6 +87,9 @@ export const ACTIONS: readonly ActionDef[] = [
   { id: 'removeFillerWords', label: 'Remove filler words', group: 'Captions' },
   { id: 'tightenPauses', label: 'Tighten pauses', group: 'Captions' },
   { id: 'track:captions', label: 'Toggle Captions track', group: 'View', shortcut: '5' },
+  { id: 'presets', label: 'Presets…', group: 'Presets' },
+  { id: 'createPreset', label: 'Create new preset', group: 'Presets' },
+  { id: 'importPreset', label: 'Import preset…', group: 'Presets' },
   { id: 'cut', label: 'Cut zoom', group: 'Clipboard', shortcut: 'Cmd+X' },
   { id: 'paste', label: 'Paste slice settings', group: 'Clipboard', shortcut: 'Cmd+V' },
   { id: 'undo', label: 'Undo', group: 'Editor', shortcut: 'Cmd+Z' },

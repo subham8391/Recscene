@@ -37,6 +37,8 @@ function assetsRoot(kind: 'sounds' | 'backgrounds' | 'music'): string {
  */
 export class ProjectService {
   private current: OpenedProject | null = null
+  /** Spec 232: the last saved project's config seeds new recordings when the preference is on. */
+  onSaved: ((project: Project) => void) | null = null
 
   constructor(
     private readonly prefs: Preferences,
@@ -197,6 +199,7 @@ export class ProjectService {
     const saved: Project = { ...project, updatedAt: project.updatedAt ?? lastSavedAt, lastSavedAt }
     await writeFile(join(current.projectDir, 'project.json'), JSON.stringify(saved, null, 2))
     current.project = saved
+    this.onSaved?.(saved)
     return { lastSavedAt }
   }
 

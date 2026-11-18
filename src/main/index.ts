@@ -13,6 +13,7 @@ import { offerRecovery } from './recovery'
 import { LibraryService } from './library'
 import { MusicService } from './music'
 import { CaptionsService } from './captions'
+import { PresetsService } from './presets'
 import { Widget } from './widget'
 import { CameraPreview } from './cameraPreview'
 import { loadRoute, preloadPath } from './windows'
@@ -37,6 +38,7 @@ let exporter: ExportService | null = null
 let library: LibraryService | null = null
 let music: MusicService | null = null
 let captions: CaptionsService | null = null
+let presets: PresetsService | null = null
 
 registerMediaScheme()
 let stopping: Promise<void> | null = null
@@ -192,11 +194,15 @@ void app.whenReady().then(() => {
   library = new LibraryService(prefs, recording, { showResult, importVideo, mainWindow: () => mainWindow, refreshMenu })
   music = new MusicService(() => projects?.currentDir ?? null)
   captions = new CaptionsService(() => recording!.helper, projects)
+  presets = new PresetsService(prefs)
+  recording.configSeed = () => presets!.seed()
+  projects.onSaved = (p) => presets?.rememberLast(p.config)
   app.on('will-quit', () => {
     exporter?.dispose()
     void library
     void music
     void captions
+    void presets
   })
   refreshMenu()
   mainWindow = createMainWindow()

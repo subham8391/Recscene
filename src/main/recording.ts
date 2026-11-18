@@ -8,6 +8,7 @@ import { newProject, recordingFolderName } from '@core/projectFile'
 import { addFlag, addMarker, markersFile, pauseClock, resumeClock, startSession, type SessionState } from '@core/recordingSession'
 import { importedBundleName, isUnfinishedBundle } from '@core/recovery'
 import { appPrefsFrom } from '@core/appPrefs'
+import type { ProjectConfig } from '@core/project'
 import { CaptureClient, resolveHelperPath } from './capture'
 import type { Preferences } from './preferences'
 
@@ -41,6 +42,9 @@ export class RecordingService extends EventEmitter {
   private current: { projectDir: string; createdAt: Date; width: number; height: number; mic: boolean; cameraName: string | null; options: RendererStartOptions; session: SessionState } | null = null
   private busy = false
   private toastTimer: ReturnType<typeof setTimeout> | null = null
+
+  /** Specs 227, 232: supplies the config a new project starts with. */
+  configSeed: (() => Promise<ProjectConfig>) | null = null
 
   constructor(private readonly prefs?: Preferences) {
     super()
@@ -182,7 +186,9 @@ export class RecordingService extends EventEmitter {
     const eventsFile = JSON.parse(await readFile(stopped.files.events, 'utf8')) as EventsFile
     const events = normaliseEvents(eventsFile, stopped.durationMs)
     const camera = stopped.files.camera && stopped.cameraWidth && stopped.cameraHeight ? { width: stopped.cameraWidth, height: stopped.cameraHeight, file: basename(stopped.files.camera) } : undefined
+    const seed = await this.configSeed?.().catch(() => undefined)
     const project = newProject({
+      ...(seed ? { config: seed } : {}),
       id: randomUUID(),
       name: basename(current.projectDir, '.recscene'),
       createdAt: current.createdAt.toISOString(),
@@ -256,7 +262,9 @@ export class RecordingService extends EventEmitter {
   }
 
   private async writeProject(projectDir: string, input: { createdAt: Date; durationMs: number; width: number; height: number; events: ReturnType<typeof normaliseEvents>; mic?: string; camera?: { width: number; height: number; file: string }; flags: number[]; markers: SessionState['markers']; frames: number }): Promise<RecordingResult> {
+    const seed = await this.configSeed?.().catch(() => undefined)
     const project = newProject({
+      ...(seed ? { config: seed } : {}),
       id: randomUUID(),
       name: basename(projectDir, '.recscene'),
       createdAt: input.createdAt.toISOString(),
