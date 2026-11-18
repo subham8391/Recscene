@@ -126,7 +126,7 @@ describe('camera choice (spec 8)', () => {
 
   it('is off unless the preference is on', () => {
     expect(selectedCamera(defaultPickerPrefs, cams)).toEqual({ camera: null, missing: false })
-    expect(cameraLabel(defaultPickerPrefs, cams)).toBe("Don't record camera")
+    expect(cameraLabel(defaultPickerPrefs, cams)).toBe("Not recorded")
   })
 
   it('uses the remembered camera when it is connected', () => {
