@@ -43,7 +43,7 @@ export function ExportDialog({ input, durationMs, aspect, counts, thumbnail, onC
   const project: Project = input.project
   const crop = project.config.recordingCrop
   const rec = project.recording.screen
-  const ratio = outputRatio(project.config.defaultOutputAspectRatio, crop ? { width: rec.width * crop.width, height: rec.height * crop.height } : rec, project.config.backgroundPaddingRatio)
+  const ratio = outputRatio(project.config.defaultOutputAspectRatio, crop ? { width: rec.width * crop.width, height: rec.height * crop.height } : rec)
   const busy = progress !== null && progress.phase !== 'done' && progress.phase !== 'cancelled' && progress.phase !== 'failed'
 
   useEffect(() => {

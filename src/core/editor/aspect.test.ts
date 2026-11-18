@@ -10,11 +10,6 @@ describe('aspect', () => {
     expect(parseRatio('x')).toBeNull()
     expect(outputRatio(null, rec)).toBeCloseTo(1.54, 2)
     expect(outputRatio('1:1', rec)).toBe(1)
-    // Auto with padding: the frame grows by the same gap on every side, so a 1600×900 recording at 10% gives (1600 + 2·p·H) / (900 + 2·p·H) with H the frame height.
-    const auto = outputRatio(null, { width: 1600, height: 900 }, 10)
-    expect(auto).toBeCloseTo((16 / 9) * 0.8 + 0.2, 4)
-    expect(outputRatio(null, { width: 900, height: 1600 }, 10)).toBeCloseTo(1 / ((16 / 9) * 0.8 + 0.2), 4)
-    expect(outputRatio('16:9', { width: 1600, height: 900 }, 10)).toBeCloseTo(16 / 9)
   })
 
   it('labels Auto with the nearest named ratio', () => {

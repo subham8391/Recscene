@@ -128,21 +128,15 @@ export interface Box {
   height: number
 }
 
-/** Spec 174: the padding in frame pixels, the same on all four sides (a share of the frame's shorter side, as Screen Studio draws it). */
-export function paddingPx(frame: { width: number; height: number }, paddingPercent: number): number {
-  return (Math.max(0, Math.min(35, paddingPercent)) / 100) * Math.min(frame.width, frame.height)
-}
-
 /**
- * Spec 174 and 181: the recording's box inside the output frame. Padding is
- * the same number of pixels on every side (measured against Screen Studio:
- * equal gaps left, right, top and bottom); the inset band sits between the
- * padding and the recording. Returns both boxes in frame pixels.
+ * Spec 174 and 181: the recording's box inside the output frame. Padding is a
+ * share of the frame on every side; the inset band sits between the padding
+ * and the recording. Returns both boxes in frame pixels.
  */
 export function screenLayout(frame: { width: number; height: number }, recording: { width: number; height: number }, paddingPercent: number, inset: InsetPadding, scale = 1): { outer: Box; screen: Box } {
-  const pad = paddingPx(frame, paddingPercent)
-  const availW = frame.width - 2 * pad
-  const availH = frame.height - 2 * pad
+  const pad = Math.max(0, Math.min(35, paddingPercent)) / 100
+  const availW = frame.width * (1 - 2 * pad)
+  const availH = frame.height * (1 - 2 * pad)
   const band = { top: inset.top * scale, right: inset.right * scale, bottom: inset.bottom * scale, left: inset.left * scale }
   const ratio = recording.height > 0 ? recording.width / recording.height : 16 / 9
   // The outer box (inset band included) keeps the recording's ratio once the band is added.
