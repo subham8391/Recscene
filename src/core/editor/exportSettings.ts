@@ -1,7 +1,8 @@
 /** Export settings (specs 233–237, 245) and the numbers the dialog shows (247). */
 export type ExportFormat = 'mp4' | 'gif'
 export type ExportQuality = 'web' | 'medium' | 'high'
-export type ExportTarget = 'file' | 'clipboard' | 'link'
+/** `quick` saves straight into ~/Movies/Recscene without a dialog (specs 42–43). */
+export type ExportTarget = 'file' | 'clipboard' | 'link' | 'quick'
 
 export const RESOLUTIONS = [480, 720, 1080, 1440, 2160] as const
 export type ExportHeight = (typeof RESOLUTIONS)[number]

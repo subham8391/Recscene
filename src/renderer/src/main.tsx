@@ -6,6 +6,7 @@ import { CameraPreview } from './picker/CameraPreview'
 import { Picker } from './picker/Picker'
 import { Widget } from './picker/Widget'
 import { Settings } from './settings/Settings'
+import { QuickExport } from './quickexport/QuickExport'
 import './styles/tokens.css'
 import './styles/app.css'
 import './styles/picker.css'
@@ -30,4 +31,4 @@ if (route === 'editor' || route === 'settings') {
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => void window.recscene.prefs.get().then((raw) => apply(raw['appearance'])))
 }
 
-createRoot(root).render(<StrictMode>{route === 'picker' ? <Picker /> : route === 'widget' ? <Widget /> : route === 'notes' ? <Notes /> : route === 'campreview' ? <CameraPreview /> : route === 'settings' ? <Settings /> : <App />}</StrictMode>)
+createRoot(root).render(<StrictMode>{route === 'picker' ? <Picker /> : route === 'widget' ? <Widget /> : route === 'notes' ? <Notes /> : route === 'campreview' ? <CameraPreview /> : route === 'settings' ? <Settings /> : route === 'quickexport' ? <QuickExport /> : <App />}</StrictMode>)

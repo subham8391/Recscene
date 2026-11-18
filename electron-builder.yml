@@ -17,6 +17,11 @@ extraResources:
     to: backgrounds
   - from: resources/music
     to: music
+fileAssociations:
+  - ext: recscene
+    name: Recscene Project
+    role: Editor
+    isPackage: true
 mac:
   category: public.app-category.video
   target:

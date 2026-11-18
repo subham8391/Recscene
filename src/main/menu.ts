@@ -110,7 +110,13 @@ export function installMenu(actions: MenuActions): void {
     },
     {
       label: 'Export',
-      submenu: [{ label: 'Export Video…', accelerator: 'CommandOrControl+E', click: send('export') }, { label: 'Export Current Frame as Image…', click: send('exportFrame') }]
+      submenu: [
+        { label: 'Export Video…', accelerator: 'CommandOrControl+E', click: send('export') },
+        { label: 'Export Current Frame as Image…', click: send('exportFrame') },
+        { type: 'separator' },
+        { label: 'Copy and Zip Project', click: send('copyZipProject') },
+        { label: 'Extract Raw Recording Files…', click: send('extractRawFiles') }
+      ]
     },
     { role: 'windowMenu' },
     { role: 'help', submenu: [{ label: 'Shortcuts Guide', accelerator: 'CommandOrControl+/', click: send('shortcutsGuide') }, { label: 'Recscene Website', click: () => void shell.openExternal('https://recscene.app') }] }

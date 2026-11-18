@@ -15,6 +15,7 @@ import { MusicService } from './music'
 import { CaptionsService } from './captions'
 import { PresetsService } from './presets'
 import { SettingsService } from './settings'
+import { QuickExport } from './quickExport'
 import { Widget } from './widget'
 import { CameraPreview } from './cameraPreview'
 import { loadRoute, preloadPath } from './windows'
@@ -40,6 +41,8 @@ let music: MusicService | null = null
 let captions: CaptionsService | null = null
 let presets: PresetsService | null = null
 let settings: SettingsService | null = null
+let quickExport: QuickExport | null = null
+let recordedDisplayId = 0
 
 registerMediaScheme()
 let stopping: Promise<void> | null = null
@@ -87,6 +90,11 @@ async function stopRecording(reason?: string): Promise<void> {
       cameraPreview?.hide()
       picker?.close()
       const result: RecordingResult = await recording.stop()
+      // Spec 41: the quick export widget (42–47) or the editor.
+      if (prefsStore?.get('showQuickExportWidget') !== false && !reason) {
+        quickExport?.show(result, recordedDisplayId)
+        return
+      }
       const window = showMainWindow()
       window.webContents.send('recording:finished', result)
       if (reason) window.webContents.send('app:notice', reason)
@@ -181,6 +189,7 @@ void app.whenReady().then(() => {
   recording.on('started', (options: StartOptions) => {
     const t = options.target
     const displayId = t.kind === 'display' ? t.id : t.kind === 'area' ? t.displayId : screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).id
+    recordedDisplayId = displayId
     widget?.show(displayId)
     const cameraName = recording?.cameraName
     if (cameraName && prefs.get('hideCameraPreview') !== true) cameraPreview?.show(displayId, { cameraName, previewType: prefs.get('webcamPreviewType') === 'full-frame' ? 'full-frame' : 'square' })
@@ -200,6 +209,10 @@ void app.whenReady().then(() => {
   presets = new PresetsService(prefs)
   recording.configSeed = () => presets!.seed()
   projects.onSaved = (p) => presets?.rememberLast(p.config)
+  quickExport = new QuickExport(prefs, projects, {
+    openInEditor: (result) => showResult(result),
+    trash: (dir) => library!.trash(dir)
+  })
   settings = new SettingsService(prefs, {
     recording,
     globalHandlers: { 'global:record': onRecordShortcut, 'global:flag': optionalShortcuts()[0]!.handler, 'global:prompter': optionalShortcuts()[1]!.handler },
@@ -227,11 +240,20 @@ void app.whenReady().then(() => {
     })
   })
   // Spec 40 on launch: the projects home shows unfinished recordings in its banner; File › Recover asks with a dialog.
+  // Development aid: RECSCENE_QUICK_EXPORT=<project dir> shows the quick export widget for that project.
+  const quickDir = process.env['RECSCENE_QUICK_EXPORT']
+  if (!app.isPackaged && quickDir) setTimeout(() => quickExport?.show({ projectDir: quickDir, projectFile: join(quickDir, 'project.json'), durationMs: 0, frames: 0, width: 0, height: 0, clicks: 0, keys: 0, cursorSamples: 0 }, screen.getPrimaryDisplay().id), 800)
   // Development aid: RECSCENE_OPEN_PICKER=1 opens the picker as soon as the app is ready.
   if (!app.isPackaged && process.env['RECSCENE_OPEN_PICKER']) setTimeout(() => picker?.open(), 800)
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) showMainWindow()
   })
+})
+
+// Spec 250: a .recscene bundle opened from Finder or dropped on the Dock icon.
+app.on('open-file', (event, path) => {
+  event.preventDefault()
+  void app.whenReady().then(() => projects?.openPath(path).then(() => refreshMenu()).catch((error: unknown) => showMainWindow().webContents.send('app:notice', error instanceof Error ? error.message : String(error))))
 })
 
 app.on('will-quit', () => {
