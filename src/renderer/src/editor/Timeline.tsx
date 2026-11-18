@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Icon } from './railIcons'
 import { clipOutputMs, outputOffsets, sourceToOutput, trimClip, trimmedMs, type Clip } from '@core/editor/clips'
 import { speedLabel } from '@core/editor/playback'
 import { panView, rulerTicks, sliderToZoom, timeAtX, visibleLabel, xAtTime, zoomToSlider, zoomView, type TimelineView } from '@core/editor/timelineView'
@@ -83,11 +84,13 @@ interface Props {
   alwaysShowScrollbar: boolean
   audioScrubber: boolean
   onToggleAudioScrubber: () => void
+  /** Toolbar add buttons run editor actions at the playhead (Main board). */
+  onAction: (id: string) => void
 }
 
 const TRACKS: { id: TrackId; name: string; color: string; key: string; forced?: boolean }[] = [
   { id: 'zooms', name: 'Zooms', color: 'var(--zoom)', key: '1', forced: true },
-  { id: 'layouts', name: 'Camera Layouts', color: 'var(--layout)', key: '2' },
+  { id: 'layouts', name: 'Layouts', color: 'var(--layout)', key: '2' },
   { id: 'shortcuts', name: 'Shortcuts', color: 'var(--shortcut)', key: '3' },
   { id: 'masks', name: 'Masks', color: 'var(--mask)', key: '4' },
   { id: 'captions', name: 'Captions', color: 'var(--caption)', key: '5' },
@@ -96,7 +99,7 @@ const TRACKS: { id: TrackId; name: string; color: string; key: string; forced?: 
 
 /** The timeline (specs 50–51, 58–62, 80–87): toolbar, ruler, clips with trim handles, tracks, waveform, playhead. */
 export function Timeline(props: Props): React.JSX.Element {
-  const { project, clips, sourceDurationMs, markers, durationMs, timeMs, view, setView, visible, toggleTrack, onSeek, onPreview, selectedClipId, onSelectClip, onTrimPreview, onTrimCommit, onRemoveTrim, onJoin, selectedZoomId, onSelectZoom, onAddZoomAt, onZoomPreview, onZoomCommit, hasCamera, selectedLayoutId, onSelectLayout, onAddLayoutAt, onLayoutPreview, onLayoutCommit, selectedMaskId, onSelectMask, onAddMaskAt, onMaskPreview, onMaskCommit, onHideShortcut, onHideShortcutLabel, onHideAllShortcuts, onSeekSource, selectedVoiceOverId, onSelectVoiceOver, onAddVoiceOverAt, onVoiceOverPreview, onVoiceOverCommit, onRemoveVoiceOver, onRemoveAllVoiceOvers, micUrl, showWaveform, smoothWaveform, alwaysShowScrollbar, audioScrubber, onToggleAudioScrubber } = props
+  const { project, clips, sourceDurationMs, markers, durationMs, timeMs, view, setView, visible, toggleTrack, onSeek, onPreview, selectedClipId, onSelectClip, onTrimPreview, onTrimCommit, onRemoveTrim, onJoin, selectedZoomId, onSelectZoom, onAddZoomAt, onZoomPreview, onZoomCommit, hasCamera, selectedLayoutId, onSelectLayout, onAddLayoutAt, onLayoutPreview, onLayoutCommit, selectedMaskId, onSelectMask, onAddMaskAt, onMaskPreview, onMaskCommit, onHideShortcut, onHideShortcutLabel, onHideAllShortcuts, onSeekSource, selectedVoiceOverId, onSelectVoiceOver, onAddVoiceOverAt, onVoiceOverPreview, onVoiceOverCommit, onRemoveVoiceOver, onRemoveAllVoiceOvers, micUrl, showWaveform, smoothWaveform, alwaysShowScrollbar, audioScrubber, onToggleAudioScrubber, onAction } = props
   const zoomDrag = useRef<{ id: string; mode: 'move' | 'start' | 'end'; startX: number; origin: ZoomRange[]; moved: boolean } | null>(null)
   const layoutDrag = useRef<{ id: string; mode: 'move' | 'start' | 'end'; startX: number; origin: CameraLayout[]; moved: boolean } | null>(null)
   const maskDrag = useRef<{ id: string; mode: 'move' | 'start' | 'end'; startX: number; origin: Mask[]; moved: boolean } | null>(null)
@@ -285,47 +288,7 @@ export function Timeline(props: Props): React.JSX.Element {
   const rows = TRACKS.filter((t) => t.forced || visible[t.id])
   const atOutput = (sourceMs: number): number | null => sourceToOutput(clips, sourceMs)
 
-  return (
-    <section aria-label="Timeline" className={`tl${alwaysShowScrollbar ? ' tl--scrollbar' : ''}`}>
-      <div className="tl__bar">
-        <div className="menu-anchor">
-          <button type="button" className="btn btn--ghost" aria-haspopup="listbox" aria-expanded={tracksOpen} title="Visible timeline tracks" onClick={() => setTracksOpen((o) => !o)}>
-            {visibleCount} visible timeline {visibleCount === 1 ? 'track' : 'tracks'} ▾
-          </button>
-          {tracksOpen && (
-            <div role="listbox" className="menu tl__tracksmenu" aria-label="Visible timeline tracks">
-              {TRACKS.map((t) => (
-                <label key={t.id} className="menu__check" title={`${t.name} track`}>
-                  <input type="checkbox" checked={t.forced || visible[t.id]} disabled={t.forced} onChange={() => toggleTrack(t.id)} />
-                  <span className="tl__dot" style={{ background: t.color }} />
-                  {t.name}
-                  <kbd>{t.key}</kbd>
-                </label>
-              ))}
-            </div>
-          )}
-        </div>
-        <button type="button" className={`btn btn--ghost${audioScrubber ? ' btn--on' : ''}`} aria-pressed={audioScrubber} title={audioScrubber ? 'Disable audio scrubber' : 'Enable audio scrubber (experimental)'} onClick={onToggleAudioScrubber}>♪ scrub</button>
-        <span className="muted tl__hint">C splits at the playhead · drag the yellow handles to trim · ⌫ removes the selected clip</span>
-        <span className="tl__spacer" />
-        <label className="tl__zoom" title={`Timeline zoom — ${visibleLabel(view)}`}>
-          <span className="muted">Timeline zoom</span>
-          <input type="range" min={0} max={100} value={zoomToSlider(view, durationMs)} onChange={(e) => setView(sliderToZoom(Number(e.target.value), view, durationMs, timeMs))} />
-        </label>
-      </div>
-      <div className="tl__body">
-        <div className="tl__names">
-          <div className="tl__ruler-pad" />
-          <div className="tl__name"><span className="tl__dot" style={{ background: 'var(--clip)' }} />Clips</div>
-          {rows.map((t) => <div key={t.id} className="tl__name"><span className="tl__dot" style={{ background: t.color }} />{t.name}</div>)}
-          {wantBars && <div className="tl__name"><span className="tl__dot" style={{ background: 'var(--text3)' }} />Audio</div>}
-        </div>
-        <div ref={lane} className="tl__lane" onWheel={onWheel} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={() => { onMouseUp(); onPreview(null) }} onClick={(e) => { if (!drag.current) { onSeek(timeFromEvent(e)); if ((e.target as HTMLElement).classList.contains('tl__row') || (e.target as HTMLElement).classList.contains('tl__ruler')) onSelectClip(null) } }}>
-          <div className="tl__ruler">
-            {ticks.map((t) => <span key={t.timeMs} className="tl__tick" style={{ left: pct(t.timeMs) }}>{t.label}</span>)}
-            {markers.map((m, i) => { const o = atOutput(m.timeMs); return o === null ? null : <span key={`m${i}`} className="tl__marker" style={{ left: pct(o) }} title={`Marker ${formatClock(m.timeMs)}${m.label ? ` · ${m.label}` : ''}`} /> })}
-            {project.meta.recordingFlags.map((f, i) => { const o = atOutput(f); return o === null ? null : <span key={`f${i}`} className="tl__flag" style={{ left: pct(o) }} title={`Flag ${formatClock(f)}`}>⚑</span> })}
-          </div>
+  const clipsRow = (
           <div className="tl__row tl__row--clips">
             {clips.map((c, i) => {
               const start = offsets[i] ?? 0
@@ -352,9 +315,57 @@ export function Timeline(props: Props): React.JSX.Element {
               )
             })}
           </div>
+  )
+
+  return (
+    <section aria-label="Timeline" className={`tl${alwaysShowScrollbar ? ' tl--scrollbar' : ''}`}>
+      <div className="tl__bar">
+        <button type="button" className="tl__add" style={{ color: 'var(--zoom)' }} title="Add a zoom at the playhead" onClick={() => onAction('addZoom')}><span>+</span>Zoom</button>
+        {hasCamera && <button type="button" className="tl__add" style={{ color: 'var(--layout)' }} title="Add a camera layout at the playhead" onClick={() => onAction('addLayout')}><span>+</span>Layout</button>}
+        <button type="button" className="tl__add" style={{ color: 'var(--mask)' }} title="Add a sensitive data mask at the playhead" onClick={() => onAction('addSensitiveDataMask')}><span>+</span>Mask</button>
+        <span className="tl__spacer" />
+        <div className="menu-anchor">
+          <button type="button" className={`tl__tool${tracksOpen ? ' tl__tool--on' : ''}`} aria-haspopup="listbox" aria-expanded={tracksOpen} aria-label="Visible timeline tracks" title={`${visibleCount} visible timeline ${visibleCount === 1 ? 'track' : 'tracks'}`} onClick={() => setTracksOpen((o) => !o)}><Icon name="tracks" size={15} /></button>
+          {tracksOpen && (
+            <div role="listbox" className="menu tl__tracksmenu" aria-label="Visible timeline tracks">
+              {TRACKS.map((t) => (
+                <label key={t.id} className="menu__check" title={`${t.name} track`}>
+                  <input type="checkbox" checked={t.forced || visible[t.id]} disabled={t.forced} onChange={() => toggleTrack(t.id)} />
+                  <span className="tl__dot" style={{ background: t.color }} />
+                  {t.name}
+                  <kbd>{t.key}</kbd>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+        <button type="button" className={`tl__tool${audioScrubber ? ' tl__tool--on' : ''}`} aria-pressed={audioScrubber} aria-label="Audio scrubber" title={audioScrubber ? 'Disable audio scrubber' : 'Enable audio scrubber (experimental)'} onClick={onToggleAudioScrubber}><Icon name="scrub" size={15} /></button>
+        <label className="tl__zoom" title={`Timeline zoom — ${visibleLabel(view)}`}>
+          <span className="muted">Timeline zoom</span>
+          <input type="range" min={0} max={100} value={zoomToSlider(view, durationMs)} onChange={(e) => setView(sliderToZoom(Number(e.target.value), view, durationMs, timeMs))} />
+        </label>
+      </div>
+      <div className="tl__body">
+        <div className="tl__names">
+          <div className="tl__ruler-pad" />
           {rows.map((t) => (
-            <div key={t.id} className="tl__row" data-track={t.id} title={t.id === 'zooms' ? 'Click or drag to add zoom on cursor' : t.id === 'layouts' ? (hasCamera ? 'Click to create a new camera layout' : 'No camera recorded') : t.id === 'masks' ? 'Click or drag to create a new mask' : t.id === 'voiceovers' ? VOICEOVER_EMPTY_TRACK : undefined} onClick={(e) => { if (e.target !== e.currentTarget) return; if (t.id === 'zooms') { e.stopPropagation(); onAddZoomAt(outputToSource(clips, timeFromEvent(e))) } else if (t.id === 'layouts' && hasCamera) { e.stopPropagation(); onAddLayoutAt(outputToSource(clips, timeFromEvent(e))) } else if (t.id === 'masks') { e.stopPropagation(); onAddMaskAt(outputToSource(clips, timeFromEvent(e))) } else if (t.id === 'voiceovers') { e.stopPropagation(); onAddVoiceOverAt(outputToSource(clips, timeFromEvent(e))) } }}>
-              {t.id === 'voiceovers' && project.voiceOvers.length === 0 && <span className="tl__hint">{VOICEOVER_EMPTY_TRACK}</span>}
+            <Fragment key={t.id}>
+              <div className="tl__name"><span className="tl__dot" style={{ background: t.color }} />{t.name}</div>
+              {t.id === 'zooms' && <div className="tl__name" title="C splits at the playhead · drag the yellow handles to trim · ⌫ removes the selected clip"><span className="tl__dot" style={{ background: 'var(--clip)' }} />Clips</div>}
+            </Fragment>
+          ))}
+          {wantBars && <div className="tl__name"><span className="tl__dot" style={{ background: 'var(--text3)' }} />Audio</div>}
+        </div>
+        <div ref={lane} className="tl__lane" onWheel={onWheel} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={() => { onMouseUp(); onPreview(null) }} onClick={(e) => { if (!drag.current) { onSeek(timeFromEvent(e)); if ((e.target as HTMLElement).classList.contains('tl__row') || (e.target as HTMLElement).classList.contains('tl__ruler')) onSelectClip(null) } }}>
+          <div className="tl__ruler">
+            {ticks.map((t) => <span key={t.timeMs} className="tl__tick" style={{ left: pct(t.timeMs) }}>{t.label}</span>)}
+            {markers.map((m, i) => { const o = atOutput(m.timeMs); return o === null ? null : <span key={`m${i}`} className="tl__marker" style={{ left: pct(o) }} title={`Marker ${formatClock(m.timeMs)}${m.label ? ` · ${m.label}` : ''}`} /> })}
+            {project.meta.recordingFlags.map((f, i) => { const o = atOutput(f); return o === null ? null : <span key={`f${i}`} className="tl__flag" style={{ left: pct(o) }} title={`Flag ${formatClock(f)}`}>⚑</span> })}
+          </div>
+          {rows.map((t) => (
+            <Fragment key={t.id}>
+            <div className="tl__row" data-track={t.id} title={t.id === 'zooms' ? 'Click or drag to add zoom on cursor' : t.id === 'layouts' ? (hasCamera ? 'Click to create a new camera layout' : 'No camera recorded') : t.id === 'masks' ? 'Click or drag to create a new mask' : t.id === 'voiceovers' ? VOICEOVER_EMPTY_TRACK : undefined} onClick={(e) => { if (e.target !== e.currentTarget) return; if (t.id === 'zooms') { e.stopPropagation(); onAddZoomAt(outputToSource(clips, timeFromEvent(e))) } else if (t.id === 'layouts' && hasCamera) { e.stopPropagation(); onAddLayoutAt(outputToSource(clips, timeFromEvent(e))) } else if (t.id === 'masks') { e.stopPropagation(); onAddMaskAt(outputToSource(clips, timeFromEvent(e))) } else if (t.id === 'voiceovers') { e.stopPropagation(); onAddVoiceOverAt(outputToSource(clips, timeFromEvent(e))) } }}>
+              {t.id === 'voiceovers' && project.voiceOvers.length === 0 && <span className="tl__empty">{VOICEOVER_EMPTY_TRACK}</span>}
               {t.id === 'voiceovers' && project.voiceOvers.map((v, i) => {
                 const a = atOutput(v.sourceStartMs)
                 const b = atOutput(v.sourceStartMs + v.voiceoverDurationMs) ?? (a === null ? null : a + v.voiceoverDurationMs)
@@ -429,6 +440,8 @@ export function Timeline(props: Props): React.JSX.Element {
                 )
               })}
             </div>
+            {t.id === 'zooms' && clipsRow}
+            </Fragment>
           ))}
           {wantBars && (
             <div className="tl__row tl__wave">

@@ -49,7 +49,7 @@ export function BackgroundPanel({ project, assetsUrl, backgroundImageUrl, onConf
   return (
     <div className="panel-body" onPaste={(e) => { const item = [...e.clipboardData.items].find((i) => i.type.startsWith('image/')); const file = item?.getAsFile(); if (file) void file.arrayBuffer().then(onPasteImage) }}>
       <section className="sec">
-        <h3>Background</h3>
+        <h3>Fill</h3>
         <div className="seg" role="group" aria-label="Background type">
           {(['system', 'gradient', 'color', 'image'] as const).map((t) => (
             <button key={t} type="button" aria-pressed={c.backgroundType === t} onClick={() => onConfig({ backgroundType: t })}>{t === 'system' ? 'Wallpaper' : t === 'gradient' ? 'Gradient' : t === 'color' ? 'Colour' : 'Image'}</button>

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { ACTIONS, formatShortcut } from '@core/editor/actions'
 import { acceleratorFromEvent, EDITOR_SHORTCUT_IDS, effectiveGlobalShortcut, GLOBAL_SHORTCUTS, isValidEmail, RESET_CONFIRM, SETTINGS_TABS, shortcutConflict, TAB_LABELS, withOverrides, type AppSettings, type SettingsTab } from '@core/settings'
 import { AccountTab } from './AccountTab'
+/** Section colours from the Settings board. */
+const TAB_COLORS: Record<SettingsTab, string> = { general: 'var(--text3)', recording: 'var(--danger)', editing: 'var(--accent)', shortcuts: 'var(--clip)', advanced: 'var(--text3)', experimental: 'var(--caption)', account: 'var(--zoom)' }
 type Snap = Awaited<ReturnType<typeof window.recscene.settings.get>>
 
 function Row({ label, sub, children }: { label: string; sub?: string; children: React.ReactNode }): React.JSX.Element {
@@ -102,9 +104,10 @@ export function Settings(): React.JSX.Element {
 
   return (
     <div className="settings">
-      <header className="titlebar"><span className="titlebar__name">Settings</span><span className="titlebar__version">v{s.appVersion}</span></header>
       <nav className="settings__tabs" aria-label="Settings sections">
-        {SETTINGS_TABS.map((t) => <button key={t} type="button" className={`settings__tab${tab === t ? ' settings__tab--on' : ''}`} aria-current={tab === t} onClick={() => setTab(t)}>{TAB_LABELS[t]}</button>)}
+        <div className="settings__drag" aria-hidden="true" />
+        {SETTINGS_TABS.map((t) => <button key={t} type="button" className={`settings__tab${tab === t ? ' settings__tab--on' : ''}`} aria-current={tab === t} onClick={() => setTab(t)}><span className="settings__dot" style={{ background: TAB_COLORS[t] }} />{TAB_LABELS[t]}</button>)}
+        <span className="settings__foot">Recscene v{s.appVersion}</span>
       </nav>
       <main className="settings__main">
         <h2>{TAB_LABELS[tab]}</h2>

@@ -3,14 +3,8 @@
   height: 100%;
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
-  grid-template-rows: var(--titlebar-h) minmax(0, 1fr);
-  grid-template-areas:
-    'title title'
-    'nav main';
-}
-
-.home .titlebar {
-  grid-area: title;
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: 'nav main';
 }
 
 .home__nav {
@@ -18,10 +12,33 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 14px 10px;
+  position: relative;
+  padding: 44px 10px 14px;
   border-right: 1px solid var(--line);
   background: var(--panel);
   min-height: 0;
+}
+
+/* The traffic lights sit over this strip, which drags the window (Projects board). */
+.home__drag {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 40px;
+  -webkit-app-region: drag;
+}
+
+.home__navlabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.home__version {
+  padding: 10px 12px 0;
+  font-size: 11px;
+  color: var(--text3);
 }
 
 .home__navitem {
