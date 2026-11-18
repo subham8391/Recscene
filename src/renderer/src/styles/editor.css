@@ -2739,3 +2739,31 @@ input[type='color'] {
   pointer-events: none;
   white-space: nowrap;
 }
+
+/* Timeline toolbar right group: label, slider and icon buttons share one centre line */
+.tl__zoom {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+}
+
+.tl__zoom .muted {
+  font-size: 11px;
+  color: var(--text3);
+  line-height: 1;
+}
+
+.tl__zoom input {
+  margin: 0;
+  height: 16px;
+  vertical-align: middle;
+}
+
+.tl__bar {
+  align-items: center;
+}
+
+.tl__tool {
+  flex: none;
+}
