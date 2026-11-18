@@ -1,3 +1,4 @@
+import { Icon } from './railIcons'
 import { useEffect, useState } from 'react'
 import { presetSummary, REMOVE_CONFIRM, type Preset } from '@core/editor/presets'
 import type { ProjectConfig } from '@core/project'
@@ -28,6 +29,13 @@ export function PresetsPopover({ config, currentProjectDir, onApply, onNotice, o
     void window.recscene.presets.folder().then(setFolder)
   }
   useEffect(reload, [])
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [onClose])
 
   const fail = (err: unknown): void => onNotice(err instanceof Error ? err.message.replace(/^Error invoking remote method '[^']*': (Error: )?/, '') : String(err))
 
@@ -54,7 +62,7 @@ export function PresetsPopover({ config, currentProjectDir, onApply, onNotice, o
   return (
     <div className="cmd__backdrop" onMouseDown={onClose}>
       <div className="presets" role="dialog" aria-label="Presets" onMouseDown={(e) => e.stopPropagation()}>
-        <div className="export__head"><h2>Presets</h2><span className="muted">{presets.length}</span><span className="tl__spacer" /><button type="button" className="btn btn--ghost btn--sm" onClick={onClose}>Close <kbd>⎋</kbd></button></div>
+        <div className="export__head"><h2>Presets</h2><span className="muted">{presets.length}</span><span className="tl__spacer" /><button type="button" className="export__close" aria-label="Close" title="Close ⎋" onClick={onClose}><Icon name="close" size={14} /></button></div>
         <p className="note">A preset stores everything in the inspector panels: zoom, cursor, camera layout, background, padding, shadow, captions style and audio. It never stores clips, masks or the recording itself.</p>
         {multi ? (
           <div className="sec">

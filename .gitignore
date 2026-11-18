@@ -31,3 +31,6 @@
 # local supabase stack state
 /supabase/.branches
 /supabase/.temp
+
+# design audit output
+/.audit

@@ -2389,3 +2389,353 @@ input[type='color'] {
   font-weight: 400;
   color: var(--text3);
 }
+
+/* Audit pass: rail fits ten sections, back button is an icon, timeline trim pills stay in their row, round playhead knob */
+.rail {
+  overflow: hidden;
+}
+
+.rail__item {
+  flex: 1 1 54px;
+  min-height: 0;
+  max-height: 54px;
+  padding: 0;
+  letter-spacing: -0.2px;
+}
+
+.titlebar__back {
+  width: 30px;
+  padding: 0;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.btn kbd,
+.btn--ghost kbd,
+.btn--accent kbd {
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.sec input[type='range'],
+.card input[type='range'],
+.toggle__extra {
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  accent-color: var(--accent);
+}
+
+.toggle__extra {
+  margin-top: -4px;
+}
+
+.transport__total {
+  color: var(--text3);
+  font-variant-numeric: tabular-nums;
+}
+
+.tl__bubble {
+  top: 2px;
+  height: 18px;
+  border: 1px solid var(--clip);
+  background: var(--panel);
+  color: var(--clip);
+  z-index: 2;
+}
+
+.tl__playhead::before {
+  left: -6px;
+  top: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  transform: none;
+}
+
+.keylist__time {
+  min-height: 20px;
+}
+
+.swatches--8 {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.swatches--8 .swatch {
+  aspect-ratio: 1;
+  width: auto;
+  height: auto;
+  border-radius: 6px;
+  border: 2px solid transparent;
+}
+
+.swatches--8 .swatch--on {
+  border-color: var(--accent);
+}
+
+.disclosure {
+  border-radius: 10px;
+  background: var(--panel2);
+  padding: 0 12px;
+}
+
+.disclosure summary {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  cursor: default;
+  list-style: none;
+}
+
+.disclosure summary::before {
+  content: '▸';
+  color: var(--text3);
+  font-size: 11px;
+}
+
+.disclosure[open] summary::before {
+  content: '▾';
+}
+
+.disclosure > :not(summary) {
+  margin-bottom: 12px;
+}
+
+.grid2--fields {
+  align-items: end;
+}
+
+.field--inline select.input {
+  width: 100%;
+}
+
+.disclosure {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.disclosure > :not(summary) {
+  margin: 0 0 4px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* Camera board: four layout cards in one row, position grid beside the size sliders */
+.laypick {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.laypick button {
+  height: 68px;
+  padding: 6px 4px;
+  border: 2px solid var(--line2);
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  gap: 8px;
+}
+
+.laypick__thumb {
+  width: 40px;
+  height: 26px;
+  background: var(--line);
+}
+
+.laypick__thumb span {
+  background: var(--layout);
+}
+
+.laypick button[aria-pressed='true'] {
+  border-color: var(--accent);
+}
+
+.camlayout {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px 16px;
+  align-items: start;
+}
+
+.camlayout__pos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.camlayout__sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.camlayout .posgrid {
+  grid-template-columns: repeat(3, 28px);
+  gap: 4px;
+}
+
+.camlayout .posgrid button {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+/* Masks board: X Y W H in one row, labels above the fields */
+.fields4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.field--stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text3);
+  min-width: 0;
+}
+
+.field--stack .input {
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Audio board: flatter mode cards */
+.mode {
+  padding: 8px 12px;
+  gap: 2px;
+  border-width: 1.5px;
+}
+
+.modes {
+  gap: 6px;
+}
+
+.chip--count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 18px;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: var(--accentSoft);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  vertical-align: 1px;
+}
+
+.field--stack--wide {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+}
+
+.field--stack--wide .input {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.grid2 .btn {
+  padding: 0 8px;
+  font-size: 12px;
+  min-width: 0;
+}
+
+.card .hd {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+}
+
+.card .hd > span:last-child {
+  font-weight: 400;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Shortcuts board: rows divided by hairlines */
+.keylist li + li {
+  border-top: 1px solid var(--line);
+}
+
+.keylist li {
+  min-height: 36px;
+}
+
+/* Trim and join pills only when the clip is hovered or selected, so neighbouring labels stay readable */
+.tl__bubble {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s;
+}
+
+.tl__clip:hover .tl__bubble,
+.tl__clip--on .tl__bubble {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Mask outlines only while masks are being edited */
+.masks__ghost {
+  display: none;
+}
+
+.app--masks .masks__ghost {
+  display: block;
+}
+
+.inspector__head .muted {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Main board: the default camera layout runs under the Layouts track as a faint band */
+.tl__band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 3px;
+  height: 16px;
+  border-radius: 4px;
+  background: var(--layout);
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.tl__band__label {
+  position: absolute;
+  left: 6px;
+  top: 3px;
+  line-height: 16px;
+  font-size: 10px;
+  color: var(--text2);
+  pointer-events: none;
+  white-space: nowrap;
+}

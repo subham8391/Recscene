@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ASPECT_OPTIONS } from '@core/editor/aspect'
 import { applyInset, GRADIENT_PRESETS, gradientCss, insetValue, isHexColor, randomWallpaper, setDirectional, toggleFavourite } from '@core/editor/background'
-import { SPRING_FOCUSED, SPRING_SMOOTH } from '@core/editor/camera'
 import { WALLPAPER_COLLECTIONS, WALLPAPERS } from '@core/editor/wallpapers'
 import type { Project } from '@core/project'
 import { frameLabel, framesFor, NO_MOCKUPS, type FrameFilter } from '@core/editor/deviceFrames'
@@ -31,10 +29,8 @@ export function BackgroundPanel({ project, assetsUrl, backgroundImageUrl, onConf
   const [collection, setCollection] = useState<string>(c.backgroundSystemName.split('/')[0] ?? 'macOS')
   const [favourites, setFavourites] = useState<string[]>([])
   const [hex, setHex] = useState(c.backgroundColor)
-  const [shadowOpen, setShadowOpen] = useState(false)
   const wallpaperUrl = (file: string): string => `${assetsUrl}/backgrounds/${file}.svg`
   const inset = insetValue(c)
-  const screenPreset = c.screenMovementSpring.stiffness === SPRING_SMOOTH.stiffness ? 'smooth' : c.screenMovementSpring.stiffness === SPRING_FOCUSED.stiffness ? 'focused' : null
 
   useEffect(() => {
     void window.recscene.prefs.get().then((raw) => setFavourites(Array.isArray(raw['favouriteBackgrounds']) ? (raw['favouriteBackgrounds'] as string[]) : []))
@@ -49,7 +45,6 @@ export function BackgroundPanel({ project, assetsUrl, backgroundImageUrl, onConf
   return (
     <div className="panel-body" onPaste={(e) => { const item = [...e.clipboardData.items].find((i) => i.type.startsWith('image/')); const file = item?.getAsFile(); if (file) void file.arrayBuffer().then(onPasteImage) }}>
       <section className="sec">
-        <h3>Fill</h3>
         <div className="seg" role="group" aria-label="Background type">
           {(['system', 'gradient', 'color', 'image'] as const).map((t) => (
             <button key={t} type="button" aria-pressed={c.backgroundType === t} onClick={() => onConfig({ backgroundType: t })}>{t === 'system' ? 'Wallpaper' : t === 'gradient' ? 'Gradient' : t === 'color' ? 'Colour' : 'Image'}</button>
@@ -126,29 +121,19 @@ export function BackgroundPanel({ project, assetsUrl, backgroundImageUrl, onConf
       )}
 
       <section className="sec">
-        <Slider id="bsi" label="Shadow" value={c.shadowIntensity} min={0} max={1} step={0.01} format={(v) => `${Math.round(v * 100)}%`} onChange={(v) => onConfig({ shadowIntensity: v })} />
-        <button type="button" className="btn btn--ghost btn--sm" onClick={() => setShadowOpen((o) => !o)}>{shadowOpen ? 'Hide' : 'Advanced shadow settings'}</button>
-        {shadowOpen && (
-          <>
-            <Slider id="bsa" label="Angle" value={c.shadowAngle} min={0} max={180} step={1} format={(v) => `${v}°`} onChange={(v) => onConfig({ shadowAngle: v })} />
-            <Slider id="bsd" label="Distance" value={c.shadowDistance} min={0} max={100} step={1} format={(v) => `${v} px`} onChange={(v) => onConfig({ shadowDistance: v })} />
-            <Slider id="bsb" label="Blur" value={c.shadowBlur} min={0} max={100} step={1} format={(v) => `${v} px`} onChange={(v) => onConfig({ shadowBlur: v })} />
-            <label className="toggle"><span><b>Directional shadow</b><small>Casts along the angle and distance as a hard offset.</small></span><input type="checkbox" checked={c.shadowIsDirectional} onChange={(e) => onConfig(setDirectional(c, e.target.checked))} /></label>
-          </>
-        )}
+        <h3>Shadow</h3>
+        <div className="grid2">
+          <Slider id="bsi" label="Intensity" value={c.shadowIntensity} min={0} max={1} step={0.01} format={(v) => `${Math.round(v * 100)}%`} onChange={(v) => onConfig({ shadowIntensity: v })} />
+          <Slider id="bsb" label="Blur" value={c.shadowBlur} min={0} max={100} step={1} format={String} onChange={(v) => onConfig({ shadowBlur: v })} />
+          <Slider id="bsd" label="Distance" value={c.shadowDistance} min={0} max={100} step={1} format={String} onChange={(v) => onConfig({ shadowDistance: v })} />
+          <Slider id="bsa" label="Angle" value={c.shadowAngle} min={0} max={180} step={1} format={(v) => `${v}°`} onChange={(v) => onConfig({ shadowAngle: v })} />
+        </div>
+        <label className="toggle"><span><b>Directional shadow</b><small>Casts along the angle and distance as a hard offset.</small></span><input type="checkbox" checked={c.shadowIsDirectional} onChange={(e) => onConfig(setDirectional(c, e.target.checked))} /></label>
       </section>
 
       <section className="sec">
-        <h3>Output aspect ratio</h3>
-        <select className="input" aria-label="Output aspect ratio" value={c.defaultOutputAspectRatio ?? 'auto'} onChange={(e) => onConfig({ defaultOutputAspectRatio: e.target.value === 'auto' ? null : e.target.value })}>
-          {ASPECT_OPTIONS.map((o) => <option key={o.label} value={o.value ?? 'auto'}>{o.label}</option>)}
-          <option value="3:4">Tall 3:4</option>
-        </select>
-        <label className="toggle"><span><b>Always keep zoomed in</b><small>Crops to the aspect ratio and follows the cursor.</small></span><input type="checkbox" checked={c.alwaysKeepZoomedIn} disabled={c.defaultOutputAspectRatio === null} onChange={(e) => onConfig({ alwaysKeepZoomedIn: e.target.checked })} /></label>
-      </section>
-
-      <section className="card">
-        <label className="toggle"><span><b>Wrap in device mockup</b><small>Wrap recording in device mockup.</small></span><input type="checkbox" checked={c.enableDeviceMockup} onChange={(e) => onConfig({ enableDeviceMockup: e.target.checked })} /></label>
+        <label className="toggle"><span><b>Always keep zoomed in</b><small>Crops to the aspect ratio and follows the cursor.</small></span><input type="checkbox" checked={c.alwaysKeepZoomedIn} disabled={c.defaultOutputAspectRatio === null} title={c.defaultOutputAspectRatio === null ? 'Pick an aspect ratio in the title bar first' : undefined} onChange={(e) => onConfig({ alwaysKeepZoomedIn: e.target.checked })} /></label>
+        <label className="toggle"><span><b>Wrap in device mockup</b><small>Pick a frame; stretch to fit, or show all frames even if they don't match.</small></span><input type="checkbox" checked={c.enableDeviceMockup} onChange={(e) => onConfig({ enableDeviceMockup: e.target.checked })} /></label>
         {c.enableDeviceMockup && (
           <>
             <div className="seg" role="group" aria-label="Device frames filter">
@@ -168,13 +153,6 @@ export function BackgroundPanel({ project, assetsUrl, backgroundImageUrl, onConf
         )}
       </section>
 
-      <section className="sec">
-        <h3>Screen animation style</h3>
-        <div className="seg" role="group" aria-label="Screen animation style">
-          <button type="button" aria-pressed={screenPreset === 'focused'} title="Animation stabilizes quickly making it easier to follow and read the content" onClick={() => onConfig({ screenMovementSpring: { ...SPRING_FOCUSED } })}>Focused</button>
-          <button type="button" aria-pressed={screenPreset === 'smooth'} title="Animation is more fluid. Great for more creative content not focused on reading" onClick={() => onConfig({ screenMovementSpring: { ...SPRING_SMOOTH } })}>Smooth</button>
-        </div>
-      </section>
     </div>
   )
 }

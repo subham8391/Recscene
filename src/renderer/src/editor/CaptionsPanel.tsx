@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { CAPTION_SIZE_MAX, CAPTION_SIZE_MIN, CAPTION_SIZE_PRESETS, EDIT_EMPTY, EDIT_HINT, ENGINE_NOTE, fillerRanges, languageName, longPauses, NO_MIC, REGENERATE_WARNING, transcriptSummary, wordIsCut, type CaptionConfig, type Transcript, type TranscriptWord } from '@core/editor/captions'
+import { agoLabel } from '@core/time'
+import { CAPTION_SIZE_MAX, CAPTION_SIZE_MIN, CAPTION_SIZE_PRESETS, EDIT_EMPTY, EDIT_HINT, ENGINE_NOTE, fillerRanges, languageName, longPauses, NO_MIC, wordIsCut, type CaptionConfig, type Transcript, type TranscriptWord } from '@core/editor/captions'
 import type { Clip } from '@core/editor/clips'
 import { formatTimecode } from '@core/time'
 
@@ -14,7 +15,7 @@ interface PanelProps {
 }
 
 /** The Captions inspector from the Captions board (specs 205–212). */
-export function CaptionsPanel({ config, transcript, cueCount, hasMic, generating, onConfig, onAction }: PanelProps): React.JSX.Element {
+export function CaptionsPanel({ config, transcript, hasMic, generating, onConfig, onAction }: PanelProps): React.JSX.Element {
   const [locales, setLocales] = useState<string[]>([])
   useEffect(() => {
     void window.recscene.captions.locales().then(setLocales)
@@ -22,7 +23,6 @@ export function CaptionsPanel({ config, transcript, cueCount, hasMic, generating
   const wordCount = transcript ? transcript.words.filter((w) => !w.hidden).length : 0
   return (
     <div className="panel-body">
-      <p className="note">{transcriptSummary(transcript, cueCount)}</p>
       <section className="sec">
         <h3>Transcript</h3>
         <div className="seg" role="group" aria-label="Engine">
@@ -30,10 +30,10 @@ export function CaptionsPanel({ config, transcript, cueCount, hasMic, generating
           <button type="button" aria-pressed={false} disabled title="Whisper models are not bundled">Local Whisper</button>
         </div>
         <p className="note">{ENGINE_NOTE}</p>
-        <label className="field--inline"><span>Spoken language</span>
+        <label className="field--stack field--stack--wide"><span>Spoken language</span>
           <select className="input" value={config.transcriptLanguage} onChange={(e) => onConfig({ transcriptLanguage: e.target.value })}>
             <option value="auto">Auto (system language)</option>
-            {locales.map((l) => <option key={l} value={l}>{languageName(l)} ({l.replace('_', '-')})</option>)}
+            {locales.filter((l) => !/^[a-z]{2,3}$/.test(languageName(l))).map((l) => <option key={l} value={l}>{languageName(l)} ({l.replace('_', '-')})</option>)}
           </select>
         </label>
         {!hasMic && <p className="note">{NO_MIC}. Captions need a microphone track.</p>}
@@ -42,10 +42,10 @@ export function CaptionsPanel({ config, transcript, cueCount, hasMic, generating
         ) : transcript ? (
           <>
             <div className="grid2">
-              <button type="button" className="btn btn--ghost" onClick={() => onAction('regenerateTranscript')}>Re-generate</button>
+              <button type="button" className="btn btn--accent" onClick={() => onAction('regenerateTranscript')}>Re-generate</button>
               <button type="button" className="btn btn--ghost" onClick={() => onAction('editTranscript')}>Edit transcript…</button>
             </div>
-            <p className="note">Generated {new Date(transcript.generatedAt).toLocaleTimeString()} · {wordCount} words · {languageName(transcript.language)}. {REGENERATE_WARNING}</p>
+            <p className="note">Generated {agoLabel(transcript.generatedAt)} · {wordCount} words · {languageName(transcript.language)}. Re-generating replaces your edits.</p>
           </>
         ) : (
           <button type="button" className="btn btn--accent" disabled={!hasMic} onClick={() => onAction('generateTranscript')}>Generate transcript</button>

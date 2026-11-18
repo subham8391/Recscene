@@ -4,7 +4,6 @@ import {
   cellPoint,
   ENABLE_CAMERA_QUESTION,
   LAYOUT_HELP,
-  LAYOUT_NAMES,
   NO_CAMERA_RECORDED,
   POSITION_LABELS,
   positionCell,
@@ -23,6 +22,8 @@ import { CAMERA_LOOKS, lookFilter, sharpenLabel } from '@core/editor/looks'
 import { clampSilenceMs, HIDE_SILENCE_DEFAULT_MS, HIDE_SILENCE_MAX_MS, HIDE_SILENCE_MIN_MS, NO_MIC_FOR_SILENCE, NO_SPEECH_FOUND } from '@core/editor/speech'
 
 const LAYOUT_TYPES: LayoutType[] = ['both', 'split', 'only-camera', 'only-screen']
+/** Card labels from the Camera board; the long names stay on the timeline and in tooltips. */
+const SHORT_LAYOUT_NAMES: Record<LayoutType, string> = { both: 'Overlay', split: 'Split', 'only-camera': 'Fullscreen', 'only-screen': 'Hidden' }
 
 function PositionGrid({ value, onChange }: { value: Point01; onChange: (p: Point01) => void }): React.JSX.Element {
   const cell = positionCell(value)
@@ -41,7 +42,7 @@ function LayoutPicker({ value, onChange, disabled }: { value: LayoutType; onChan
       {LAYOUT_TYPES.map((t) => (
         <button key={t} type="button" aria-pressed={value === t} title={LAYOUT_HELP[t]} disabled={disabled} onClick={() => onChange(t)}>
           <span className={`laypick__thumb laypick__thumb--${t}`}><span /></span>
-          {LAYOUT_NAMES[t]}
+          {SHORT_LAYOUT_NAMES[t]}
         </button>
       ))}
     </div>
@@ -95,10 +96,21 @@ export function CameraPanel({ config, hasCamera, hasMic, speechState, micMuted, 
       </section>
 
       {d.type === 'both' && (
-        <section className="sec">
-          <div className="hd hd--grid"><h3>Position</h3><PositionGrid value={d.cameraPositionPoint} onChange={(cameraPositionPoint) => setDefault({ cameraPositionPoint })} /></div>
-          <div className="hd"><h3>Size</h3><span>{Math.round(d.cameraSize * 100)}%</span></div>
-          <input type="range" min={CAMERA_SIZE_MIN} max={CAMERA_SIZE_MAX} step={0.01} value={d.cameraSize} aria-label="Camera size" onChange={(e) => setDefault({ cameraSize: Number(e.target.value) })} />
+        <section className="sec camlayout">
+          <div className="camlayout__pos">
+            <h3>Position</h3>
+            <PositionGrid value={d.cameraPositionPoint} onChange={(cameraPositionPoint) => setDefault({ cameraPositionPoint })} />
+          </div>
+          <div className="camlayout__sliders">
+            <div className="hd"><h3>Size</h3><span>{Math.round(d.cameraSize * 100)}%</span></div>
+            <input type="range" min={CAMERA_SIZE_MIN} max={CAMERA_SIZE_MAX} step={0.01} value={d.cameraSize} aria-label="Camera size" onChange={(e) => setDefault({ cameraSize: Number(e.target.value) })} />
+            <div className="hd"><h3>Roundness</h3><span>{Math.round(config.cameraRoundness * 100)}%</span></div>
+            <input type="range" min={0} max={ROUNDNESS_MAX} step={0.01} value={config.cameraRoundness} aria-label="Roundness" onChange={(e) => onConfig({ cameraRoundness: Number(e.target.value) })} />
+            <div className="seg" role="group" aria-label="Camera shape">
+              <button type="button" aria-pressed={config.cameraAspectRatio === 'original'} onClick={() => onConfig({ cameraAspectRatio: 'original' })}>Original</button>
+              <button type="button" aria-pressed={config.cameraAspectRatio === 'square'} onClick={() => onConfig({ cameraAspectRatio: 'square' })}>Square</button>
+            </div>
+          </div>
         </section>
       )}
 
@@ -112,17 +124,19 @@ export function CameraPanel({ config, hasCamera, hasMic, speechState, micMuted, 
         </section>
       )}
 
-      <section className="sec">
-        <div className="hd"><h3>Roundness</h3><span>{Math.round(config.cameraRoundness * 100)}%</span></div>
-        <input type="range" min={0} max={ROUNDNESS_MAX} step={0.01} value={config.cameraRoundness} aria-label="Roundness" onChange={(e) => onConfig({ cameraRoundness: Number(e.target.value) })} />
-        <div className="seg" role="group" aria-label="Camera shape">
-          <button type="button" aria-pressed={config.cameraAspectRatio === 'original'} onClick={() => onConfig({ cameraAspectRatio: 'original' })}>Original</button>
-          <button type="button" aria-pressed={config.cameraAspectRatio === 'square'} onClick={() => onConfig({ cameraAspectRatio: 'square' })}>Square</button>
-        </div>
-      </section>
+      {d.type !== 'both' && (
+        <section className="sec">
+          <div className="hd"><h3>Roundness</h3><span>{Math.round(config.cameraRoundness * 100)}%</span></div>
+          <input type="range" min={0} max={ROUNDNESS_MAX} step={0.01} value={config.cameraRoundness} aria-label="Roundness" onChange={(e) => onConfig({ cameraRoundness: Number(e.target.value) })} />
+          <div className="seg" role="group" aria-label="Camera shape">
+            <button type="button" aria-pressed={config.cameraAspectRatio === 'original'} onClick={() => onConfig({ cameraAspectRatio: 'original' })}>Original</button>
+            <button type="button" aria-pressed={config.cameraAspectRatio === 'square'} onClick={() => onConfig({ cameraAspectRatio: 'square' })}>Square</button>
+          </div>
+        </section>
+      )}
 
       <section className="card">
-        <label className="toggle"><span><b>Make smaller during zoom</b><small>When zooming in, the camera will shrink to avoid covering the recording itself.</small></span><input type="checkbox" checked={config.cameraScaleDuringZoom < 1} onChange={(e) => onConfig({ cameraScaleDuringZoom: e.target.checked ? ZOOM_SCALE_DEFAULT : 1 })} /></label>
+        <label className="toggle"><span><b>Make smaller during zoom</b><small>Shrinks to {Math.round((config.cameraScaleDuringZoom < 1 ? config.cameraScaleDuringZoom : ZOOM_SCALE_DEFAULT) * 100)}% so it never covers what you zoom into.</small></span><input type="checkbox" checked={config.cameraScaleDuringZoom < 1} onChange={(e) => onConfig({ cameraScaleDuringZoom: e.target.checked ? ZOOM_SCALE_DEFAULT : 1 })} /></label>
         {config.cameraScaleDuringZoom < 1 && (
           <>
             <div className="hd"><span>Size during zoom</span><span>{Math.round(config.cameraScaleDuringZoom * 100)}%</span></div>
@@ -130,8 +144,8 @@ export function CameraPanel({ config, hasCamera, hasMic, speechState, micMuted, 
           </>
         )}
         <label className="toggle"><span><b>Mirror horizontally</b></span><input type="checkbox" checked={config.mirrorCamera} onChange={(e) => onConfig({ mirrorCamera: e.target.checked })} /></label>
-        <label className="toggle"><span><b>Face tracking</b><small>Arrives with the camera cutout work.</small></span><input type="checkbox" disabled /></label>
-        <label className="toggle"><span><b>Hide during silence</b><small>{hasMic ? 'Hide the camera during silence.' : NO_MIC_FOR_SILENCE}</small></span><input type="checkbox" disabled={!hasMic} checked={config.hideDuringSilenceMs !== null} onChange={(e) => onConfig({ hideDuringSilenceMs: e.target.checked ? HIDE_SILENCE_DEFAULT_MS : null })} /></label>
+        <label className="toggle"><span><b>Face tracking</b><small>Centres the picture on your face. Done locally. Not built yet.</small></span><input type="checkbox" disabled /></label>
+        <label className="toggle"><span><b>Hide during silence</b><small>{hasMic ? (config.hideDuringSilenceMs !== null ? `Minimum silence ${(config.hideDuringSilenceMs / 1000).toFixed(1)} s` : 'Drops the camera while nobody speaks.') : NO_MIC_FOR_SILENCE}</small></span><input type="checkbox" disabled={!hasMic} checked={config.hideDuringSilenceMs !== null} onChange={(e) => onConfig({ hideDuringSilenceMs: e.target.checked ? HIDE_SILENCE_DEFAULT_MS : null })} /></label>
         {config.hideDuringSilenceMs !== null && (
           <>
             <div className="hd"><span>Minimum silence duration</span><span>{(config.hideDuringSilenceMs / 1000).toFixed(1)} s</span></div>
