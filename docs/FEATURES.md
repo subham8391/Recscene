@@ -28,7 +28,7 @@ Spec numbers refer to `docs/research/screen-studio-feature-specs.md`. A feature 
 ## M3 — launch
 | Area | Specs | Notes |
 | --- | --- | --- |
-| Licensing, sign-in, devices, auto-update | 273–282 | Q1 |
+| Licensing, sign-in, devices, auto-update | 273–282 | Done: 275 as Google sign-in through Supabase (browser consent, deep link or loopback return, session kept in the app data folder), 277 devices (every signed-in Mac registers a seat; Account tab lists them, Deactivate this device asks and signs out, other devices can be freed), 278 sign out and use another account, app menu Sign In…/Account… (282). Needs the Supabase project in `.env` (supabase/README.md). Not built: 273 licence keys, 274 email codes, 275's SSO and Microsoft, 276 product choice, 279–281 licence states and trial gating (Q1), 282 dashboard pages, 259–262 updates |
 | Shareable links with comments | 246–251 | the only cloud feature. Done without the cloud: 249 copy and zip project, 250 open shared projects (drop a bundle on the home, open from Finder), 251 extract raw recording files |
 | Transcript editing, filler-word removal | 291 | |
 | AI and recorded voice-overs | 292 | Recorded voice-overs done with 221: track items move between neighbours, item settings (volume with apply-to-all, Independent/Synchronized attach, Hide & Mute original recording, Disable, Remove), context menu Remove/Remove all. Not built: AI voice-overs (Speechify) |

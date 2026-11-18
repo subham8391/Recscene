@@ -27,3 +27,7 @@
 
 # native helper binary (built by npm run build:native)
 /native/bin
+
+# local supabase stack state
+/supabase/.branches
+/supabase/.temp

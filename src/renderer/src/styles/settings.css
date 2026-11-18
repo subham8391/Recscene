@@ -173,3 +173,71 @@
 .input--bad {
   border-color: var(--danger);
 }
+
+/* Account tab (Account board) */
+.settings .note {
+  margin: 4px 0;
+  font-size: 12px;
+  color: var(--text3);
+}
+
+.settings .note--bad {
+  color: var(--danger);
+}
+
+.sel--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--onAccent);
+  font-weight: 500;
+}
+
+.acct {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.acct__avatar {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--panel2);
+}
+
+.acct__avatar--text {
+  display: grid;
+  place-items: center;
+  background: var(--accentSoft);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.devs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.settings .chip {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--accentSoft);
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 600;
+  vertical-align: 1px;
+}
+
+.settings .muted {
+  color: var(--text3);
+  text-transform: none;
+  letter-spacing: 0;
+}

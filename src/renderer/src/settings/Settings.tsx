@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ACTIONS, formatShortcut } from '@core/editor/actions'
 import { acceleratorFromEvent, EDITOR_SHORTCUT_IDS, effectiveGlobalShortcut, GLOBAL_SHORTCUTS, isValidEmail, RESET_CONFIRM, SETTINGS_TABS, shortcutConflict, TAB_LABELS, withOverrides, type AppSettings, type SettingsTab } from '@core/settings'
+import { AccountTab } from './AccountTab'
 type Snap = Awaited<ReturnType<typeof window.recscene.settings.get>>
 
 function Row({ label, sub, children }: { label: string; sub?: string; children: React.ReactNode }): React.JSX.Element {
@@ -200,7 +201,8 @@ export function Settings(): React.JSX.Element {
 
         {tab === 'account' && (
           <>
-            <p className="note">Licensing, devices and shareable links arrive in M3. Recscene runs fully offline until then.</p>
+            <AccountTab />
+            <h3>Updates</h3>
             <Row label="Updates" sub="Automatic updates arrive with signed builds."><button type="button" className="sel" onClick={() => void window.recscene.settings.checkForUpdates()}>Check for updates…</button></Row>
             <Row label="Beta updates" sub="Include beta builds when update checks exist."><Toggle value={s.betaUpdates} onChange={(v) => set({ betaUpdates: v })} /></Row>
           </>

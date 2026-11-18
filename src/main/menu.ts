@@ -14,6 +14,8 @@ export interface MenuActions {
   projectsRoot: () => string
   /** The Settings window (⌘,), optionally at a tab. */
   openSettings: (tab?: 'general' | 'recording' | 'editing' | 'shortcuts' | 'advanced' | 'experimental' | 'account') => void
+  /** Spec 282: the app menu says Account… once signed in, Sign In… before. */
+  signedIn: boolean
   /** Sends an editor action id to the renderer (save, undo, toggles…). */
   editorAction: (id: string) => void
 }
@@ -37,6 +39,7 @@ export function installMenu(actions: MenuActions): void {
         { role: 'about' },
         { type: 'separator' },
         { label: 'Settings…', accelerator: 'CommandOrControl+,', click: () => actions.openSettings() },
+        { label: actions.signedIn ? 'Account…' : 'Sign In…', click: () => actions.openSettings('account') },
         { label: 'Check for Updates…', click: () => actions.editorAction('checkForUpdates') },
         { type: 'separator' },
         { role: 'services' },
