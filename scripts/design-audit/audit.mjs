@@ -31,6 +31,17 @@ const expr = `(() => {
     if ((el.tagName === 'BUTTON' || el.getAttribute('role') === 'button') && !el.closest('.tl__lane')) { const r = el.getBoundingClientRect(); if (r.height < 20 || r.width < 20) issues.push({ kind: 'tiny-target', el: desc(el), w: Math.round(r.width), h: Math.round(r.height) }) }
     if (el.tagName === 'IMG' && el.complete && el.naturalWidth === 0 && el.getAttribute('src')) issues.push({ kind: 'broken-image', el: desc(el) })
   }
+  // controls in a flex row whose vertical centres drift apart (a slider floating above its label)
+  for (const p of all) {
+    const pcs = getComputedStyle(p)
+    if (!pcs.display.includes('flex') || pcs.flexDirection !== 'row' || pcs.flexWrap === 'wrap') continue
+    if (p.closest('.tl__lane, .stage__canvas')) continue
+    const kids = [...p.children].filter((k) => vis(k) && !['absolute', 'fixed'].includes(getComputedStyle(k).position) && k.getBoundingClientRect().height <= 44)
+    if (kids.length < 2) continue
+    const centres = kids.map((k) => { const r = k.getBoundingClientRect(); return (r.top + r.bottom) / 2 })
+    const spread = Math.max(...centres) - Math.min(...centres)
+    if (spread > 3) issues.push({ kind: 'misaligned-row', parent: desc(p), spread: Math.round(spread), kids: kids.map((k) => desc(k)).slice(0, 4) })
+  }
   // overlapping siblings laid out in a row/grid (not absolutely positioned, not inside timeline lanes)
   for (const p of all) {
     const pcs = getComputedStyle(p)
