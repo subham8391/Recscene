@@ -55,6 +55,8 @@ interface Props {
   cursorTypes: CursorTypeChange[]
   /** Spec 70: performance mode turns the screen's motion blur off in the preview. */
   previewQuality: 'high-quality' | 'high-speed'
+  /** Spec 70: blur the screen while it moves; off by default so the preview stays sharp. */
+  motionBlur: boolean
   /** Spec 71: a social app mock over the preview, never exported. */
   reelMode: 'instagram' | 'tiktok' | null
   /** Spec 286: silences long enough to hide the camera, in source time. */
@@ -87,7 +89,7 @@ interface Props {
  * The preview canvas (spec 48): the output box in the project's aspect ratio
  * with the (cropped) recording contained inside. Effects arrive with their specs.
  */
-export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, screenUrl, micUrl, cameraUrl, sourceMs, playing, rate, audio: gains, micMode, musicUrl, outputMs, previewMaxHeight, cursor, cursorTypes, previewQuality, reelMode, silenceGaps, voiceOvers, clips, voiceUrl, transportSpeed, sourceDurationMs, clipState, clickSoundUrl, backgroundImageUrl, assetsUrl, selectedMaskId, onMaskRegionPreview, onMaskRegionCommit, onSelectMask, onDuration, onBox, children }, ref) {
+export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, screenUrl, micUrl, cameraUrl, sourceMs, playing, rate, audio: gains, micMode, musicUrl, outputMs, previewMaxHeight, cursor, cursorTypes, previewQuality, motionBlur, reelMode, silenceGaps, voiceOvers, clips, voiceUrl, transportSpeed, sourceDurationMs, clipState, clickSoundUrl, backgroundImageUrl, assetsUrl, selectedMaskId, onMaskRegionPreview, onMaskRegionCommit, onSelectMask, onDuration, onBox, children }, ref) {
   const live = useRef({ sourceMs, playing, rate, clipState, innerWidth: 0 })
   useEffect(() => {
     live.current = { ...live.current, sourceMs, playing, rate, clipState }
@@ -104,10 +106,10 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
   const camLayer = useRef<HTMLDivElement>(null)
   const camMotion = useRef<CameraMotion | null>(null)
   const camera = useRef<CameraState>(cameraAtRest({ center: { x: 0.5, y: 0.5 }, scale: 1 }))
-  const latest = useRef({ sourceMs, zooms: project.zooms, spring: project.config.screenMovementSpring, cursor, config: project.config, layouts: project.layouts, frame: { width: 0, height: 0 }, cameraFrame: project.recording.camera ?? null, hasCamera: !!cameraUrl, blurOn: previewQuality === 'high-quality', silenceGaps, recordingHidden: false })
+  const latest = useRef({ sourceMs, zooms: project.zooms, spring: project.config.screenMovementSpring, cursor, config: project.config, layouts: project.layouts, frame: { width: 0, height: 0 }, cameraFrame: project.recording.camera ?? null, hasCamera: !!cameraUrl, blurOn: motionBlur && previewQuality === 'high-quality', silenceGaps, recordingHidden: false })
   const [size, setSize] = useState({ width: 0, height: 0 })
   useEffect(() => {
-    latest.current = { ...latest.current, sourceMs, zooms: project.zooms, spring: project.config.screenMovementSpring, cursor, config: project.config, layouts: project.layouts, cameraFrame: project.recording.camera ?? null, hasCamera: !!cameraUrl, blurOn: previewQuality === 'high-quality', silenceGaps, recordingHidden: recordingHiddenAt(voiceOvers, clips, outputMs) }
+    latest.current = { ...latest.current, sourceMs, zooms: project.zooms, spring: project.config.screenMovementSpring, cursor, config: project.config, layouts: project.layouts, cameraFrame: project.recording.camera ?? null, hasCamera: !!cameraUrl, blurOn: motionBlur && previewQuality === 'high-quality', silenceGaps, recordingHidden: recordingHiddenAt(voiceOvers, clips, outputMs) }
   })
 
   useLayoutEffect(() => {

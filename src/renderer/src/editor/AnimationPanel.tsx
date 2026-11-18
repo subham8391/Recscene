@@ -28,7 +28,7 @@ export function AnimationPanel({ config, motionBlur, onConfig, onMotionBlur }: P
         <p className="note">Applies to every zoom and to the camera following the cursor. Per-zoom options (instant, start early) are on each zoom.</p>
       </section>
       <section className="sec">
-        <label className="toggle"><span><b>Screen motion blur</b><small>Blurs the screen while it moves, in the preview and the export. Off makes the preview faster.</small></span><input type="checkbox" checked={motionBlur} onChange={(e) => onMotionBlur(e.target.checked)} /></label>
+        <label className="toggle"><span><b>Screen motion blur</b><small>Shows the export's motion blur in the preview too. Off keeps the preview sharp while a zoom moves, as Screen Studio does.</small></span><input type="checkbox" checked={motionBlur} onChange={(e) => onMotionBlur(e.target.checked)} /></label>
       </section>
     </div>
   )
