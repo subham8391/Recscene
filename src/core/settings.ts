@@ -42,6 +42,8 @@ export interface AppSettings {
   optimizePreviewRendering: boolean
   playbackEnergyMode: EnergyMode
   playbackQualityMode: QualityMode
+  /** Spec 70: motion blur in the preview. Off by default, as in Screen Studio; the export keeps the blur. */
+  previewMotionBlur: boolean
   defaultPresetId: string | null
   // Shortcuts (spec 66): action id → accelerator
   shortcutOverrides: Record<string, string>
@@ -83,6 +85,7 @@ export const defaultSettings: AppSettings = {
   optimizePreviewRendering: true,
   playbackEnergyMode: 'high-performance',
   playbackQualityMode: 'high-quality',
+  previewMotionBlur: false,
   defaultPresetId: null,
   shortcutOverrides: {},
   logLevel: 2,
@@ -133,6 +136,7 @@ export function settingsFrom(raw: Record<string, unknown>): AppSettings {
     optimizePreviewRendering: bool('optimizePreviewRendering'),
     playbackEnergyMode: raw['playbackEnergyMode'] === 'low-power' ? 'low-power' : 'high-performance',
     playbackQualityMode: raw['playbackQualityMode'] === 'high-speed' ? 'high-speed' : 'high-quality',
+    previewMotionBlur: bool('previewMotionBlur'),
     defaultPresetId: typeof raw['defaultPresetId'] === 'string' && raw['defaultPresetId'] ? (raw['defaultPresetId'] as string) : null,
     shortcutOverrides: overrides,
     logLevel: level === 0 || level === 1 || level === 3 ? level : 2,

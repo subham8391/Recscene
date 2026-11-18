@@ -799,6 +799,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           cursor={opened.cursor}
           cursorTypes={opened.cursorTypes}
           previewQuality={prefs.playbackQualityMode}
+          motionBlur={prefs.previewMotionBlur}
           reelMode={prefs.reelPreviewMode}
           silenceGaps={silenceGaps}
           voiceOvers={voiceOvers}
@@ -967,9 +968,9 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           ) : panel === 'animations' ? (
             <AnimationPanel
               config={project.config}
-              motionBlur={prefs.playbackQualityMode !== 'high-speed'}
+              motionBlur={prefs.previewMotionBlur}
               onConfig={(patch) => edit({ ...project, config: { ...project.config, ...patch } })}
-              onMotionBlur={(on) => setPrefs({ playbackQualityMode: on ? 'high-quality' : 'high-speed' })}
+              onMotionBlur={(on) => setPrefs({ previewMotionBlur: on })}
             />
           ) : panel === 'background' ? (
             <BackgroundPanel

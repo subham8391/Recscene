@@ -13,6 +13,8 @@ export interface EditorPrefs {
   shortcutOverrides: Record<string, string>
   /** Spec 70: performance mode turns the preview's motion blur off. */
   playbackQualityMode: 'high-quality' | 'high-speed'
+  /** Spec 70: motion blur in the preview, off by default. */
+  previewMotionBlur: boolean
   /** Spec 71. */
   reelPreviewMode: 'instagram' | 'tiktok' | null
   /** Spec 221: the microphone chosen for voice-overs. */
@@ -29,6 +31,7 @@ export const defaultEditorPrefs: EditorPrefs = {
   autoSaveProject: true,
   shortcutOverrides: {},
   playbackQualityMode: 'high-quality',
+  previewMotionBlur: false,
   reelPreviewMode: null,
   voiceoverPreferredMicrophoneId: null
 }
@@ -46,6 +49,7 @@ export function editorPrefsFrom(raw: Record<string, unknown>): EditorPrefs {
     autoSaveProject: bool('autoSaveProject'),
     shortcutOverrides: typeof raw['shortcutOverrides'] === 'object' && raw['shortcutOverrides'] ? Object.fromEntries(Object.entries(raw['shortcutOverrides'] as Record<string, unknown>).filter((e): e is [string, string] => typeof e[1] === 'string')) : {},
     playbackQualityMode: raw['playbackQualityMode'] === 'high-speed' ? 'high-speed' : 'high-quality',
+    previewMotionBlur: raw['previewMotionBlur'] === true,
     reelPreviewMode: raw['reelPreviewMode'] === 'instagram' || raw['reelPreviewMode'] === 'tiktok' ? raw['reelPreviewMode'] : null,
     voiceoverPreferredMicrophoneId: typeof raw['voiceoverPreferredMicrophoneId'] === 'string' ? raw['voiceoverPreferredMicrophoneId'] : null
   }

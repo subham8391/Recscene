@@ -198,7 +198,8 @@ export function Settings(): React.JSX.Element {
           <>
             <Row label="Optimize preview rendering" sub="Pauses rendering when nothing has changed in the project. If the preview seems not to react to edits, try disabling this option."><Toggle value={s.optimizePreviewRendering} onChange={(v) => set({ optimizePreviewRendering: v })} /></Row>
             <Row label="Power saving mode" sub="Lower CPU/GPU and power usage. Might decrease the frame rate of the preview."><Toggle value={s.playbackEnergyMode === 'low-power'} onChange={(v) => set({ playbackEnergyMode: v ? 'low-power' : 'high-performance' })} /></Row>
-            <Row label="Preview mode" sub="Quality: the preview looks exactly like the export. Performance: motion blur off, lower-quality scaling, higher FPS."><Seg value={s.playbackQualityMode} options={[{ v: 'high-quality', l: 'Quality' }, { v: 'high-speed', l: 'Performance' }]} onChange={(v) => set({ playbackQualityMode: v })} /></Row>
+            <Row label="Motion blur in the preview" sub="Blurs the screen while a zoom moves, as the export does. Off keeps the preview sharp while it animates."><Toggle value={s.previewMotionBlur} onChange={(v) => set({ previewMotionBlur: v })} /></Row>
+            <Row label="Preview mode" sub="Quality: the preview looks exactly like the export. Performance: lower-quality scaling, higher FPS."><Seg value={s.playbackQualityMode} options={[{ v: 'high-quality', l: 'Quality' }, { v: 'high-speed', l: 'Performance' }]} onChange={(v) => set({ playbackQualityMode: v })} /></Row>
           </>
         )}
 
