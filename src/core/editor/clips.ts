@@ -40,7 +40,7 @@ export function ensureClips(clips: readonly Clip[], sourceDurationMs: number): C
   return clips.length ? [...clips] : [defaultClip(sourceDurationMs)]
 }
 
-const sorted = (clips: readonly Clip[]): Clip[] => [...clips].sort((a, b) => a.sourceStartMs - b.sourceStartMs)
+export const sorted = (clips: readonly Clip[]): Clip[] => [...clips].sort((a, b) => a.sourceStartMs - b.sourceStartMs)
 const indexOf = (clips: readonly Clip[], id: string): number => clips.findIndex((c) => c.id === id)
 
 export function clipDurationMs(c: Clip): number {

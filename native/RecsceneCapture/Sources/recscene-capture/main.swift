@@ -45,6 +45,11 @@ func handle(_ command: Command) async {
         case let .mux(video, audio, outputPath):
             let ms = try await Media.mux(video: video, audio: audio, output: outputPath)
             output.send(.muxed(output: outputPath, durationMs: ms))
+        case let .transcribe(path, locale):
+            let r = try await Transcribe.run(path: path, locale: locale)
+            output.send(.transcribed(language: r.language, words: r.words))
+        case .speechLocales:
+            output.send(.speechLocales(await Transcribe.supportedLocales()))
         case let .importVideo(path, outputPath):
             let (info, converted) = try await Media.importVideo(path: path, output: outputPath)
             output.send(.imported(output: outputPath, durationMs: info.durationMs, width: info.width, height: info.height, converted: converted))

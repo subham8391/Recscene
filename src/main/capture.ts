@@ -164,6 +164,15 @@ export class CaptureClient extends EventEmitter {
     return this.send({ cmd: 'import', path, output }, 'imported')
   }
 
+  /** Spec 206: on-device transcription of an audio file. */
+  transcribe(path: string, locale: string | null): Promise<Extract<HelperEvent, { event: 'transcribed' }>> {
+    return this.send({ cmd: 'transcribe', path, locale }, 'transcribed')
+  }
+
+  speechLocales(): Promise<string[]> {
+    return this.send({ cmd: 'speechLocales' }, 'speechLocales').then((e) => e.locales)
+  }
+
   mux(video: string, audio: string | null, output: string): Promise<Extract<HelperEvent, { event: 'muxed' }>> {
     return this.send({ cmd: 'mux', video, audio, output }, 'muxed')
   }

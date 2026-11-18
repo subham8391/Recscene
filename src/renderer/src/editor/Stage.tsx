@@ -10,6 +10,8 @@ import { CursorLayer } from './CursorLayer'
 import { MaskLayer } from './MaskLayer'
 import { buildMicChain, peakOf } from './micGraph'
 import { ShortcutLayer } from './ShortcutLayer'
+import { CaptionLayer } from './CaptionLayer'
+import { buildCues, CUE_DEFAULTS, ONE_LINE } from '@core/editor/captions'
 import { shortcutEvents } from '@core/editor/shortcuts'
 import { drawMask } from './maskDraw'
 
@@ -406,6 +408,11 @@ export const Stage = forwardRef<StageHandle, Props>(function Stage({ project, sc
             </div>
           </div>
           <ShortcutLayer events={shortcutEvents(project.recording.keys, project.config)} config={project.config} sourceMs={sourceMs} frame={{ width: inner.width, height: inner.height }} />
+        </div>
+        {project.transcript && (
+          <CaptionLayer cues={buildCues(project.transcript.words, project.config.captionOneLine ? ONE_LINE : CUE_DEFAULTS)} config={project.config} sourceMs={sourceMs} screen={{ x: inner.x - output.x, y: inner.y - output.y, width: inner.width, height: inner.height }} output={{ width: output.width, height: output.height }} />
+        )}
+        <div style={{ display: 'none' }}>
         </div>
         {cameraUrl && camRec && (
           <div ref={camLayer} className="stage__cam" data-layout={eff.type} style={{ visibility: 'hidden' }}>

@@ -72,6 +72,8 @@ export type HelperCommand =
   | { cmd: 'probe'; path: string }
   | { cmd: 'import'; path: string; output: string }
   | { cmd: 'mux'; video: string; audio: string | null; output: string }
+  | { cmd: 'transcribe'; path: string; locale: string | null }
+  | { cmd: 'speechLocales' }
 
 export interface Permissions {
   screen: boolean
@@ -103,10 +105,12 @@ export type HelperEvent =
   | { event: 'probed'; durationMs: number; width: number; height: number; hasAudio: boolean }
   | { event: 'imported'; output: string; durationMs: number; width: number; height: number; converted: boolean }
   | { event: 'muxed'; output: string; durationMs: number }
+  | { event: 'transcribed'; language: string; words: { text: string; startMs: number; endMs: number }[] }
+  | { event: 'speechLocales'; locales: string[] }
   | { event: 'warning'; message: string }
   | { event: 'error'; code: string; message: string }
 
-const EVENT_NAMES = new Set(['pong', 'permissions', 'targets', 'cameras', 'started', 'stopped', 'paused', 'resumed', 'marked', 'cancelled', 'probed', 'imported', 'muxed', 'warning', 'error'])
+const EVENT_NAMES = new Set(['pong', 'permissions', 'targets', 'cameras', 'started', 'stopped', 'paused', 'resumed', 'marked', 'cancelled', 'probed', 'imported', 'muxed', 'transcribed', 'speechLocales', 'warning', 'error'])
 
 /** Parses one stdout line. Returns null for blank lines and anything that is not a helper event. */
 export function parseHelperLine(line: string): HelperEvent | null {

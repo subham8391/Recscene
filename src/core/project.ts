@@ -34,6 +34,7 @@ import { defaultCameraConfig, type CameraConfig, type CameraLayout } from './edi
 import type { Mask } from './editor/masks'
 import { defaultShortcutConfig, type ShortcutConfig } from './editor/shortcuts'
 import { defaultAudioConfig, type AudioConfig } from './editor/audio'
+import { defaultCaptionConfig, type CaptionConfig, type Transcript } from './editor/captions'
 export type { Clip } from './editor/clips'
 export type { CameraLayout } from './editor/cameraLayout'
 export type { Mask } from './editor/masks'
@@ -54,7 +55,7 @@ export interface ProjectMeta {
   recordingFlags: Ms[]
 }
 
-export interface ProjectConfig extends CursorConfig, BackgroundConfig, CameraConfig, ShortcutConfig, AudioConfig {
+export interface ProjectConfig extends CursorConfig, BackgroundConfig, CameraConfig, ShortcutConfig, AudioConfig, CaptionConfig {
   /** Spec 48: "x:y" or null for Auto. */
   defaultOutputAspectRatio: string | null
   /** Spec 81: the usable part of the source, [start, end] in ms. */
@@ -75,6 +76,7 @@ export const defaultProjectConfig: ProjectConfig = {
   ...defaultCameraConfig,
   ...defaultShortcutConfig,
   ...defaultAudioConfig,
+  ...defaultCaptionConfig,
   defaultOutputAspectRatio: null,
   recordingRange: null,
   recordingCrop: null,
@@ -95,6 +97,8 @@ export interface Project {
   layouts: CameraLayout[]
   /** Specs 189–198: masks over the recording. */
   masks: Mask[]
+  /** Specs 205–212: the transcript, or null until generated. */
+  transcript: Transcript | null
   /** ISO timestamps (spec 73–74). */
   updatedAt?: string
   lastSavedAt?: string
@@ -113,6 +117,7 @@ export function normaliseProject(raw: unknown): Project {
     zooms: Array.isArray(r.zooms) ? r.zooms : [],
     layouts: Array.isArray(r.layouts) ? r.layouts : [],
     masks: Array.isArray(r.masks) ? r.masks : [],
+    transcript: r.transcript && typeof r.transcript === 'object' && Array.isArray(r.transcript.words) ? r.transcript : null,
     clips: Array.isArray(r.clips) && r.clips.length > 0 ? r.clips : [defaultClip(recording.durationMs)],
     ...(r.updatedAt ? { updatedAt: r.updatedAt } : {}),
     ...(r.lastSavedAt ? { lastSavedAt: r.lastSavedAt } : {})

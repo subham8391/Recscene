@@ -7,18 +7,20 @@ import { isAutoType, moveZoom, type ZoomRange } from '@core/editor/zooms'
 import { LAYOUT_NAMES, moveLayout, type CameraLayout } from '@core/editor/cameraLayout'
 import { maskLabel, moveMask, type Mask } from '@core/editor/masks'
 import { countOf, isShown, shortcutEvents } from '@core/editor/shortcuts'
+import { buildCues, CUE_DEFAULTS, cueText, ONE_LINE } from '@core/editor/captions'
 import { outputToSource } from '@core/editor/clips'
 import type { Project } from '@core/project'
 import { formatClock } from '@core/recordingPicker'
 import type { RecordingMarker } from '@core/recordingSession'
 
-export type TrackId = 'zooms' | 'layouts' | 'masks' | 'shortcuts'
+export type TrackId = 'zooms' | 'layouts' | 'masks' | 'shortcuts' | 'captions'
 
 export interface TrackVisibility {
   zooms: true
   layouts: boolean
   masks: boolean
   shortcuts: boolean
+  captions: boolean
 }
 
 interface Props {
@@ -63,6 +65,8 @@ interface Props {
   onHideShortcut: (timeMs: number, hidden: boolean) => void
   onHideShortcutLabel: (label: string, hidden: boolean) => void
   onHideAllShortcuts: (hidden: boolean) => void
+  /** Captions track (specs 208–212): a click seeks to the cue. */
+  onSeekSource: (sourceMs: number) => void
   micUrl?: string
   showWaveform: boolean
   smoothWaveform: boolean
@@ -75,12 +79,13 @@ const TRACKS: { id: TrackId; name: string; color: string; key: string; forced?: 
   { id: 'zooms', name: 'Zooms', color: 'var(--zoom)', key: '1', forced: true },
   { id: 'layouts', name: 'Camera Layouts', color: 'var(--layout)', key: '2' },
   { id: 'shortcuts', name: 'Shortcuts', color: 'var(--shortcut)', key: '3' },
-  { id: 'masks', name: 'Masks', color: 'var(--mask)', key: '4' }
+  { id: 'masks', name: 'Masks', color: 'var(--mask)', key: '4' },
+  { id: 'captions', name: 'Captions', color: 'var(--caption)', key: '5' }
 ]
 
 /** The timeline (specs 50–51, 58–62, 80–87): toolbar, ruler, clips with trim handles, tracks, waveform, playhead. */
 export function Timeline(props: Props): React.JSX.Element {
-  const { project, clips, sourceDurationMs, markers, durationMs, timeMs, view, setView, visible, toggleTrack, onSeek, onPreview, selectedClipId, onSelectClip, onTrimPreview, onTrimCommit, onRemoveTrim, onJoin, selectedZoomId, onSelectZoom, onAddZoomAt, onZoomPreview, onZoomCommit, hasCamera, selectedLayoutId, onSelectLayout, onAddLayoutAt, onLayoutPreview, onLayoutCommit, selectedMaskId, onSelectMask, onAddMaskAt, onMaskPreview, onMaskCommit, onHideShortcut, onHideShortcutLabel, onHideAllShortcuts, micUrl, showWaveform, smoothWaveform, alwaysShowScrollbar, audioScrubber, onToggleAudioScrubber } = props
+  const { project, clips, sourceDurationMs, markers, durationMs, timeMs, view, setView, visible, toggleTrack, onSeek, onPreview, selectedClipId, onSelectClip, onTrimPreview, onTrimCommit, onRemoveTrim, onJoin, selectedZoomId, onSelectZoom, onAddZoomAt, onZoomPreview, onZoomCommit, hasCamera, selectedLayoutId, onSelectLayout, onAddLayoutAt, onLayoutPreview, onLayoutCommit, selectedMaskId, onSelectMask, onAddMaskAt, onMaskPreview, onMaskCommit, onHideShortcut, onHideShortcutLabel, onHideAllShortcuts, onSeekSource, micUrl, showWaveform, smoothWaveform, alwaysShowScrollbar, audioScrubber, onToggleAudioScrubber } = props
   const zoomDrag = useRef<{ id: string; mode: 'move' | 'start' | 'end'; startX: number; origin: ZoomRange[]; moved: boolean } | null>(null)
   const layoutDrag = useRef<{ id: string; mode: 'move' | 'start' | 'end'; startX: number; origin: CameraLayout[]; moved: boolean } | null>(null)
   const maskDrag = useRef<{ id: string; mode: 'move' | 'start' | 'end'; startX: number; origin: Mask[]; moved: boolean } | null>(null)
@@ -89,6 +94,7 @@ export function Timeline(props: Props): React.JSX.Element {
   const [tracksOpen, setTracksOpen] = useState(false)
   const [chipMenu, setChipMenu] = useState<{ timeMs: number; label: string; hidden: boolean; x: number; y: number } | null>(null)
   const shortcuts = useMemo(() => shortcutEvents(project.recording.keys, project.config), [project.recording.keys, project.config])
+  const cues = useMemo(() => (project.transcript ? buildCues(project.transcript.words, project.config.captionOneLine ? ONE_LINE : CUE_DEFAULTS) : []), [project.transcript, project.config.captionOneLine])
   useEffect(() => {
     if (!chipMenu) return
     const close = (): void => setChipMenu(null)
@@ -233,7 +239,7 @@ export function Timeline(props: Props): React.JSX.Element {
   const x = (ms: number): number => xAtTime(view, ms, width)
   const pct = (ms: number): string => `${(x(ms) / width) * 100}%`
   const offsets = outputOffsets(clips)
-  const visibleCount = 1 + Number(visible.layouts) + Number(visible.masks) + Number(visible.shortcuts)
+  const visibleCount = 1 + Number(visible.layouts) + Number(visible.masks) + Number(visible.shortcuts) + Number(visible.captions)
   const rows = TRACKS.filter((t) => t.forced || visible[t.id])
   const atOutput = (sourceMs: number): number | null => sourceToOutput(clips, sourceMs)
 
@@ -340,6 +346,16 @@ export function Timeline(props: Props): React.JSX.Element {
                     <span className="tl__handle tl__handle--start" onMouseDown={onZoomDown(z.id, 'start')} />
                     <span className="tl__handle tl__handle--end" onMouseDown={onZoomDown(z.id, 'end')} />
                   </div>
+                )
+              })}
+              {t.id === 'captions' && cues.map((c, i) => {
+                const a = atOutput(c.startMs)
+                const b = atOutput(c.endMs) ?? (a === null ? null : a + 400)
+                if (a === null || b === null) return null
+                return (
+                  <button key={i} type="button" className="tl__zi tl__zi--caption" style={{ left: x(a), width: Math.max(2, x(b) - x(a)) }} title={cueText(c)} onClick={(e) => { e.stopPropagation(); onSeekSource(c.startMs) }}>
+                    <span className="tl__zi__label">{cueText(c)}</span>
+                  </button>
                 )
               })}
               {t.id === 'shortcuts' && shortcuts.map((k) => {
