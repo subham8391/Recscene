@@ -9,6 +9,8 @@ import type { ExportSettings, ExportTarget } from '@core/editor/exportSettings'
 import type { ProjectSummary, UnfinishedRecording } from '@core/projectsHome'
 import type { MusicTrack } from '@core/editor/audio'
 import type { Transcript } from '@core/editor/captions'
+import type { Preset } from '@core/editor/presets'
+import type { ProjectConfig } from '@core/project'
 
 export interface ProjectsFolder {
   path: string
@@ -57,6 +59,21 @@ const api = {
     importBackgroundImage: (source: File | ArrayBuffer): Promise<{ file: string; url: string }> =>
       ipcRenderer.invoke('project:importBackgroundImage', source instanceof ArrayBuffer ? source : webUtils.getPathForFile(source)) as Promise<{ file: string; url: string }>,
     mediaUrl: (file: string): Promise<string | null> => ipcRenderer.invoke('project:mediaUrl', file) as Promise<string | null>
+  },
+  /** Presets (specs 224–232): files in the presets folder. */
+  presets: {
+    list: (): Promise<Preset[]> => ipcRenderer.invoke('presets:list') as Promise<Preset[]>,
+    create: (name: string, config: ProjectConfig): Promise<Preset> => ipcRenderer.invoke('presets:create', name, config) as Promise<Preset>,
+    update: (id: string, config: ProjectConfig): Promise<Preset> => ipcRenderer.invoke('presets:update', id, config) as Promise<Preset>,
+    rename: (id: string, name: string): Promise<Preset> => ipcRenderer.invoke('presets:rename', id, name) as Promise<Preset>,
+    remove: (id: string): Promise<void> => ipcRenderer.invoke('presets:remove', id) as Promise<void>,
+    importFile: (): Promise<Preset | null> => ipcRenderer.invoke('presets:import') as Promise<Preset | null>,
+    showInFinder: (id: string): Promise<void> => ipcRenderer.invoke('presets:showInFinder', id) as Promise<void>,
+    defaultId: (): Promise<string | null> => ipcRenderer.invoke('presets:default') as Promise<string | null>,
+    setDefault: (id: string | null): Promise<void> => ipcRenderer.invoke('presets:setDefault', id) as Promise<void>,
+    applyToProjects: (id: string, projectDirs: string[]): Promise<{ applied: string[]; failed: string[] }> => ipcRenderer.invoke('presets:applyToProjects', id, projectDirs) as Promise<{ applied: string[]; failed: string[] }>,
+    folder: (): Promise<string> => ipcRenderer.invoke('presets:folder') as Promise<string>,
+    chooseFolder: (): Promise<string> => ipcRenderer.invoke('presets:chooseFolder') as Promise<string>
   },
   /** Captions (specs 205–212): on-device transcription through the helper and subtitle files. */
   captions: {

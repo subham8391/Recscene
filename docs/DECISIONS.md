@@ -44,6 +44,8 @@
 
 **2026-11-18 (captions built; Q2 settled).** The transcription engine is Apple's SpeechAnalyzer/SpeechTranscriber (macOS 26+), run by the helper on the microphone file with word time ranges; no model download beyond the system's own speech assets, nothing leaves the Mac, and no Speech Recognition permission prompt is needed for file transcription. Whisper is not bundled. The transcript lives in project.json (`project.transcript`, words with hidden and filler flags) so edits are undoable like everything else; cues are built on the fly. Edit-by-transcript cuts are ordinary clip cuts.
 
+**2026-11-18 (presets built).** A preset is a JSON file `<name>.recscenepreset` in `~/Documents/Recscene Presets` (preference `presetsFolderPath`) holding a copy of the inspector config without the recording-specific keys (range, crop, typing suggestions, hidden shortcuts, background image, background audio file); applying copies the keys over the project's config and keeps those. New recordings start from the default preset, else the last saved project's config when `useLastProjectConfigForNewProjects` is on, else the built-in defaults.
+
 ## Open
 - **Q1** Licensing model: one-time with a year of updates versus subscription. Decide before M3.
 - **Q2** Transcription and captions: on-device (whisper.cpp) versus a cloud service. Lean on-device for privacy; decide at M2.

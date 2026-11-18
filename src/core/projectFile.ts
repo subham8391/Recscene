@@ -2,7 +2,7 @@ import type { RecordedEvents } from './captureProtocol'
 import type { RecordingMarker } from './recordingSession'
 import { defaultClip } from './editor/clips'
 import { automaticZooms } from './editor/zooms'
-import { defaultProjectConfig, type Project } from './project'
+import { defaultProjectConfig, type Project, type ProjectConfig } from './project'
 
 /** The folder name for a new recording, e.g. "Recording 2026-11-17 at 15.09.recscene". */
 export function recordingFolderName(date: Date): string {
@@ -24,6 +24,8 @@ export interface NewProjectInput {
   flags?: number[]
   /** Spec 102–103: zoom level for the generated zooms; null skips generation. */
   autoZoomLevel?: number | null
+  /** Specs 227, 232: the config the project starts with (the default preset or the last project's). */
+  config?: ProjectConfig
 }
 
 /** Builds the project document written as project.json after a recording stops. */
@@ -32,7 +34,7 @@ export function newProject(input: NewProjectInput): Project {
     version: 1,
     name: input.name,
     meta: { recordingFlags: input.flags ?? [] },
-    config: { ...defaultProjectConfig },
+    config: { ...(input.config ?? defaultProjectConfig) },
     recording: {
       id: input.id,
       createdAt: input.createdAt,
