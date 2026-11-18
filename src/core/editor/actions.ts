@@ -2,7 +2,7 @@
  * The editor's action registry (specs 49, 52–58, 63–65, 72–78): one list
  * that drives keyboard handling, the ⌘K command menu and the shortcuts guide.
  */
-export type ActionGroup = 'Playback' | 'Slice' | 'Zoom' | 'Camera' | 'Mask' | 'Shortcuts' | 'View' | 'Editor' | 'Project' | 'Sidebar' | 'Export' | 'Clipboard' | 'Help'
+export type ActionGroup = 'Playback' | 'Slice' | 'Zoom' | 'Camera' | 'Mask' | 'Shortcuts' | 'Audio' | 'View' | 'Editor' | 'Project' | 'Sidebar' | 'Export' | 'Clipboard' | 'Help'
 
 export interface ActionDef {
   id: string
@@ -74,6 +74,11 @@ export const ACTIONS: readonly ActionDef[] = [
   { id: 'toggleShowShortcuts', label: 'Show keyboard shortcuts', group: 'Shortcuts' },
   { id: 'hideAllShortcuts', label: 'Hide all shortcuts', group: 'Shortcuts' },
   { id: 'showAllShortcuts', label: 'Show all shortcuts', group: 'Shortcuts' },
+  { id: 'muteMicrophone', label: 'Mute microphone', group: 'Audio' },
+  { id: 'muteSystemAudio', label: 'Mute system audio', group: 'Audio' },
+  { id: 'muteBackgroundAudio', label: 'Mute background audio', group: 'Audio' },
+  { id: 'removeBackgroundAudio', label: 'Remove background audio', group: 'Audio' },
+  { id: 'openAudioLibraryFolder', label: 'Open audio library folder', group: 'Audio' },
   { id: 'cut', label: 'Cut zoom', group: 'Clipboard', shortcut: 'Cmd+X' },
   { id: 'paste', label: 'Paste slice settings', group: 'Clipboard', shortcut: 'Cmd+V' },
   { id: 'undo', label: 'Undo', group: 'Editor', shortcut: 'Cmd+Z' },

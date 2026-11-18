@@ -23,8 +23,10 @@ export function mediaUrl(projectDir: string, file: string): string {
 
 /** Bundled, read-only assets (click sounds, wallpapers): recscene-media://assets/<path under resources>. */
 export const ASSETS_URL = `${MEDIA_SCHEME}://assets`
+/** Spec 219: recscene-media://library/<file> serves the music library folder. */
+export const LIBRARY_URL = `${MEDIA_SCHEME}://library`
 
-function assetsRoot(kind: 'sounds' | 'backgrounds'): string {
+function assetsRoot(kind: 'sounds' | 'backgrounds' | 'music'): string {
   const candidates = [join(process.resourcesPath, kind), join(app.getAppPath(), 'resources', kind)]
   return candidates.find((p) => existsSync(p)) ?? candidates[1]!
 }
@@ -50,7 +52,13 @@ export class ProjectService {
         const rel = decodeURIComponent(url.pathname).replace(/^\/+/, '')
         if (/^sounds\/clicks\/[a-z-]+\/(down|up|click)\.wav$/.test(rel)) path = join(assetsRoot('sounds'), rel.slice('sounds/'.length))
         else if (/^backgrounds\/[A-Za-z]+\/[a-z0-9-]+\.svg$/.test(rel)) path = join(assetsRoot('backgrounds'), rel.slice('backgrounds/'.length))
+        else if (/^music\/[a-z]+\/[a-z0-9-]+\.m4a$/.test(rel)) path = join(assetsRoot('music'), rel.slice('music/'.length))
         else return new Response('Forbidden', { status: 403 })
+      } else if (url.host === 'library') {
+        // Spec 219: audio files directly inside the app's music library folder.
+        const file = decodeURIComponent(url.pathname).replace(/^\/+/, '')
+        if (file.includes('/') || file.includes('..') || !file) return new Response('Forbidden', { status: 403 })
+        path = join(app.getPath('userData'), 'music-library', file)
       } else {
         const [, dirEncoded, fileEncoded] = url.pathname.split('/')
         if (!dirEncoded || !fileEncoded) return new Response('Not found', { status: 404 })
@@ -62,7 +70,7 @@ export class ProjectService {
       const info = await stat(path).catch(() => null)
       if (!info?.isFile()) return new Response('Not found', { status: 404 })
       const ext = path.slice(path.lastIndexOf('.') + 1).toLowerCase()
-      const type = ({ mov: 'video/quicktime', m4a: 'audio/mp4', wav: 'audio/wav', svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg' } as Record<string, string>)[ext] ?? 'application/octet-stream'
+      const type = ({ mov: 'video/quicktime', mp4: 'video/mp4', m4a: 'audio/mp4', aac: 'audio/aac', mp3: 'audio/mpeg', wav: 'audio/wav', aiff: 'audio/aiff', aif: 'audio/aiff', svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg' } as Record<string, string>)[ext] ?? 'application/octet-stream'
       const range = /^bytes=(\d*)-(\d*)$/.exec(request.headers.get('range') ?? '')
       let start = 0
       let end = info.size - 1
@@ -140,6 +148,7 @@ export class ProjectService {
       cursor,
       media: {
         assets: ASSETS_URL,
+        library: LIBRARY_URL,
         screen: mediaUrl(projectDir, project.recording.screen.file),
         ...(project.recording.microphone && (await has(project.recording.microphone.file)) ? { mic: mediaUrl(projectDir, project.recording.microphone.file) } : {}),
         ...(project.recording.camera && (await has(project.recording.camera.file)) ? { camera: mediaUrl(projectDir, project.recording.camera.file) } : {})

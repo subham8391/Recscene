@@ -57,5 +57,5 @@ export interface OpenedProject {
   markers: RecordingMarker[]
   /** Cursor positions from events.json (fractions of the frame), for zooms that follow the mouse. */
   cursor: { timeMs: number; x: number; y: number }[]
-  media: { screen: string; mic?: string; systemAudio?: string; camera?: string; assets: string }
+  media: { screen: string; mic?: string; systemAudio?: string; camera?: string; assets: string; library: string }
 }

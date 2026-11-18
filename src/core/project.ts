@@ -33,6 +33,7 @@ import { defaultBackgroundConfig, type BackgroundConfig } from './editor/backgro
 import { defaultCameraConfig, type CameraConfig, type CameraLayout } from './editor/cameraLayout'
 import type { Mask } from './editor/masks'
 import { defaultShortcutConfig, type ShortcutConfig } from './editor/shortcuts'
+import { defaultAudioConfig, type AudioConfig } from './editor/audio'
 export type { Clip } from './editor/clips'
 export type { CameraLayout } from './editor/cameraLayout'
 export type { Mask } from './editor/masks'
@@ -53,7 +54,7 @@ export interface ProjectMeta {
   recordingFlags: Ms[]
 }
 
-export interface ProjectConfig extends CursorConfig, BackgroundConfig, CameraConfig, ShortcutConfig {
+export interface ProjectConfig extends CursorConfig, BackgroundConfig, CameraConfig, ShortcutConfig, AudioConfig {
   /** Spec 48: "x:y" or null for Auto. */
   defaultOutputAspectRatio: string | null
   /** Spec 81: the usable part of the source, [start, end] in ms. */
@@ -73,6 +74,7 @@ export const defaultProjectConfig: ProjectConfig = {
   ...defaultBackgroundConfig,
   ...defaultCameraConfig,
   ...defaultShortcutConfig,
+  ...defaultAudioConfig,
   defaultOutputAspectRatio: null,
   recordingRange: null,
   recordingCrop: null,
