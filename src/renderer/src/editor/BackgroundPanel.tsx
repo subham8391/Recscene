@@ -131,7 +131,7 @@ export function BackgroundPanel({ project, assetsUrl, backgroundImageUrl, onConf
         <label className="toggle"><span><b>Directional shadow</b><small>Casts along the angle and distance as a hard offset.</small></span><input type="checkbox" checked={c.shadowIsDirectional} onChange={(e) => onConfig(setDirectional(c, e.target.checked))} /></label>
       </section>
 
-      <section className="sec">
+      <section className="card">
         <label className="toggle"><span><b>Always keep zoomed in</b><small>Crops to the aspect ratio and follows the cursor.</small></span><input type="checkbox" checked={c.alwaysKeepZoomedIn} disabled={c.defaultOutputAspectRatio === null} title={c.defaultOutputAspectRatio === null ? 'Pick an aspect ratio in the title bar first' : undefined} onChange={(e) => onConfig({ alwaysKeepZoomedIn: e.target.checked })} /></label>
         <label className="toggle"><span><b>Wrap in device mockup</b><small>Pick a frame; stretch to fit, or show all frames even if they don't match.</small></span><input type="checkbox" checked={c.enableDeviceMockup} onChange={(e) => onConfig({ enableDeviceMockup: e.target.checked })} /></label>
         {c.enableDeviceMockup && (

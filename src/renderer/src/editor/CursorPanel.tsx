@@ -42,7 +42,7 @@ export function CursorPanel({ config: c, hasCursor, clipHidden, onConfig, onPrev
   return (
     <div className="panel-body">
       {clipHidden && <p className="note">Cursor is hidden in this part of the recording, so you will not see changes you make to it.</p>}
-      <section className="sec">
+      <section className="card">
         <label className="toggle"><span><b>Show cursor</b><small>Hide it for the whole video; clips can hide it individually.</small></span><input type="checkbox" checked={!c.hideCursor} onChange={(e) => onConfig({ hideCursor: !e.target.checked })} /></label>
         {!c.hideCursor && (
           <>
@@ -109,7 +109,7 @@ export function CursorPanel({ config: c, hasCursor, clipHidden, onConfig, onPrev
             <p className="note">Not played in parts faster than 2×.</p>
           </section>
 
-          <section className="sec">
+          <section className="card">
             <label className="toggle"><span><b>Hide cursor when idle</b><small>After {((c.hideNotMovingCursorAfterMs ?? 2000) / 1000).toFixed(1)} s without movement; fades back in on the next move.</small></span><input type="checkbox" checked={c.hideNotMovingCursorAfterMs !== null} onChange={(e) => onConfig({ hideNotMovingCursorAfterMs: e.target.checked ? 2000 : null })} /></label>
             {c.hideNotMovingCursorAfterMs !== null && <input className="toggle__extra" type="range" min={500} max={5000} step={100} value={c.hideNotMovingCursorAfterMs} onChange={(e) => onConfig({ hideNotMovingCursorAfterMs: Number(e.target.value) })} aria-label="Idle time before hiding" />}
             <label className="toggle"><span><b>Rotate while moving</b><small>Tilts slightly as if chasing the mouse.</small></span><input type="checkbox" checked={c.cursorRotateOnXMovementRatio > 0} onChange={(e) => onConfig({ cursorRotateOnXMovementRatio: e.target.checked ? 0.5 : 0 })} /></label>
