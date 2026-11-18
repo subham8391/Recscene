@@ -5,6 +5,8 @@ import type { CursorConfig } from '@core/editor/cursor'
 interface Props {
   config: AudioConfig & CursorConfig
   hasMic: boolean
+  /** Specs 221, 292: how many voice-overs the project has. */
+  voiceOverCount: number
   assetsUrl: string
   libraryUrl: string
   /** Media url for a file inside the project bundle. */
@@ -14,7 +16,7 @@ interface Props {
 }
 
 /** The Audio inspector from the Audio board (specs 213–220, 14). */
-export function AudioPanel({ config, hasMic, assetsUrl, libraryUrl, projectUrl, onConfig, onAction }: Props): React.JSX.Element {
+export function AudioPanel({ config, hasMic, voiceOverCount, assetsUrl, libraryUrl, projectUrl, onConfig, onAction }: Props): React.JSX.Element {
   const [catalogue, setCatalogue] = useState<MusicTrack[]>([])
   const [library, setLibrary] = useState<string[]>([])
   const [genre, setGenre] = useState<string>('All')
@@ -83,6 +85,15 @@ export function AudioPanel({ config, hasMic, assetsUrl, libraryUrl, projectUrl, 
         <label className="toggle"><span><b>Mute system audio</b><small>{config.muteSystemAudio ? MUTED_SYSTEM : 'Recorded with the screen when system audio was on.'}</small></span><input type="checkbox" checked={config.muteSystemAudio} onChange={(e) => onConfig({ muteSystemAudio: e.target.checked })} /></label>
         <div className="hd"><span className="muted">External device audio</span><span className="muted">Muted</span></div>
         <p className="note">iPhone or iPad audio when recording a device. Device recording is not built yet.</p>
+      </section>
+
+      <section className="sec">
+        <div className="hd"><h3>Voiceovers</h3><span className="muted">{voiceOverCount === 0 ? 'None yet' : `${voiceOverCount} recorded`}</span></div>
+        <p className="note">Narrate after recording: a voiceover starts at the playhead, plays the video along and lands on the Voiceovers track.</p>
+        <div className="grid2">
+          <button type="button" className="btn btn--ghost" onClick={() => onAction('recordVoiceover')}>Record voiceover…</button>
+          <button type="button" className="btn btn--ghost" disabled={voiceOverCount === 0} onClick={() => onAction('removeAllVoiceovers')}>Remove all voiceovers</button>
+        </div>
       </section>
 
       <section className={`sec${dragOver ? ' sec--drop' : ''}`}>

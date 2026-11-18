@@ -54,6 +54,9 @@ import type { OpenedProject } from '@core/projectFile'
 import { BackgroundPanel } from './BackgroundPanel'
 import { CameraPanel, LayoutPanel } from './CameraPanel'
 import { MaskPanel } from './MaskPanel'
+import { VoiceOverPanel } from './VoiceOverPanel'
+import { VoiceoverRecorder } from './VoiceoverRecorder'
+import { addVoiceOver, applyVolumeToAll as applyVoiceVolumeToAll, canStartAt, recordingLimitMs, removeVoiceOver, updateVoiceOver, VOICEOVER_ADDED, type VoiceOver } from '@core/editor/voiceovers'
 import { ShortcutsPanel } from './ShortcutsPanel'
 import { AudioPanel } from './AudioPanel'
 import { CaptionsPanel, TranscriptEditor } from './CaptionsPanel'
@@ -98,7 +101,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   const [pb, setPb] = useState<PlaybackState>(() => initialPlayback(prefs.playbackLoop))
   const [preview, setPreview] = useState<number | null>(null)
   const [view, setView] = useState<TimelineView>(() => initialView(opened.project.recording.durationMs))
-  const [visible, setVisible] = useState<TrackVisibility>({ zooms: true, layouts: !!opened.media.camera, masks: opened.project.masks.length > 0, shortcuts: opened.project.recording.keys.length > 0, captions: opened.project.transcript !== null })
+  const [visible, setVisible] = useState<TrackVisibility>({ zooms: true, layouts: !!opened.media.camera, masks: opened.project.masks.length > 0, shortcuts: opened.project.recording.keys.length > 0, captions: opened.project.transcript !== null, voiceovers: opened.project.voiceOvers.length > 0 })
   const [generating, setGenerating] = useState(false)
   const [presetsOpen, setPresetsOpen] = useState(false)
   const [transcriptEditing, setTranscriptEditing] = useState(false)
@@ -123,6 +126,10 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   const [draftLayouts, setDraftLayouts] = useState<CameraLayout[] | null>(null)
   const [layoutClipboard, setLayoutClipboard] = useState<LayoutSettings | null>(null)
   const [selectedMaskId, setSelectedMaskId] = useState<string | null>(null)
+  const [selectedVoiceOverId, setSelectedVoiceOverId] = useState<string | null>(null)
+  const [draftVoiceOvers, setDraftVoiceOvers] = useState<VoiceOver[] | null>(null)
+  /** Spec 221: the Voiceover editor, opened at a source and output time. */
+  const [recorder, setRecorder] = useState<{ sourceMs: number; outputMs: number; limitMs: number; clipSpeed: number } | null>(null)
   const [draftMasks, setDraftMasks] = useState<Mask[] | null>(null)
   const [maskClipboard, setMaskClipboard] = useState<MaskSettings | null>(null)
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string | null>(null)
@@ -143,6 +150,10 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   const masks = draftMasks ?? project.masks
   const selectedMask = masks.find((m) => m.id === selectedMaskId) ?? null
   const selectedMaskIndex = selectedMask ? masks.indexOf(selectedMask) : -1
+  const voiceOvers = draftVoiceOvers ?? project.voiceOvers
+  const selectedVoiceOver = voiceOvers.find((v) => v.id === selectedVoiceOverId) ?? null
+  const selectedVoiceOverIndex = selectedVoiceOver ? voiceOvers.indexOf(selectedVoiceOver) : -1
+  const voiceUrl = useCallback((file: string) => opened.media.screen.replace(/[^/]+$/, encodeURIComponent(file)), [opened.media.screen])
   const shownProject = draftZooms || draftLayouts || draftMasks ? { ...project, zooms: draftZooms ?? project.zooms, layouts: draftLayouts ?? project.layouts, masks: draftMasks ?? project.masks } : project
   const durationMs = outputDurationMs(clips)
   const sourceMs = outputToSource(clips, preview ?? pb.timeMs)
@@ -306,12 +317,35 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
   const setZooms = (next: ZoomRange[]): void => edit({ ...project, zooms: next })
   const setLayouts = (next: CameraLayout[]): void => edit({ ...project, layouts: next })
   const setMasks = (next: Mask[]): void => edit({ ...project, masks: next })
+  const setVoiceOvers = (next: VoiceOver[]): void => edit({ ...project, voiceOvers: next })
+  const selectVoiceOver = (id: string | null): void => {
+    setSelectedVoiceOverId(id)
+    if (id) {
+      setSelectedClipId(null)
+      setSelectedZoomId(null)
+      setSelectedLayoutId(null)
+      setSelectedMaskId(null)
+    }
+  }
+  /** Spec 221: open the Voiceover editor at a source time (the playhead by default). */
+  const openRecorder = (sourceMsAt: number): void => {
+    const error = canStartAt(project.voiceOvers, sourceMsAt)
+    if (error) return notify(error)
+    const clip = clipAtSource(clips, sourceMsAt)
+    const out = sourceToOutput(clips, sourceMsAt)
+    if (!clip || out === null) return notify('The playhead is outside the kept clips')
+    const limitMs = Math.min(recordingLimitMs(project.voiceOvers, sourceMsAt, sourceDurationMs), clip.sourceEndMs)
+    setPb((p) => ({ ...p, playing: false, timeMs: out }))
+    setVisible((v) => ({ ...v, voiceovers: true }))
+    setRecorder({ sourceMs: sourceMsAt, outputMs: out, limitMs, clipSpeed: clip.speed })
+  }
   const selectMask = (id: string | null): void => {
     setSelectedMaskId(id)
     if (id) {
       setSelectedClipId(null)
       setSelectedZoomId(null)
       setSelectedLayoutId(null)
+      setSelectedVoiceOverId(null)
     }
   }
   /** Specs 189–190, 192, 195: a new mask at a time, from a type or the copied settings. */
@@ -487,7 +521,14 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           if (r.error) return notify(r.error)
           return setClips(r.clips)
         }
+        case 'recordVoiceover': return openRecorder(outputToSource(clips, pb.timeMs))
+        case 'removeAllVoiceovers': return void (setSelectedVoiceOverId(null), setVoiceOvers([]))
+        case 'track:voiceovers': return toggleTrack('voiceovers')
         case 'removeSlice': {
+          if (selectedVoiceOver) {
+            setSelectedVoiceOverId(null)
+            return setVoiceOvers(removeVoiceOver(voiceOvers, selectedVoiceOver.id))
+          }
           if (selectedMask) {
             setSelectedMaskId(null)
             return setMasks(removeMask(masks, selectedMask.id))
@@ -614,7 +655,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [durationMs, pb.timeMs, prefs, project, save, closeProject, setPrefs, clips, selectedClip, currentClip, clipboard, sourceDurationMs, setClips, zooms, selectedZoom, zoomClipboard, defaultZoomLevel, setZooms, layouts, selectedLayout, layoutClipboard, hasCamera, setLayouts, addLayout, moveLayoutCamera, masks, selectedMask, maskClipboard, setMasks, addMask, focusMask, shortcuts, setShortcutConfig, generateTranscript, exportTranscript]
+    [durationMs, pb.timeMs, prefs, project, save, closeProject, setPrefs, clips, selectedClip, currentClip, clipboard, sourceDurationMs, setClips, zooms, selectedZoom, zoomClipboard, defaultZoomLevel, setZooms, layouts, selectedLayout, layoutClipboard, hasCamera, setLayouts, addLayout, moveLayoutCamera, masks, selectedMask, maskClipboard, setMasks, addMask, focusMask, voiceOvers, selectedVoiceOver, setVoiceOvers, openRecorder, shortcuts, setShortcutConfig, generateTranscript, exportTranscript]
   )
 
   useEffect(() => window.recscene.onEditorAction(run), [run])
@@ -732,6 +773,10 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           previewQuality={prefs.playbackQualityMode}
           reelMode={prefs.reelPreviewMode}
           silenceGaps={silenceGaps}
+          voiceOvers={voiceOvers}
+          clips={clips}
+          voiceUrl={voiceUrl}
+          transportSpeed={pb.speed}
           sourceDurationMs={sourceDurationMs}
           clipState={{ hidden: !!currentClip?.hideCursor, smooth: !currentClip?.disableSmoothMouseMovement }}
           clickSoundUrl={(kind) => (project.config.clickSoundEffect ? opened.media.assets + `/sounds/clicks/${project.config.clickSoundEffect}/${kind}.wav` : null)}
@@ -801,7 +846,19 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
 
       {sidebar && (
         <aside className="inspector" aria-label="Inspector">
-          {selectedMask ? (
+          {selectedVoiceOver ? (
+            <>
+              <div className="inspector__head"><span className="tl__dot" style={{ background: 'var(--voice)' }} /><h2>Voiceover</h2><span className="muted">{selectedVoiceOverIndex + 1} of {voiceOvers.length}</span><span className="tl__spacer" /><button type="button" className="btn btn--ghost btn--sm" onClick={() => setSelectedVoiceOverId(null)}>Close <kbd>⎋</kbd></button></div>
+              <VoiceOverPanel
+                list={voiceOvers}
+                voiceOver={selectedVoiceOver}
+                index={selectedVoiceOverIndex}
+                onChange={(patch) => setVoiceOvers(updateVoiceOver(voiceOvers, selectedVoiceOver.id, patch))}
+                onApplyVolumeToAll={() => { setVoiceOvers(applyVoiceVolumeToAll(voiceOvers, selectedVoiceOver.volume)); notify('Volume applied to all voiceovers') }}
+                onRemove={() => { setSelectedVoiceOverId(null); setVoiceOvers(removeVoiceOver(voiceOvers, selectedVoiceOver.id)) }}
+              />
+            </>
+          ) : selectedMask ? (
             <>
               <div className="inspector__head"><span className="tl__dot" style={{ background: 'var(--mask)' }} /><h2>Mask</h2><span className="muted">{selectedMaskIndex + 1} of {masks.length}</span><span className="tl__spacer" /><button type="button" className="btn btn--ghost btn--sm" onClick={() => setSelectedMaskId(null)}>Close <kbd>⎋</kbd></button></div>
               <MaskPanel
@@ -946,6 +1003,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
             <AudioPanel
               config={project.config}
               hasMic={!!opened.media.mic}
+              voiceOverCount={voiceOvers.length}
               assetsUrl={opened.media.assets}
               libraryUrl={opened.media.library}
               projectUrl={(file) => window.recscene.project.mediaUrl(file)}
@@ -1035,6 +1093,13 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
           onHideShortcutLabel={(label, hidden) => setShortcutConfig(setHiddenForLabel(project.config, shortcuts, label, hidden))}
           onHideAllShortcuts={(hidden) => setShortcutConfig(setAllHidden(project.config, shortcuts, hidden))}
           onSeekSource={(ms) => { const o = sourceToOutput(clips, ms); if (o !== null) setPb((p) => seek(p, o, durationMs)) }}
+          selectedVoiceOverId={selectedVoiceOverId}
+          onSelectVoiceOver={selectVoiceOver}
+          onAddVoiceOverAt={openRecorder}
+          onVoiceOverPreview={setDraftVoiceOvers}
+          onVoiceOverCommit={() => { const next = draftVoiceOvers; setDraftVoiceOvers(null); if (next) setVoiceOvers(next) }}
+          onRemoveVoiceOver={(id) => { if (selectedVoiceOverId === id) setSelectedVoiceOverId(null); setVoiceOvers(removeVoiceOver(voiceOvers, id)) }}
+          onRemoveAllVoiceOvers={() => run('removeAllVoiceovers')}
           micUrl={opened.media.mic}
           showWaveform={!prefs.hideAudioWaveform}
           smoothWaveform={prefs.enableSmoothWaveform}
@@ -1044,6 +1109,30 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
         />
       )}
 
+      {recorder && (
+        <VoiceoverRecorder
+          startSourceMs={recorder.sourceMs}
+          startOutputMs={recorder.outputMs}
+          limitSourceMs={recorder.limitMs}
+          sourceMs={sourceMs}
+          outputMs={pb.timeMs}
+          playing={pb.playing}
+          preferredMicId={prefs.voiceoverPreferredMicrophoneId}
+          onPreferredMic={(id) => setPrefs({ voiceoverPreferredMicrophoneId: id || null })}
+          onPlay={() => setPb((p) => ({ ...p, timeMs: recorder.outputMs, playing: true, speed: 1 / recorder.clipSpeed, loop: false }))}
+          onPause={() => setPb((p) => ({ ...p, playing: false, speed: 1 }))}
+          onSaved={(v) => {
+            const r = addVoiceOver(project.voiceOvers, v)
+            if (r.error) return notify(r.error)
+            setVoiceOvers(r.list)
+            setRecorder(null)
+            selectVoiceOver(r.voiceOver?.id ?? null)
+            notify(VOICEOVER_ADDED)
+          }}
+          onNotice={notify}
+          onClose={() => setRecorder(null)}
+        />
+      )}
       {presetsOpen && (
         <PresetsPopover
           config={project.config}
@@ -1056,7 +1145,7 @@ export function Editor({ opened, notice, onDismissNotice }: Props): React.JSX.El
       {overlay && <CommandMenu mode={overlay} actions={withOverrides(ACTIONS, prefs.shortcutOverrides)} onRun={(id) => { setOverlay(null); run(id) }} onClose={() => setOverlay(null)} />}
       {exporting && (
         <ExportDialog
-          input={{ project, clips, sourceDurationMs, screenUrl: opened.media.screen, micUrl: opened.media.mic, cameraUrl: opened.media.camera, musicUrl, backgroundImageUrl: backgroundImage ? backgroundImageUrl : null, assetsUrl: opened.media.assets, cursor: opened.cursor, cursorTypes: opened.cursorTypes, silenceGaps, projectName: project.name }}
+          input={{ project, clips, sourceDurationMs, screenUrl: opened.media.screen, micUrl: opened.media.mic, cameraUrl: opened.media.camera, musicUrl, backgroundImageUrl: backgroundImage ? backgroundImageUrl : null, assetsUrl: opened.media.assets, cursor: opened.cursor, cursorTypes: opened.cursorTypes, silenceGaps, voiceUrl, projectName: project.name }}
           durationMs={durationMs}
           onClose={() => setExporting(false)}
           onNotice={notify}

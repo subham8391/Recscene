@@ -112,6 +112,7 @@ export class ProjectService {
     ipcMain.handle('project:openPath', (_e, path: string) => this.openPath(path))
     ipcMain.handle('project:copyZip', () => this.copyZip())
     ipcMain.handle('project:extractRaw', () => this.extractRaw())
+    ipcMain.handle('project:saveVoiceOver', (_e, wav: ArrayBuffer) => this.saveVoiceOver(wav))
     ipcMain.handle('project:mediaUrl', (_e, file: string) => (this.current ? mediaUrl(this.current.projectDir, file) : null))
   }
 
@@ -270,6 +271,15 @@ export class ProjectService {
     await writeFile(join(target, 'project.json'), JSON.stringify({ ...renamed, lastSavedAt: new Date().toISOString() }, null, 2))
     await writeFile(join(target, 'recording-markers.json'), JSON.stringify(markersFile(current.markers), null, 2))
     return this.open(target)
+  }
+
+  /** Spec 221: a recorded voice-over (mono WAV bytes) is written into the bundle as voiceover-<n>.wav. */
+  async saveVoiceOver(wav: ArrayBuffer): Promise<{ file: string; url: string }> {
+    const current = this.current
+    if (!current) throw new Error('No project is open')
+    const file = `voiceover-${Date.now().toString(36)}.wav`
+    await writeFile(join(current.projectDir, file), Buffer.from(wav))
+    return { file, url: mediaUrl(current.projectDir, file) }
   }
 
   /** Spec 167: a png or jpg is copied into the bundle as background-<n>.<ext>; returns its file name and media url. */

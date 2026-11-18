@@ -85,7 +85,9 @@ const api = {
     /** A dropped File (its path is resolved here) or pasted PNG bytes. */
     importBackgroundImage: (source: File | ArrayBuffer): Promise<{ file: string; url: string }> =>
       ipcRenderer.invoke('project:importBackgroundImage', source instanceof ArrayBuffer ? source : webUtils.getPathForFile(source)) as Promise<{ file: string; url: string }>,
-    mediaUrl: (file: string): Promise<string | null> => ipcRenderer.invoke('project:mediaUrl', file) as Promise<string | null>
+    mediaUrl: (file: string): Promise<string | null> => ipcRenderer.invoke('project:mediaUrl', file) as Promise<string | null>,
+    /** Spec 221: writes a recorded voice-over into the bundle. */
+    saveVoiceOver: (wav: ArrayBuffer): Promise<{ file: string; url: string }> => ipcRenderer.invoke('project:saveVoiceOver', wav) as Promise<{ file: string; url: string }>
   },
   /** The quick export widget (specs 42–47). */
   quickExport: {

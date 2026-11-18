@@ -31,6 +31,7 @@ import type { ZoomRange } from './editor/zooms'
 import { defaultCursorConfig, type CursorConfig } from './editor/cursor'
 import { defaultBackgroundConfig, type BackgroundConfig } from './editor/background'
 import { defaultCameraConfig, type CameraConfig, type CameraLayout } from './editor/cameraLayout'
+import type { VoiceOver } from './editor/voiceovers'
 import type { Mask } from './editor/masks'
 import { defaultShortcutConfig, type ShortcutConfig } from './editor/shortcuts'
 import { defaultAudioConfig, type AudioConfig } from './editor/audio'
@@ -99,6 +100,8 @@ export interface Project {
   masks: Mask[]
   /** Specs 205–212: the transcript, or null until generated. */
   transcript: Transcript | null
+  /** Specs 221, 292: recorded voice-overs. */
+  voiceOvers: VoiceOver[]
   /** ISO timestamps (spec 73–74). */
   updatedAt?: string
   lastSavedAt?: string
@@ -118,6 +121,7 @@ export function normaliseProject(raw: unknown): Project {
     layouts: Array.isArray(r.layouts) ? r.layouts : [],
     masks: Array.isArray(r.masks) ? r.masks : [],
     transcript: r.transcript && typeof r.transcript === 'object' && Array.isArray(r.transcript.words) ? r.transcript : null,
+    voiceOvers: Array.isArray(r.voiceOvers) ? r.voiceOvers : [],
     clips: Array.isArray(r.clips) && r.clips.length > 0 ? r.clips : [defaultClip(recording.durationMs)],
     ...(r.updatedAt ? { updatedAt: r.updatedAt } : {}),
     ...(r.lastSavedAt ? { lastSavedAt: r.lastSavedAt } : {})
