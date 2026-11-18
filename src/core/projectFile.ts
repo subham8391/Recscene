@@ -60,5 +60,7 @@ export interface OpenedProject {
   markers: RecordingMarker[]
   /** Cursor positions from events.json (fractions of the frame), for zooms that follow the mouse. */
   cursor: { timeMs: number; x: number; y: number }[]
+  /** Specs 134–136: cursor type changes from events.json. */
+  cursorTypes: { timeMs: number; type: string }[]
   media: { screen: string; mic?: string; systemAudio?: string; camera?: string; assets: string; library: string }
 }

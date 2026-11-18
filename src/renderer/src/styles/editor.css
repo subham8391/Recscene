@@ -1677,3 +1677,112 @@ input[type='color'] {
 .preset__new .input {
   flex: 1 1 auto;
 }
+
+/* Device frames (specs 185–187) */
+.devframe {
+  position: absolute;
+  overflow: hidden;
+}
+
+.devframe__notch,
+.devframe__island,
+.devframe__camera {
+  position: absolute;
+  transform: translateX(-50%);
+  background: #000;
+}
+
+.devframe__notch {
+  border-radius: 0 0 8px 8px;
+}
+
+.devframe__island {
+  border-radius: 999px;
+}
+
+.devframe__camera {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-top: -3px;
+}
+
+.devframe__lip,
+.devframe__chin,
+.devframe__stand {
+  position: absolute;
+  bottom: 0;
+}
+
+.devframe__lip,
+.devframe__chin {
+  left: 0;
+  right: 0;
+}
+
+.devframe__stand {
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 6px 6px 0 0;
+}
+
+/* Reel preview mode (spec 71): preview only */
+.reel {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: #fff;
+  font-family: var(--font);
+  font-weight: 600;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.reel__top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  padding: 12px 16px;
+  background: linear-gradient(rgba(0, 0, 0, 0.55), transparent);
+  font-size: 14px;
+}
+
+.reel--instagram .reel__top {
+  justify-content: space-between;
+  font-size: 18px;
+}
+
+.reel__on {
+  text-decoration: underline;
+  text-underline-offset: 6px;
+}
+
+.reel__side {
+  position: absolute;
+  right: 12px;
+  bottom: 16%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  font-size: 20px;
+  text-align: center;
+}
+
+.reel__bottom {
+  position: absolute;
+  left: 14px;
+  right: 60px;
+  bottom: 6%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.reel__caption {
+  font-weight: 400;
+  opacity: 0.9;
+}

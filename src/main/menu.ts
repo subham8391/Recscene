@@ -99,6 +99,7 @@ export function installMenu(actions: MenuActions): void {
         { label: 'Smooth Waveform', click: send('toggleSmoothWaveform') },
         { label: 'Always Show Timeline Scrollbar', click: send('toggleTimelineScrollbar') },
         { label: 'Loop Playback', click: send('toggleLoop') },
+        { label: 'Reel Mode', submenu: [{ label: 'Disable', click: send('reelMode:off') }, { label: 'Instagram', click: send('reelMode:instagram') }, { label: 'TikTok', click: send('reelMode:tiktok') }] },
         { type: 'separator' },
         { label: 'Zoom In Timeline', accelerator: 'CommandOrControl+=', click: send('timelineZoomIn') },
         { label: 'Zoom Out Timeline', accelerator: 'CommandOrControl+-', click: send('timelineZoomOut') },

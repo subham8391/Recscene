@@ -1,3 +1,4 @@
+import AppKit
 import Carbon.HIToolbox
 import CoreGraphics
 import Foundation
@@ -19,6 +20,12 @@ struct CursorSample: Codable {
     var y: Double
 }
 
+/// Specs 125, 134–136: the system cursor's type when it changed ("pointer", "ibeam", …).
+struct CursorTypeChange: Codable {
+    var timeMs: Double
+    var type: String
+}
+
 struct Position: Codable {
     var x: Double
     var y: Double
@@ -30,6 +37,7 @@ struct EventsFile: Codable {
     var clicks: [ClickEvent]
     var keys: [KeyEvent]
     var cursor: [CursorSample]
+    var cursorTypes: [CursorTypeChange]
 
     struct Region: Codable { var x: Double, y: Double, width: Double, height: Double }
 }
@@ -48,6 +56,9 @@ final class EventRecorder {
     private var clicks: [ClickEvent] = []
     private var keys: [KeyEvent] = []
     private var cursor: [CursorSample] = []
+    private var cursorTypes: [CursorTypeChange] = []
+    private var lastCursorType = ""
+    private var lastTypeCheckAt: TimeInterval = 0
     private var lastCursorAt: TimeInterval = 0
     private var lastPoint = CGPoint(x: -1, y: -1)
     private var buttonsDown: [CGMouseButton: Bool] = [.left: false, .right: false, .center: false]
@@ -72,7 +83,7 @@ final class EventRecorder {
         lock.lock(); defer { lock.unlock() }
         return EventsFile(
             region: .init(x: region.origin.x, y: region.origin.y, width: region.width, height: region.height),
-            clicks: clicks, keys: keys, cursor: cursor)
+            clicks: clicks, keys: keys, cursor: cursor, cursorTypes: cursorTypes)
     }
 
     // MARK: Mouse polling (240 Hz for buttons, cursor samples at most 60 Hz)
@@ -99,6 +110,15 @@ final class EventRecorder {
             lastCursorAt = uptime
             let n = normalise(point)
             lock.lock(); cursor.append(CursorSample(timeMs: timeMs, x: n.x, y: n.y)); lock.unlock()
+        }
+        // The cursor type (specs 134–136) is checked at 20 Hz; only changes are kept.
+        if uptime - lastTypeCheckAt >= 0.05 {
+            lastTypeCheckAt = uptime
+            let type = CursorKind.current()
+            if type != lastCursorType {
+                lastCursorType = type
+                lock.lock(); cursorTypes.append(CursorTypeChange(timeMs: timeMs, type: type)); lock.unlock()
+            }
         }
     }
 
@@ -193,5 +213,30 @@ enum KeyLabel {
         }
         guard status == noErr, length > 0 else { return nil }
         return String(utf16CodeUnits: chars, count: length).uppercased()
+    }
+}
+
+/// Names the system cursor by comparing its image with the standard cursors (app-drawn cursors read as "pointer").
+enum CursorKind {
+    private static let known: [(String, NSCursor)] = [
+        ("pointer", .arrow), ("ibeam", .iBeam), ("ibeam-vertical", .iBeamCursorForVerticalLayout), ("crosshair", .crosshair),
+        ("pointinghand", .pointingHand), ("openhand", .openHand), ("closedhand", .closedHand),
+        ("resize-leftright", .resizeLeftRight), ("resize-updown", .resizeUpDown), ("resize-left", .resizeLeft), ("resize-right", .resizeRight),
+        ("resize-up", .resizeUp), ("resize-down", .resizeDown), ("notallowed", .operationNotAllowed), ("drag-link", .dragLink),
+        ("drag-copy", .dragCopy), ("contextual-menu", .contextualMenu), ("disappearing", .disappearingItem)
+    ]
+    private static let signatures: [Data: String] = {
+        var map: [Data: String] = [:]
+        for (name, cursor) in known { if let sig = signature(of: cursor) { map[sig] = name } }
+        return map
+    }()
+
+    private static func signature(of cursor: NSCursor) -> Data? {
+        cursor.image.tiffRepresentation
+    }
+
+    static func current() -> String {
+        guard let cursor = NSCursor.currentSystem, let sig = signature(of: cursor) else { return "pointer" }
+        return signatures[sig] ?? "pointer"
     }
 }

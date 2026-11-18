@@ -16,7 +16,7 @@ describe('newProject', () => {
       createdAt: '2026-11-17T09:05:00.000Z',
       durationMs: 5000,
       screen: { width: 3600, height: 2338, file: 'screen.mov' },
-      events: { clicks: [{ timeMs: 10, position: { x: 0.5, y: 0.5 }, button: 'left' }], keys: [], cursor: [] }
+      events: { clicks: [{ timeMs: 10, position: { x: 0.5, y: 0.5 }, button: 'left' }], keys: [], cursor: [], cursorTypes: [] }
     })
     expect(project.version).toBe(1)
     expect(project.meta.recordingFlags).toEqual([])
@@ -36,7 +36,7 @@ describe('newProject', () => {
       durationMs: 1,
       screen: { width: 2, height: 2, file: 'screen.mov' },
       mic: { file: 'mic.m4a' },
-      events: { clicks: [], keys: [], cursor: [] },
+      events: { clicks: [], keys: [], cursor: [], cursorTypes: [] },
       flags: [1500],
       autoZoomLevel: null
     })

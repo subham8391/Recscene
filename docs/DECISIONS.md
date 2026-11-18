@@ -50,6 +50,8 @@
 
 **2026-11-18 (quick export and project files built).** After a recording the quick export widget shows by default (`showQuickExportWidget`, spec 41); it is its own always-on-top window that runs the same export engine as the editor with a `quick` target that writes to `~/Movies/Recscene` without a dialog. The project is written before the widget appears, so Keep/Delete only decides whether the bundle stays. Zipping uses `ditto` and puts a file URL on the pasteboard; `.recscene` bundles are registered as a package document type and drops go through one open-path check.
 
+**2026-11-18 (editor leftovers built).** Cursor types come from the helper polling `NSCursor.currentSystem` at 20 Hz and matching its image against the standard cursors (`events.json` `cursorTypes`); app-drawn cursors read as the pointer. Cursor sets are SVG sprites drawn in code (24 sets, 9 types), not bundled images. Device mockups are drawn from geometry (bezel fractions, notch, chin, stand) rather than photographed frames, so they scale to any export size and need no assets; Perfect mode lists frames whose screen aspect matches the recording. Screen motion blur is a CSS blur in the preview and a canvas filter on export, driven by the camera spring's velocity. Reel mode is a preview overlay only; 9:16 export is the aspect picker's job.
+
 ## Open
 - **Q1** Licensing model: one-time with a year of updates versus subscription. Decide before M3.
 - **Q2** Transcription and captions: on-device (whisper.cpp) versus a cloud service. Lean on-device for privacy; decide at M2.
