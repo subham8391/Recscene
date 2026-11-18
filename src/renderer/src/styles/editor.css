@@ -156,11 +156,8 @@
   transform: scaleX(-1);
 }
 
-.stage__inner,
-.stage__shadow,
-.stage__inset {
-  transition: left 0.35s ease, top 0.35s ease, width 0.35s ease, height 0.35s ease;
-}
+/* The recording box, its shadow and the inset band follow the layout at once: a transition here made the
+   box lag behind the video while the padding slider moved (Screen Studio moves everything as one piece). */
 
 .transport {
   display: flex;

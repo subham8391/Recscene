@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { applyInset, GRADIENT_PRESETS, gradientCss, insetValue, isHexColor, randomWallpaper, setDirectional, toggleFavourite } from '@core/editor/background'
+import { applyInset, GRADIENT_PRESETS, gradientCss, insetValue, isHexColor, randomWallpaper, setDirectional, toggleFavourite, PADDING_MAX } from '@core/editor/background'
 import { WALLPAPER_COLLECTIONS, WALLPAPERS } from '@core/editor/wallpapers'
 import type { Project } from '@core/project'
 import { frameLabel, framesFor, NO_MOCKUPS, type FrameFilter } from '@core/editor/deviceFrames'
@@ -110,7 +110,7 @@ export function BackgroundPanel({ project, assetsUrl, backgroundImageUrl, onConf
 
       {(c.backgroundType === 'image' || c.backgroundType === 'system') && <Slider id="bblur" label="Background blur" value={c.backgroundBlur} min={0} max={100} step={1} format={String} onChange={(v) => onConfig({ backgroundBlur: v })} />}
 
-      <Slider id="bpad" label="Padding" value={c.backgroundPaddingRatio} min={0} max={35} step={0.5} format={(v) => `${v}%`} onChange={(v) => onConfig({ backgroundPaddingRatio: v })} />
+      <Slider id="bpad" label="Padding" value={Math.min(PADDING_MAX, c.backgroundPaddingRatio)} min={0} max={PADDING_MAX} step={1} format={(v) => `${Math.round(v)}%`} onChange={(v) => onConfig({ backgroundPaddingRatio: v })} />
       <Slider id="brad" label="Rounded corners" value={c.windowBorderRadius} min={0} max={200} step={1} format={(v) => `${v} px`} onChange={(v) => onConfig({ windowBorderRadius: v })} />
       <Slider id="bins" label="Inset" value={inset} min={0} max={60} step={1} format={(v) => `${v} px`} onChange={(v) => onConfig(applyInset(c, v))} />
       {inset > 0 && (
