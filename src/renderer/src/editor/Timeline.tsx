@@ -170,9 +170,39 @@ export function Timeline(props: Props): React.JSX.Element {
     [view, width, durationMs]
   )
 
+  // Spec 58–59: two-finger scroll pans, pinch (ctrl+wheel in Chromium) or ⌘+wheel zooms around the pointer.
   const onWheel = (e: React.WheelEvent): void => {
-    if (e.metaKey) setView(zoomView(view, e.deltaY > 0 ? 1.1 : 0.9, durationMs, timeFromEvent(e)))
-    else setView(panView(view, (e.deltaX || e.deltaY) * (view.visibleMs / width), durationMs))
+    if (e.metaKey || e.ctrlKey) setView(zoomView(view, e.deltaY > 0 ? 1.08 : 0.92, durationMs, timeFromEvent(e)))
+    else setView(panView(view, (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) * (view.visibleMs / width), durationMs))
+  }
+  // The scrollbar under the tracks (Screen Studio): the thumb is the visible window; drag it, or click the track to jump.
+  const viewRef = useRef(view)
+  useEffect(() => {
+    viewRef.current = view
+  }, [view])
+  const onScrollThumbDown = (e: React.MouseEvent): void => {
+    e.stopPropagation()
+    e.preventDefault()
+    const track = e.currentTarget.parentElement?.getBoundingClientRect()
+    if (!track) return
+    const startX = e.clientX
+    const startMs = viewRef.current.startMs
+    const move = (ev: MouseEvent): void => {
+      const target = startMs + ((ev.clientX - startX) / track.width) * durationMs
+      setView(panView(viewRef.current, target - viewRef.current.startMs, durationMs))
+    }
+    const up = (): void => {
+      window.removeEventListener('mousemove', move)
+      window.removeEventListener('mouseup', up)
+    }
+    window.addEventListener('mousemove', move)
+    window.addEventListener('mouseup', up)
+  }
+  const onScrollTrackDown = (e: React.MouseEvent): void => {
+    e.stopPropagation()
+    const r = e.currentTarget.getBoundingClientRect()
+    const target = ((e.clientX - r.left) / r.width) * durationMs - view.visibleMs / 2
+    setView(panView(view, target - view.startMs, durationMs))
   }
 
   // Trim handles (spec 80): pixels → output ms → source ms through the clip's speed.
@@ -345,7 +375,7 @@ export function Timeline(props: Props): React.JSX.Element {
           <input type="range" min={0} max={100} value={zoomToSlider(view, durationMs)} onChange={(e) => setView(sliderToZoom(Number(e.target.value), view, durationMs, timeMs))} />
         </label>
       </div>
-      <div className="tl__body">
+      <div className="tl__body" onWheel={onWheel}>
         <div className="tl__names">
           <div className="tl__ruler-pad" />
           {rows.map((t) => (
@@ -356,7 +386,7 @@ export function Timeline(props: Props): React.JSX.Element {
           ))}
           {wantBars && <div className="tl__name"><span className="tl__dot" style={{ background: 'var(--text3)' }} />Audio</div>}
         </div>
-        <div ref={lane} className="tl__lane" onWheel={onWheel} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={() => { onMouseUp(); onPreview(null) }} onClick={(e) => { if (!drag.current) { onSeek(timeFromEvent(e)); if ((e.target as HTMLElement).classList.contains('tl__row') || (e.target as HTMLElement).classList.contains('tl__ruler')) onSelectClip(null) } }}>
+        <div ref={lane} className="tl__lane" onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={() => { onMouseUp(); onPreview(null) }} onClick={(e) => { if (!drag.current) { onSeek(timeFromEvent(e)); if ((e.target as HTMLElement).classList.contains('tl__row') || (e.target as HTMLElement).classList.contains('tl__ruler')) onSelectClip(null) } }}>
           <div className="tl__ruler">
             {ticks.map((t) => <span key={t.timeMs} className="tl__tick" style={{ left: pct(t.timeMs) }}>{t.label}</span>)}
             {markers.map((m, i) => { const o = atOutput(m.timeMs); return o === null ? null : <span key={`m${i}`} className="tl__marker" style={{ left: pct(o) }} title={`Marker ${formatClock(m.timeMs)}${m.label ? ` · ${m.label}` : ''}`} /> })}
@@ -450,6 +480,11 @@ export function Timeline(props: Props): React.JSX.Element {
             </div>
           )}
           <div className="tl__playhead" style={{ left: pct(timeMs) }} aria-hidden="true" />
+          {view.visibleMs < durationMs - 1 && (
+            <div className="tl__scroll" role="scrollbar" aria-label="Timeline scroll" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round((view.startMs / Math.max(1, durationMs - view.visibleMs)) * 100)} onMouseDown={onScrollTrackDown} onClick={(e) => e.stopPropagation()}>
+              <div className="tl__scroll__thumb" style={{ left: `${(view.startMs / durationMs) * 100}%`, width: `${(view.visibleMs / durationMs) * 100}%` }} onMouseDown={onScrollThumbDown} />
+            </div>
+          )}
           {voiceMenu && (
             <div role="menu" className="menu tl__ctx" style={{ left: voiceMenu.x, top: voiceMenu.y }} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()} onMouseMove={(e) => e.stopPropagation()}>
               <button type="button" role="menuitem" className="menu__item" onClick={() => { onRemoveVoiceOver(voiceMenu.id); setVoiceMenu(null) }}>Remove voiceover</button>

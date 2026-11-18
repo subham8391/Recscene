@@ -2816,3 +2816,29 @@ select.input:focus-visible {
 .card .input {
   background-color: var(--panel);
 }
+
+/* Timeline scrollbar (Screen Studio): the thumb is the visible window */
+.tl__scroll {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2px;
+  height: 8px;
+  z-index: 4;
+  cursor: default;
+}
+
+.tl__scroll__thumb {
+  position: absolute;
+  top: 0;
+  height: 8px;
+  min-width: 24px;
+  border-radius: 4px;
+  background: var(--line2);
+  cursor: grab;
+}
+
+.tl__scroll__thumb:hover,
+.tl__scroll__thumb:active {
+  background: var(--text3);
+}

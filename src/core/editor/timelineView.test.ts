@@ -4,9 +4,10 @@ import { initialView, keepVisible, panView, rulerTicks, sliderToZoom, timeAtX, v
 const D = 60_000
 
 describe('timeline view', () => {
-  it('starts showing the whole project up to ten minutes', () => {
+  it('starts on the first minute, or the whole project when shorter', () => {
     expect(initialView(D)).toEqual({ startMs: 0, visibleMs: D })
-    expect(initialView(2_000_000).visibleMs).toBe(600_000)
+    expect(initialView(2_000_000).visibleMs).toBe(60_000)
+    expect(initialView(20_000).visibleMs).toBe(20_000)
     expect(initialView(500).visibleMs).toBe(2000)
   })
 

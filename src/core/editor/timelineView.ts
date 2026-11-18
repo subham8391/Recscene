@@ -8,13 +8,15 @@ export interface TimelineView {
 
 export const MIN_VISIBLE_MS = 2000
 export const MAX_VISIBLE_MS = 10 * 60 * 1000
+/** A fresh project opens on its first minute, like Screen Studio, so the timeline scrolls from the start. */
+export const INITIAL_VISIBLE_MS = 60 * 1000
 
 export function maxVisible(durationMs: number): number {
   return Math.max(MIN_VISIBLE_MS, Math.min(MAX_VISIBLE_MS, durationMs))
 }
 
 export function initialView(durationMs: number): TimelineView {
-  return { startMs: 0, visibleMs: maxVisible(durationMs) }
+  return { startMs: 0, visibleMs: Math.min(maxVisible(durationMs), INITIAL_VISIBLE_MS) }
 }
 
 function clampView(v: TimelineView, durationMs: number): TimelineView {

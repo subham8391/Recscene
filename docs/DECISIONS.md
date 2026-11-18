@@ -68,6 +68,8 @@
 
 **2026-11-18 (preview motion blur off by default).** While a zoom moved, the preview blurred the whole screen with a CSS gaussian blur of up to 1.7 px for about 440 ms, which read as the picture going out of focus; Screen Studio's preview shows no such blur because its motion blur is an experimental preview setting that is off by default (spec 70). The preview blur is now the `previewMotionBlur` preference, off by default, switchable from Settings › Experimental and from the Animation panel; the export keeps its screen motion blur as before.
 
+**2026-11-18 (timeline scrolling like Screen Studio).** A project now opens on its first minute instead of the whole recording, so there is something to scroll from the start; two-finger scrolling anywhere on the timeline (track names included) pans, pinch or ⌘+wheel zooms around the pointer, and a scrollbar under the tracks shows the visible window as a thumb that can be dragged or jumped with a click on its track. The scrollbar appears only while the window is narrower than the project.
+
 ## Open
 - **Q1** Licensing model: one-time with a year of updates versus subscription. Sign-in is decided (Google through Supabase, 2026-11-18); what a signed-in account entitles, trial limits and prices are still to decide before M3.
 - **Q2** Transcription and captions: on-device (whisper.cpp) versus a cloud service. Lean on-device for privacy; decide at M2.
