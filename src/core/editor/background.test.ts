@@ -31,6 +31,17 @@ describe('screenLayout', () => {
     expect(screen.x).toBeCloseTo((1000 - screen.width) / 2)
   })
 
+  it('pads every side by the same number of pixels (Screen Studio measurement)', () => {
+    const square = { width: 1000, height: 1000 }
+    const { screen } = screenLayout(square, { width: 1600, height: 900 }, 10, none)
+    expect(screen.x).toBeCloseTo(100)
+    expect(screen.width).toBeCloseTo(800)
+    const tall = { width: 500, height: 1000 }
+    const t = screenLayout(tall, { width: 1000, height: 1000 }, 10, none)
+    expect(t.screen.x).toBeCloseTo(50)
+    expect(t.screen.width).toBeCloseTo(400)
+  })
+
   it('leaves room for the inset band', () => {
     const { outer, screen } = screenLayout(frame, rec, 10, { top: 20, right: 20, bottom: 20, left: 20 })
     expect(outer.height).toBeCloseTo(400)
