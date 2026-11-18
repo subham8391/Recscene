@@ -19,6 +19,7 @@ import { outputSize, videoBitrate, type ExportProgress, type ExportSettings, typ
 import { zoomAt } from '@core/editor/zooms'
 import { cameraMotionAtRest, cameraMotionStep, cameraTimeMs, effectiveLayout, motionBox, placeCamera, type CameraMotion } from '@core/editor/cameraLayout'
 import { applySilence, type TimeRange } from '@core/editor/speech'
+import { hiddenOutputRanges, recordingHiddenAt, voiceOverSegments } from '@core/editor/voiceovers'
 import { cameraFilter } from '@core/editor/looks'
 import { ensureSharpenFilter } from './cameraLooks'
 import { activeMask } from '@core/editor/masks'
@@ -46,6 +47,8 @@ export interface ExportInput {
   cursorTypes: CursorTypeChange[]
   /** Spec 286: silences long enough to hide the camera, in source time. */
   silenceGaps: TimeRange[]
+  /** Specs 221, 292: media url of a voice-over file inside the bundle. */
+  voiceUrl: (file: string) => string
   projectName: string
 }
 
@@ -134,18 +137,42 @@ async function mixAudio(input: ExportInput, totalMs: number): Promise<AudioBuffe
       at += (len * 1000) / clip.speed
     }
   }
+  // Spec 292: "Hide & Mute original recording" ducks the microphone and system audio while such a voice-over plays.
+  const original = ctx.createGain()
+  original.connect(master)
+  for (const r of hiddenOutputRanges(input.project.voiceOvers, input.clips)) {
+    original.gain.setValueAtTime(0, r.startMs / 1000)
+    original.gain.setValueAtTime(1, r.endMs / 1000)
+  }
   // Microphone (214, 217, 14): cleaned up by the mode's chain, folded to mono unless stereo mode is on.
   const micRaw = input.micUrl && !cfg.muteMicrophone ? await decode(input.micUrl) : null
   if (micRaw) {
     const mic = cfg.microphoneInStereoMode ? micRaw : toMono(ctx, micRaw)
     const chain = buildMicChain(ctx, cfg.microphoneMode, peakOf(mic))
-    chain.output.connect(master)
+    chain.output.connect(original)
     playClips(mic, (clip) => micGain(clip, cfg), chain.input)
   }
   // System audio (215): the screen file's audio track, when the recording captured one.
   if (!cfg.muteSystemAudio && cfg.systemAudioVolume > 0) {
     const sys = await decode(input.screenUrl)
-    if (sys) playClips(sys, (clip) => systemGain(clip, cfg), master)
+    if (sys) playClips(sys, (clip) => systemGain(clip, cfg), original)
+  }
+  // Voice-overs (221, 292): each segment plays its piece of the file at the clip's speed when synchronized.
+  const voiceBuffers = new Map<string, AudioBuffer | null>()
+  for (const seg of voiceOverSegments(input.project.voiceOvers, input.clips)) {
+    const v = seg.voiceOver
+    if (!voiceBuffers.has(v.file)) voiceBuffers.set(v.file, await decode(input.voiceUrl(v.file)))
+    const buf = voiceBuffers.get(v.file)
+    if (!buf || v.volume <= 0) continue
+    const src = ctx.createBufferSource()
+    src.buffer = buf
+    src.playbackRate.value = seg.rate
+    const gain = ctx.createGain()
+    gain.gain.value = v.volume
+    src.connect(gain).connect(master)
+    // Files are in source time (recorded while the source advanced at 1×), so offsets need no rate conversion.
+    src.start(seg.atMs / 1000, seg.offsetMs / 1000, seg.lengthMs / 1000)
+    any = true
   }
   // Background music (218–220): loops from the start in output time.
   const musicLevel = musicGain(cfg)
@@ -262,7 +289,8 @@ export async function runExport(
     const sourceMs = outputToSource(input.clips, outputMs)
     const clip = clipAtOutput(input.clips, outputMs)?.clip
     // Camera layout at this moment (148–164): a split layout leaves the screen only part of the frame.
-    const eff = applySilence(effectiveLayout(cfg, project.layouts, sourceMs), cfg, input.silenceGaps, sourceMs, cfg.muteMicrophone)
+    const effBase = applySilence(effectiveLayout(cfg, project.layouts, sourceMs), cfg, input.silenceGaps, sourceMs, cfg.muteMicrophone)
+    const eff = recordingHiddenAt(project.voiceOvers, input.clips, outputMs) && effBase.type !== 'only-screen' ? { ...effBase, type: 'only-screen' as const } : effBase
     const activeZoom = zoomAt(project.zooms, sourceMs)
     const placed = camVideo && camRec ? placeCamera({ frame: size, cameraFrame: camRec, type: eff.type, cameraSize: eff.cameraSize, position: eff.cameraPositionPoint, config: cfg, zoomed: !!activeZoom && !activeZoom.isDisabled, paddingRatio: cfg.backgroundPaddingRatio / 100 }) : null
     let laid = laidWhole

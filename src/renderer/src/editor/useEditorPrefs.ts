@@ -15,6 +15,8 @@ export interface EditorPrefs {
   playbackQualityMode: 'high-quality' | 'high-speed'
   /** Spec 71. */
   reelPreviewMode: 'instagram' | 'tiktok' | null
+  /** Spec 221: the microphone chosen for voice-overs. */
+  voiceoverPreferredMicrophoneId: string | null
 }
 
 export const defaultEditorPrefs: EditorPrefs = {
@@ -27,7 +29,8 @@ export const defaultEditorPrefs: EditorPrefs = {
   autoSaveProject: true,
   shortcutOverrides: {},
   playbackQualityMode: 'high-quality',
-  reelPreviewMode: null
+  reelPreviewMode: null,
+  voiceoverPreferredMicrophoneId: null
 }
 
 export function editorPrefsFrom(raw: Record<string, unknown>): EditorPrefs {
@@ -43,7 +46,8 @@ export function editorPrefsFrom(raw: Record<string, unknown>): EditorPrefs {
     autoSaveProject: bool('autoSaveProject'),
     shortcutOverrides: typeof raw['shortcutOverrides'] === 'object' && raw['shortcutOverrides'] ? Object.fromEntries(Object.entries(raw['shortcutOverrides'] as Record<string, unknown>).filter((e): e is [string, string] => typeof e[1] === 'string')) : {},
     playbackQualityMode: raw['playbackQualityMode'] === 'high-speed' ? 'high-speed' : 'high-quality',
-    reelPreviewMode: raw['reelPreviewMode'] === 'instagram' || raw['reelPreviewMode'] === 'tiktok' ? raw['reelPreviewMode'] : null
+    reelPreviewMode: raw['reelPreviewMode'] === 'instagram' || raw['reelPreviewMode'] === 'tiktok' ? raw['reelPreviewMode'] : null,
+    voiceoverPreferredMicrophoneId: typeof raw['voiceoverPreferredMicrophoneId'] === 'string' ? raw['voiceoverPreferredMicrophoneId'] : null
   }
 }
 

@@ -49,7 +49,8 @@ export function newProject(input: NewProjectInput): Project {
     clips: [defaultClip(input.durationMs)],
     layouts: [],
     masks: [],
-    transcript: null
+    transcript: null,
+    voiceOvers: []
   }
 }
 

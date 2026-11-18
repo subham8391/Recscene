@@ -775,7 +775,9 @@
   font-size: 11px;
 }
 
-.btn--danger {
+/* The app-wide .btn--danger is a filled red button; in the inspector it is an outlined one. */
+.btn--ghost.btn--danger {
+  background: transparent;
   color: var(--danger);
 }
 
@@ -1332,6 +1334,60 @@ input[type='color'] {
 .tl__zi--mask {
   background: var(--mask);
   color: #04303a;
+}
+
+/* Voiceovers track (specs 221, 292) */
+.tl__zi--voice {
+  background: var(--voice);
+  color: #3a1a05;
+}
+
+.tl__hint {
+  position: absolute;
+  left: 8px;
+  top: 3px;
+  font-size: 10px;
+  line-height: 16px;
+  color: var(--text2);
+  pointer-events: none;
+}
+
+/* Voiceover editor (spec 221) */
+.vorec {
+  width: min(92vw, 420px);
+}
+
+.vorec .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.vorec__time {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.vorec__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--line2);
+}
+
+.vorec__dot--on {
+  background: #e5484d;
+  box-shadow: 0 0 0 4px rgba(229, 72, 77, 0.25);
+  animation: vorec-pulse 1s ease-in-out infinite;
+}
+
+@keyframes vorec-pulse {
+  50% { box-shadow: 0 0 0 7px rgba(229, 72, 77, 0.12); }
 }
 
 /* Keystroke overlay (specs 199–201) */

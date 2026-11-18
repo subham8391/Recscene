@@ -6,6 +6,7 @@ import { waveformBars } from '@core/editor/waveform'
 import { isAutoType, moveZoom, type ZoomRange } from '@core/editor/zooms'
 import { LAYOUT_NAMES, moveLayout, type CameraLayout } from '@core/editor/cameraLayout'
 import { maskLabel, moveMask, type Mask } from '@core/editor/masks'
+import { moveVoiceOver, VOICEOVER_EMPTY_TRACK, voiceOverLabel, type VoiceOver } from '@core/editor/voiceovers'
 import { countOf, isShown, shortcutEvents } from '@core/editor/shortcuts'
 import { buildCues, CUE_DEFAULTS, cueText, ONE_LINE } from '@core/editor/captions'
 import { outputToSource } from '@core/editor/clips'
@@ -13,7 +14,7 @@ import type { Project } from '@core/project'
 import { formatClock } from '@core/recordingPicker'
 import type { RecordingMarker } from '@core/recordingSession'
 
-export type TrackId = 'zooms' | 'layouts' | 'masks' | 'shortcuts' | 'captions'
+export type TrackId = 'zooms' | 'layouts' | 'masks' | 'shortcuts' | 'captions' | 'voiceovers'
 
 export interface TrackVisibility {
   zooms: true
@@ -21,6 +22,7 @@ export interface TrackVisibility {
   masks: boolean
   shortcuts: boolean
   captions: boolean
+  voiceovers: boolean
 }
 
 interface Props {
@@ -67,6 +69,14 @@ interface Props {
   onHideAllShortcuts: (hidden: boolean) => void
   /** Captions track (specs 208–212): a click seeks to the cue. */
   onSeekSource: (sourceMs: number) => void
+  /** Voiceovers track (specs 221, 292): items move, never resize; an empty click starts a recording there. */
+  selectedVoiceOverId: string | null
+  onSelectVoiceOver: (id: string | null) => void
+  onAddVoiceOverAt: (sourceMs: number) => void
+  onVoiceOverPreview: (list: VoiceOver[]) => void
+  onVoiceOverCommit: (list: VoiceOver[]) => void
+  onRemoveVoiceOver: (id: string) => void
+  onRemoveAllVoiceOvers: () => void
   micUrl?: string
   showWaveform: boolean
   smoothWaveform: boolean
@@ -80,21 +90,34 @@ const TRACKS: { id: TrackId; name: string; color: string; key: string; forced?: 
   { id: 'layouts', name: 'Camera Layouts', color: 'var(--layout)', key: '2' },
   { id: 'shortcuts', name: 'Shortcuts', color: 'var(--shortcut)', key: '3' },
   { id: 'masks', name: 'Masks', color: 'var(--mask)', key: '4' },
-  { id: 'captions', name: 'Captions', color: 'var(--caption)', key: '5' }
+  { id: 'captions', name: 'Captions', color: 'var(--caption)', key: '5' },
+  { id: 'voiceovers', name: 'Voiceovers', color: 'var(--voice)', key: '6' }
 ]
 
 /** The timeline (specs 50–51, 58–62, 80–87): toolbar, ruler, clips with trim handles, tracks, waveform, playhead. */
 export function Timeline(props: Props): React.JSX.Element {
-  const { project, clips, sourceDurationMs, markers, durationMs, timeMs, view, setView, visible, toggleTrack, onSeek, onPreview, selectedClipId, onSelectClip, onTrimPreview, onTrimCommit, onRemoveTrim, onJoin, selectedZoomId, onSelectZoom, onAddZoomAt, onZoomPreview, onZoomCommit, hasCamera, selectedLayoutId, onSelectLayout, onAddLayoutAt, onLayoutPreview, onLayoutCommit, selectedMaskId, onSelectMask, onAddMaskAt, onMaskPreview, onMaskCommit, onHideShortcut, onHideShortcutLabel, onHideAllShortcuts, onSeekSource, micUrl, showWaveform, smoothWaveform, alwaysShowScrollbar, audioScrubber, onToggleAudioScrubber } = props
+  const { project, clips, sourceDurationMs, markers, durationMs, timeMs, view, setView, visible, toggleTrack, onSeek, onPreview, selectedClipId, onSelectClip, onTrimPreview, onTrimCommit, onRemoveTrim, onJoin, selectedZoomId, onSelectZoom, onAddZoomAt, onZoomPreview, onZoomCommit, hasCamera, selectedLayoutId, onSelectLayout, onAddLayoutAt, onLayoutPreview, onLayoutCommit, selectedMaskId, onSelectMask, onAddMaskAt, onMaskPreview, onMaskCommit, onHideShortcut, onHideShortcutLabel, onHideAllShortcuts, onSeekSource, selectedVoiceOverId, onSelectVoiceOver, onAddVoiceOverAt, onVoiceOverPreview, onVoiceOverCommit, onRemoveVoiceOver, onRemoveAllVoiceOvers, micUrl, showWaveform, smoothWaveform, alwaysShowScrollbar, audioScrubber, onToggleAudioScrubber } = props
   const zoomDrag = useRef<{ id: string; mode: 'move' | 'start' | 'end'; startX: number; origin: ZoomRange[]; moved: boolean } | null>(null)
   const layoutDrag = useRef<{ id: string; mode: 'move' | 'start' | 'end'; startX: number; origin: CameraLayout[]; moved: boolean } | null>(null)
   const maskDrag = useRef<{ id: string; mode: 'move' | 'start' | 'end'; startX: number; origin: Mask[]; moved: boolean } | null>(null)
+  const voiceDrag = useRef<{ id: string; startX: number; origin: VoiceOver[]; moved: boolean } | null>(null)
+  const [voiceMenu, setVoiceMenu] = useState<{ id: string; x: number; y: number } | null>(null)
   const lane = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(1)
   const [tracksOpen, setTracksOpen] = useState(false)
   const [chipMenu, setChipMenu] = useState<{ timeMs: number; label: string; hidden: boolean; x: number; y: number } | null>(null)
   const shortcuts = useMemo(() => shortcutEvents(project.recording.keys, project.config), [project.recording.keys, project.config])
   const cues = useMemo(() => (project.transcript ? buildCues(project.transcript.words, project.config.captionOneLine ? ONE_LINE : CUE_DEFAULTS) : []), [project.transcript, project.config.captionOneLine])
+  useEffect(() => {
+    if (!voiceMenu) return
+    const close = (): void => setVoiceMenu(null)
+    window.addEventListener('mousedown', close)
+    window.addEventListener('keydown', close)
+    return () => {
+      window.removeEventListener('mousedown', close)
+      window.removeEventListener('keydown', close)
+    }
+  }, [voiceMenu])
   useEffect(() => {
     if (!chipMenu) return
     const close = (): void => setChipMenu(null)
@@ -174,7 +197,23 @@ export function Timeline(props: Props): React.JSX.Element {
     maskDrag.current = { id, mode, startX: e.clientX, origin: project.masks, moved: false }
     onSelectMask(id)
   }
+  const onVoiceDown = (id: string) => (e: React.MouseEvent) => {
+    if (e.button !== 0) return
+    e.stopPropagation()
+    voiceDrag.current = { id, startX: e.clientX, origin: project.voiceOvers, moved: false }
+    onSelectVoiceOver(id)
+  }
   const onMouseMove = (e: React.MouseEvent): void => {
+    const vd = voiceDrag.current
+    if (vd) {
+      const v = vd.origin.find((x) => x.id === vd.id)
+      if (!v) return
+      const clip = clips.find((c) => v.sourceStartMs >= c.sourceStartMs && v.sourceStartMs <= c.sourceEndMs) ?? clips[0]
+      const deltaMs = ((e.clientX - vd.startX) / width) * view.visibleMs * (clip?.speed ?? 1)
+      vd.moved = true
+      onVoiceOverPreview(moveVoiceOver(vd.origin, vd.id, v.sourceStartMs + deltaMs, sourceDurationMs))
+      return
+    }
     const md = maskDrag.current
     if (md) {
       const m = md.origin.find((x) => x.id === md.id)
@@ -221,6 +260,9 @@ export function Timeline(props: Props): React.JSX.Element {
     onTrimPreview(trimClip(d.origin, d.id, d.edge, target, sourceDurationMs))
   }
   const onMouseUp = (): void => {
+    const vd = voiceDrag.current
+    voiceDrag.current = null
+    if (vd?.moved) onVoiceOverCommit(project.voiceOvers)
     const md = maskDrag.current
     maskDrag.current = null
     if (md?.moved) onMaskCommit(project.masks)
@@ -239,7 +281,7 @@ export function Timeline(props: Props): React.JSX.Element {
   const x = (ms: number): number => xAtTime(view, ms, width)
   const pct = (ms: number): string => `${(x(ms) / width) * 100}%`
   const offsets = outputOffsets(clips)
-  const visibleCount = 1 + Number(visible.layouts) + Number(visible.masks) + Number(visible.shortcuts) + Number(visible.captions)
+  const visibleCount = 1 + Number(visible.layouts) + Number(visible.masks) + Number(visible.shortcuts) + Number(visible.captions) + Number(visible.voiceovers)
   const rows = TRACKS.filter((t) => t.forced || visible[t.id])
   const atOutput = (sourceMs: number): number | null => sourceToOutput(clips, sourceMs)
 
@@ -311,7 +353,18 @@ export function Timeline(props: Props): React.JSX.Element {
             })}
           </div>
           {rows.map((t) => (
-            <div key={t.id} className="tl__row" data-track={t.id} title={t.id === 'zooms' ? 'Click or drag to add zoom on cursor' : t.id === 'layouts' ? (hasCamera ? 'Click to create a new camera layout' : 'No camera recorded') : t.id === 'masks' ? 'Click or drag to create a new mask' : undefined} onClick={(e) => { if (e.target !== e.currentTarget) return; if (t.id === 'zooms') { e.stopPropagation(); onAddZoomAt(outputToSource(clips, timeFromEvent(e))) } else if (t.id === 'layouts' && hasCamera) { e.stopPropagation(); onAddLayoutAt(outputToSource(clips, timeFromEvent(e))) } else if (t.id === 'masks') { e.stopPropagation(); onAddMaskAt(outputToSource(clips, timeFromEvent(e))) } }}>
+            <div key={t.id} className="tl__row" data-track={t.id} title={t.id === 'zooms' ? 'Click or drag to add zoom on cursor' : t.id === 'layouts' ? (hasCamera ? 'Click to create a new camera layout' : 'No camera recorded') : t.id === 'masks' ? 'Click or drag to create a new mask' : t.id === 'voiceovers' ? VOICEOVER_EMPTY_TRACK : undefined} onClick={(e) => { if (e.target !== e.currentTarget) return; if (t.id === 'zooms') { e.stopPropagation(); onAddZoomAt(outputToSource(clips, timeFromEvent(e))) } else if (t.id === 'layouts' && hasCamera) { e.stopPropagation(); onAddLayoutAt(outputToSource(clips, timeFromEvent(e))) } else if (t.id === 'masks') { e.stopPropagation(); onAddMaskAt(outputToSource(clips, timeFromEvent(e))) } else if (t.id === 'voiceovers') { e.stopPropagation(); onAddVoiceOverAt(outputToSource(clips, timeFromEvent(e))) } }}>
+              {t.id === 'voiceovers' && project.voiceOvers.length === 0 && <span className="tl__hint">{VOICEOVER_EMPTY_TRACK}</span>}
+              {t.id === 'voiceovers' && project.voiceOvers.map((v, i) => {
+                const a = atOutput(v.sourceStartMs)
+                const b = atOutput(v.sourceStartMs + v.voiceoverDurationMs) ?? (a === null ? null : a + v.voiceoverDurationMs)
+                if (a === null || b === null) return null
+                return (
+                  <div key={v.id} className={`tl__zi tl__zi--voice${v.isDisabled ? ' tl__zi--off' : ''}${v.id === selectedVoiceOverId ? ' tl__zi--on' : ''}`} style={{ left: x(a), width: Math.max(2, x(b) - x(a)) }} onMouseDown={onVoiceDown(v.id)} onClick={(e) => { e.stopPropagation(); if (!voiceDrag.current) onSelectVoiceOver(v.id) }} onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); onSelectVoiceOver(v.id); setVoiceMenu({ id: v.id, x: e.clientX, y: e.clientY }) }} title={`${voiceOverLabel(v, i)} · ${formatClock(v.voiceoverDurationMs)}${v.attachMode === 'first-frame' ? ' · independent' : ''}`}>
+                    <span className="tl__zi__label">{voiceOverLabel(v, i)}{v.hideRecording ? ' · hides recording' : ''}</span>
+                  </div>
+                )
+              })}
               {t.id === 'masks' && project.masks.map((m) => {
                 const a = atOutput(m.sourceStartMs)
                 const b = atOutput(m.sourceEndMs)
@@ -383,6 +436,12 @@ export function Timeline(props: Props): React.JSX.Element {
             </div>
           )}
           <div className="tl__playhead" style={{ left: pct(timeMs) }} aria-hidden="true" />
+          {voiceMenu && (
+            <div role="menu" className="menu tl__ctx" style={{ left: voiceMenu.x, top: voiceMenu.y }} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()} onMouseMove={(e) => e.stopPropagation()}>
+              <button type="button" role="menuitem" className="menu__item" onClick={() => { onRemoveVoiceOver(voiceMenu.id); setVoiceMenu(null) }}>Remove voiceover</button>
+              <button type="button" role="menuitem" className="menu__item" onClick={() => { onRemoveAllVoiceOvers(); setVoiceMenu(null) }}>Remove all voiceovers</button>
+            </div>
+          )}
           {chipMenu && (
             <div role="menu" className="menu tl__ctx" style={{ left: chipMenu.x, top: chipMenu.y }} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()} onMouseMove={(e) => e.stopPropagation()}>
               <button type="button" role="menuitem" className="menu__item" onClick={() => { onHideShortcut(chipMenu.timeMs, !chipMenu.hidden); setChipMenu(null) }}>{chipMenu.hidden ? 'Show shortcut' : 'Hide shortcut'}</button>
