@@ -12,6 +12,7 @@ import type { Transcript } from '@core/editor/captions'
 import type { Preset } from '@core/editor/presets'
 import type { ProjectConfig } from '@core/project'
 import type { AppSettings, SettingsTab } from '@core/settings'
+import type { AccountState } from '@core/auth'
 
 export type SettingsSnapshot = AppSettings & { projectsFolder: string; presetsFolder: string; appVersion: string; appData: string; permissions: Record<string, string | boolean> }
 
@@ -47,6 +48,15 @@ const api = {
     onChanged: (listener: (settings: AppSettings) => void): (() => void) => on('prefs:changed', listener)
   },
   /** The Settings window (specs 252–272, 66, 68–70). */
+  account: {
+    state: (): Promise<AccountState> => ipcRenderer.invoke('account:state') as Promise<AccountState>,
+    signInWithGoogle: (): Promise<AccountState> => ipcRenderer.invoke('account:signInWithGoogle') as Promise<AccountState>,
+    cancelSignIn: (): Promise<AccountState> => ipcRenderer.invoke('account:cancelSignIn') as Promise<AccountState>,
+    signOut: (): Promise<AccountState> => ipcRenderer.invoke('account:signOut') as Promise<AccountState>,
+    deactivate: (deviceId?: string): Promise<AccountState> => ipcRenderer.invoke('account:deactivate', deviceId) as Promise<AccountState>,
+    refresh: (): Promise<AccountState> => ipcRenderer.invoke('account:refresh') as Promise<AccountState>,
+    onChanged: (listener: (state: AccountState) => void): (() => void) => on('account:changed', listener)
+  },
   settings: {
     get: (): Promise<SettingsSnapshot> => ipcRenderer.invoke('settings:get') as Promise<SettingsSnapshot>,
     set: (values: Partial<AppSettings>): Promise<AppSettings> => ipcRenderer.invoke('settings:set', values) as Promise<AppSettings>,

@@ -1,6 +1,7 @@
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { app, BrowserWindow, globalShortcut, ipcMain, screen, shell } from 'electron'
 import type { RecordingResult, StartOptions } from '@core/captureProtocol'
+import { authConfig, AuthService } from './auth'
 import { RecordingEnvironment } from './environment'
 import { ExportService } from './export'
 import { installMenu } from './menu'
@@ -42,9 +43,13 @@ let captions: CaptionsService | null = null
 let presets: PresetsService | null = null
 let settings: SettingsService | null = null
 let quickExport: QuickExport | null = null
+let auth: AuthService | null = null
 let recordedDisplayId = 0
 
 registerMediaScheme()
+// Spec 275: the sign-in consent comes back through `recscene://auth/callback` (packaged builds).
+if (app.isPackaged) app.setAsDefaultProtocolClient('recscene')
+else if (process.argv[1]) app.setAsDefaultProtocolClient('recscene', process.execPath, [resolve(process.argv[1])])
 let stopping: Promise<void> | null = null
 
 function createMainWindow(): BrowserWindow {
@@ -136,6 +141,7 @@ function refreshMenu(): void {
       recent,
       projectsRoot,
       openSettings: (tab) => settings?.open(tab),
+      signedIn: auth?.signedIn ?? false,
       editorAction: (id) => mainWindow?.webContents.send('editor:action', id)
     })
   })
@@ -220,10 +226,13 @@ void app.whenReady().then(() => {
     projectsFolder: projectsRoot,
     presetsFolder: () => presets!.folder()
   })
+  auth = new AuthService(prefs, authConfig(), { notify: (message) => showMainWindow().webContents.send('app:notice', message), changed: refreshMenu })
+  void auth.start()
   recording.on('stopped', () => settings?.applyDock())
   recording.on('cancelled', () => settings?.applyDock())
   app.on('will-quit', () => {
     exporter?.dispose()
+    auth?.dispose()
     void library
     void music
     void captions
@@ -248,6 +257,12 @@ void app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) showMainWindow()
   })
+})
+
+// Spec 275: the browser returns the Google consent through the deep link.
+app.on('open-url', (event, url) => {
+  event.preventDefault()
+  void app.whenReady().then(() => auth?.handleUrl(url))
 })
 
 // Spec 250: a .recscene bundle opened from Finder or dropped on the Dock icon.

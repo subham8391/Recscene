@@ -17,6 +17,9 @@ extraResources:
     to: backgrounds
   - from: resources/music
     to: music
+protocols:
+  - name: Recscene sign-in
+    schemes: [recscene]
 fileAssociations:
   - ext: recscene
     name: Recscene Project
