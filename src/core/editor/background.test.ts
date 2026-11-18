@@ -23,19 +23,28 @@ describe('screenLayout', () => {
   const rec = { width: 1600, height: 900 }
   const none = { top: 0, right: 0, bottom: 0, left: 0 }
 
-  it('fills the frame at 0% padding and shrinks by the padding share', () => {
+  it('fills the frame at 0% padding and keeps the same gap on every side (Screen Studio measurement)', () => {
     expect(screenLayout(frame, { width: 1000, height: 500 }, 0, none).screen).toEqual({ x: 0, y: 0, width: 1000, height: 500 })
-    const { screen } = screenLayout(frame, rec, 10, none)
-    expect(screen.width).toBeCloseTo(711.1, 0)
-    expect(screen.height).toBeCloseTo(400)
-    expect(screen.x).toBeCloseTo((1000 - screen.width) / 2)
+    // Auto frame for 1600×900 at 10%: (1600 + 180) × (900 + 180) → scaled to height 500: gap = 10% of the recording's height on all sides.
+    const auto = { width: 1780 * (500 / 1080), height: 500 }
+    const { screen } = screenLayout(auto, rec, 10, none)
+    const gap = screen.y
+    expect(gap).toBeCloseTo(0.1 * screen.height, 5)
+    expect(screen.x).toBeCloseTo(gap, 5)
+    expect(auto.width - screen.x - screen.width).toBeCloseTo(gap, 5)
+    expect(auto.height - screen.y - screen.height).toBeCloseTo(gap, 5)
+    // A fixed 2:1 frame letterboxes the extra width equally.
+    const fixed = screenLayout(frame, rec, 10, none)
+    expect(fixed.screen.height).toBeCloseTo(500 / 1.2)
+    expect(fixed.screen.y).toBeCloseTo(0.1 * fixed.screen.height)
+    expect(fixed.screen.x).toBeCloseTo((1000 - fixed.screen.width) / 2)
   })
 
   it('leaves room for the inset band', () => {
     const { outer, screen } = screenLayout(frame, rec, 10, { top: 20, right: 20, bottom: 20, left: 20 })
-    expect(outer.height).toBeCloseTo(400)
-    expect(screen.height).toBeCloseTo(360)
+    expect(outer.height - screen.height).toBeCloseTo(40)
     expect(screen.x - outer.x).toBe(20)
+    expect(outer.y).toBeCloseTo(0.1 * screen.height)
   })
 })
 

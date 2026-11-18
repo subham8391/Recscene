@@ -21,9 +21,18 @@ export function parseRatio(value: string | null): number | null {
   return w && h && Number.isFinite(w) && Number.isFinite(h) ? w / h : null
 }
 
-/** The output ratio: the recording's own when Auto. */
-export function outputRatio(value: string | null, recording: { width: number; height: number }): number {
-  return parseRatio(value) ?? (recording.height > 0 ? recording.width / recording.height : 16 / 9)
+/**
+ * The output ratio. Auto is the recording plus its padding: Screen Studio's
+ * frame keeps its height and grows sideways as the gap (a share of the
+ * recording's shorter side, the same on all four sides) gets bigger.
+ */
+export function outputRatio(value: string | null, recording: { width: number; height: number }, paddingPercent = 0): number {
+  const fixed = parseRatio(value)
+  if (fixed) return fixed
+  if (!(recording.width > 0 && recording.height > 0)) return 16 / 9
+  const p = Math.max(0, Math.min(25, paddingPercent)) / 100
+  const short = Math.min(recording.width, recording.height)
+  return (recording.width + 2 * p * short) / (recording.height + 2 * p * short)
 }
 
 export function aspectLabel(value: string | null, recording: { width: number; height: number }): string {

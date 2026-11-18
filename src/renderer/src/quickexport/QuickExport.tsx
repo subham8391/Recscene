@@ -28,7 +28,7 @@ export function QuickExport(): React.JSX.Element {
   const { opened, prefs } = state
   const project = opened.project
   const durationMs = outputDurationMs(project.clips)
-  const ratio = outputRatio(project.config.defaultOutputAspectRatio, project.recording.screen)
+  const ratio = outputRatio(project.config.defaultOutputAspectRatio, project.recording.screen, project.config.backgroundPaddingRatio)
   const size = outputSize(settings.height, ratio)
 
   const start = (target: ExportTarget): void => {

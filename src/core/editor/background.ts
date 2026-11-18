@@ -52,6 +52,8 @@ export interface BackgroundConfig {
 export const DEFAULT_GRADIENT: Gradient = { start: { x: 0, y: 0 }, end: { x: 1, y: 1 }, stops: [{ color: '#03045e', at: 0 }, { color: '#caf0f8', at: 1 }] }
 export const DEFAULT_WALLPAPER = 'macOS/tahoe-light'
 export const PADDING_DEFAULT = 10
+/** Spec 174 in Screen Studio 4.1: the slider runs 0–25 in whole steps. */
+export const PADDING_MAX = 25
 export const SHADOW_INTENSITY_DEFAULT = 0.75
 export const SHADOW_INTENSITY_DIRECTIONAL = 0.4
 
@@ -128,26 +130,29 @@ export interface Box {
   height: number
 }
 
+/** The padding share clamped to the slider's range. */
+export const paddingShare = (paddingPercent: number): number => Math.max(0, Math.min(PADDING_MAX, paddingPercent)) / 100
+
 /**
- * Spec 174 and 181: the recording's box inside the output frame. Padding is a
- * share of the frame on every side; the inset band sits between the padding
- * and the recording. Returns both boxes in frame pixels.
+ * Spec 174 and 181, measured on Screen Studio frame by frame: the gap is the
+ * same number of pixels on all four sides and it is a share of the
+ * recording's displayed shorter side (25% → a gap a quarter of the
+ * recording's height). The recording plus its gap is fitted into the frame
+ * and centred, so a frame of another ratio letterboxes equally on two sides.
+ * The inset band sits between the gap and the recording. Boxes in frame pixels.
  */
 export function screenLayout(frame: { width: number; height: number }, recording: { width: number; height: number }, paddingPercent: number, inset: InsetPadding, scale = 1): { outer: Box; screen: Box } {
-  const pad = Math.max(0, Math.min(35, paddingPercent)) / 100
-  const availW = frame.width * (1 - 2 * pad)
-  const availH = frame.height * (1 - 2 * pad)
+  const p = paddingShare(paddingPercent)
   const band = { top: inset.top * scale, right: inset.right * scale, bottom: inset.bottom * scale, left: inset.left * scale }
-  const ratio = recording.height > 0 ? recording.width / recording.height : 16 / 9
-  // The outer box (inset band included) keeps the recording's ratio once the band is added.
-  let screenW = availW - band.left - band.right
-  let screenH = screenW / ratio
-  if (screenH + band.top + band.bottom > availH) {
-    screenH = availH - band.top - band.bottom
-    screenW = screenH * ratio
-  }
-  screenW = Math.max(1, screenW)
-  screenH = Math.max(1, screenH)
+  const recW = Math.max(1, recording.width)
+  const recH = Math.max(1, recording.height)
+  const short = Math.min(recW, recH)
+  // Scale s so that the recording, its inset band and a gap of p·short·s on every side fit the frame.
+  const sW = (frame.width - band.left - band.right) / (recW + 2 * p * short)
+  const sH = (frame.height - band.top - band.bottom) / (recH + 2 * p * short)
+  const s = Math.max(0, Math.min(sW, sH))
+  const screenW = Math.max(1, recW * s)
+  const screenH = Math.max(1, recH * s)
   const outerW = screenW + band.left + band.right
   const outerH = screenH + band.top + band.bottom
   const outer = { x: (frame.width - outerW) / 2, y: (frame.height - outerH) / 2, width: outerW, height: outerH }

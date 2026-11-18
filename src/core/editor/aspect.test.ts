@@ -10,6 +10,10 @@ describe('aspect', () => {
     expect(parseRatio('x')).toBeNull()
     expect(outputRatio(null, rec)).toBeCloseTo(1.54, 2)
     expect(outputRatio('1:1', rec)).toBe(1)
+    // Auto grows the frame by the same gap on every side: 1600×900 at 10% → 1780×1080.
+    expect(outputRatio(null, { width: 1600, height: 900 }, 10)).toBeCloseTo(1780 / 1080, 5)
+    expect(outputRatio(null, { width: 900, height: 1600 }, 10)).toBeCloseTo(1080 / 1780, 5)
+    expect(outputRatio('16:9', { width: 1600, height: 900 }, 10)).toBeCloseTo(16 / 9)
   })
 
   it('labels Auto with the nearest named ratio', () => {
