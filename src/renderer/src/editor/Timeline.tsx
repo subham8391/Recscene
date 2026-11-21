@@ -350,6 +350,9 @@ export function Timeline(props: Props): React.JSX.Element {
   return (
     <section aria-label="Timeline" className={`tl${alwaysShowScrollbar ? ' tl--scrollbar' : ''}`}>
       <div className="tl__bar">
+        <button type="button" className="tl__tool tl__tool--on" aria-pressed="true" aria-label="Select tool" title="Select and drag items"><Icon name="cursor" size={16} /></button>
+        <button type="button" className="tl__tool" aria-label="Split at playhead" title="Split the clip at the playhead (C)" onClick={() => onAction('splitSliceAtCurrentTime')}><Icon name="scissors" size={16} /></button>
+        <span className="tl__sep" aria-hidden="true" />
         <button type="button" className="tl__add" style={{ color: 'var(--zoom)' }} title="Add a zoom at the playhead" onClick={() => onAction('addZoom')}><span>+</span>Zoom</button>
         {hasCamera && <button type="button" className="tl__add" style={{ color: 'var(--layout)' }} title="Add a camera layout at the playhead" onClick={() => onAction('addLayout')}><span>+</span>Layout</button>}
         <button type="button" className="tl__add" style={{ color: 'var(--mask)' }} title="Add a sensitive data mask at the playhead" onClick={() => onAction('addSensitiveDataMask')}><span>+</span>Mask</button>

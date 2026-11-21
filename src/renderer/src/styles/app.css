@@ -10,7 +10,7 @@ body,
 }
 
 body {
-  font: 13px/1.45 var(--font);
+  font: 13px/normal var(--font); /* the boards use the font's own line height */
   color: var(--text);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
@@ -72,7 +72,9 @@ body {
   background: transparent;
   color: var(--text2);
   font: inherit;
-  font-size: 11px;
+  font-size: 10px;
+  font-weight: 500; /* after font: inherit, which would reset it */
+  gap: 4px;
   cursor: default;
 }
 
@@ -97,10 +99,10 @@ body {
 .btn {
   height: 30px;
   padding: 0 16px;
+  font-weight: 500;
   border: 1px solid transparent;
   border-radius: var(--radius);
   font: inherit;
-  font-weight: 600;
   background: var(--panel);
   color: var(--text);
 }
@@ -110,6 +112,7 @@ body {
 }
 
 .btn--accent {
+  font-weight: 600;
   background: var(--accent);
   color: var(--onAccent);
 }
@@ -124,8 +127,9 @@ body {
   height: 30px;
   padding: 0 12px;
   border-color: var(--line2);
-  background: var(--panel2);
-  font-weight: 500;
+  background: transparent;
+  border: 1px solid var(--line2);
+  font-weight: 400;
   font-size: 12px;
 }
 
