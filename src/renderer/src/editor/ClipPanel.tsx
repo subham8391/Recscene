@@ -97,6 +97,8 @@ export function ClipPanel({ clips, clip, index, sourceDurationMs, hasMic, typing
           <div className="hd"><label htmlFor="vmic">Microphone</label><span>{Math.round(clip.volume * 100)}%</span></div>
           <input id="vmic" type="range" min={0} max={1} step={0.01} value={clip.volume} onChange={(e) => set({ volume: Math.round(Number(e.target.value) * 10) / 10 })} list="vol-options" />
           <datalist id="vol-options">{VOLUME_OPTIONS.map((v) => <option key={v} value={v} />)}</datalist>
+          <div className="hd"><label htmlFor="vsys">System audio</label><span>{Math.round(clip.systemAudioVolume * 100)}%</span></div>
+          <input id="vsys" type="range" min={0} max={1} step={0.01} value={clip.systemAudioVolume} onChange={(e) => set({ systemAudioVolume: Math.round(Number(e.target.value) * 10) / 10 })} list="vol-options" />
         </section>
       )}
 
@@ -118,9 +120,9 @@ export function ClipPanel({ clips, clip, index, sourceDurationMs, hasMic, typing
 
       <section className="grid2">
         <button type="button" className="btn btn--ghost" onClick={() => onAction('splitSliceAtCurrentTime')}>Split at playhead <kbd>C</kbd></button>
-        <button type="button" className="btn btn--ghost" disabled={!next} onClick={() => onClips(mergeWith(clips, clip.id, 'next'))}>Merge with next</button>
-        <button type="button" className="btn btn--ghost" disabled={!prev} onClick={() => onClips(mergeWith(clips, clip.id, 'previous'))}>Merge with previous</button>
-        <button type="button" className="btn btn--ghost" onClick={() => onAction('rippleRemoveSlice')}>Remove to last cut <kbd>X</kbd></button>
+        <button type="button" className="btn btn--ghost" disabled={!next} onClick={() => onClips(mergeWith(clips, clip.id, 'next'))}>Join with next</button>
+        <button type="button" className="btn btn--ghost" disabled={!prev} onClick={() => onClips(mergeWith(clips, clip.id, 'previous'))}>Join with previous</button>
+        <button type="button" className="btn btn--ghost" onClick={() => onAction('rippleRemoveSlice')}>Remove till previous cut <kbd>X</kbd></button>
         <button type="button" className="btn btn--ghost" onClick={() => onAction('copyFrame')}>Copy clip settings</button>
         <button type="button" className="btn btn--ghost" disabled={!clipboard} onClick={() => onAction('paste')}>Paste settings</button>
         <button type="button" className="btn btn--ghost" disabled={clips.length <= 1} onClick={() => onAction('resetAllClips')}>Remove all clips</button>

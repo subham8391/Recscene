@@ -3,6 +3,7 @@ export const ICONS: Record<string, string> = {
   zooms: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM16 16l5 5M11 8v6M8 11h6',
   clips: 'M6 4h12v16H6zM6 9h12M6 14h12',
   cursor: 'M5 3l14 8-6 2-3 6z',
+  scissors: 'M6 7a2.5 2.5 0 1 0 0 .01M6 17a2.5 2.5 0 1 0 0 .01M8.3 8.6L20 20M8.3 15.4L20 4M8.3 15.4l3.7-3.4',
   camera: 'M4 7h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4zM17 10l4-2v8l-4-2',
   background: 'M3 5h18v14H3zM3 15l5-5 4 4 3-3 6 6',
   masks: 'M4 6h16v12H4zM8 10h4v4H8',

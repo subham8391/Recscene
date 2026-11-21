@@ -78,8 +78,8 @@ export function CaptionsPanel({ config, transcript, hasMic, generating, onConfig
           </section>
           <section className="sec">
             <h3>Export transcript</h3>
-            <div className="seg" role="group" aria-label="Subtitle format">
-              {(['srt', 'vtt', 'txt'] as const).map((f) => <button key={f} type="button" onClick={() => onAction(`exportTranscript:${f}`)}>.{f}</button>)}
+            <div className="grid3" role="group" aria-label="Subtitle format">
+              {(['srt', 'vtt', 'txt'] as const).map((f) => <button key={f} type="button" className="btn btn--ghost" onClick={() => onAction(`exportTranscript:${f}`)}>.{f}</button>)}
             </div>
             <p className="note">Timed to the edited video, so cuts and speed changes are already applied.</p>
           </section>

@@ -1939,7 +1939,7 @@ input[type='color'] {
   white-space: nowrap;
 }
 
-@media (max-width: 1480px) {
+@media (max-width: 1180px) {
   .transport__hint {
     display: none;
   }
@@ -2841,4 +2841,91 @@ select.input:focus-visible {
 .tl__scroll__thumb:hover,
 .tl__scroll__thumb:active {
   background: var(--text3);
+}
+
+/* Design audit 2026-11-21: metrics measured from the boards (Design system board: body 13/400,
+   section heading 12/600, helper 11/400, chips 10/500; radii 6/8/10/12). */
+.titlebar .btn--ghost {
+  background: var(--panel2);
+}
+
+.seg button {
+  height: 30px; /* 32px control: 30px buttons inside a 1px border */
+}
+
+.hd--hint,
+.hd--hint span,
+.sec .hd--hint > span:last-child:not(.muted) {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text3);
+}
+
+.hd + input[type='range'] {
+  margin-top: -4px; /* label row sits 4px above its slider on the boards */
+}
+
+.card .toggle,
+.card .toggle + .toggle {
+  margin-top: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent; /* a card already tints its toggles */
+}
+
+.mode b,
+.card-opt b {
+  font-weight: 600;
+}
+
+.card-opt b {
+  font-size: 13px;
+}
+
+.export__head h2 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.export h3 {
+  font-weight: 600;
+}
+
+.export__thumb {
+  position: relative;
+  overflow: hidden;
+}
+
+.export__thumb img {
+  position: absolute;
+  inset: 0;
+  object-fit: cover;
+}
+
+.tl__zi__label {
+  font-weight: 500;
+}
+
+.tl__sep {
+  flex: none;
+  width: 1px;
+  height: 18px;
+  margin: 0 6px;
+  background: var(--line);
+}
+
+.transport {
+  gap: 10px;
+}
+
+.transport__hint {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
 }
